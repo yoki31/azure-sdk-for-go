@@ -3,7 +3,7 @@
 
 package autorest
 
-import "github.com/Azure/azure-sdk-for-go/tools/generator/autorest/model"
+import "github.com/Azure/azure-sdk-for-go/eng/tools/generator/autorest/model"
 
 // MetadataValidateFunc is a function that validates a metadata is legal or not
 type MetadataValidateFunc func(tag string, metadata model.Metadata) error
