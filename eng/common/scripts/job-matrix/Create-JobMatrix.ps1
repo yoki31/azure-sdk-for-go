@@ -19,6 +19,11 @@ param (
 
 . $PSScriptRoot/job-matrix-functions.ps1
 
+write-host "BBP gen contents $ConfigPath"
+push-location (split-path $ConfigPath)
+Get-ChildItem -Recurse
+pop-location
+
 $config = GetMatrixConfigFromJson (Get-Content $ConfigPath)
 # Strip empty string filters in order to be able to use azure pipelines yaml join()
 $Filters = $Filters | Where-Object { $_ }

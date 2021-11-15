@@ -32,6 +32,9 @@ steps:
             New-Item $dir -ItemType Directory -Force
             Push-Location $dir
 
+            write-host "BBP pwd"
+            write-host $pwd
+
             if (Test-Path .git/info/sparse-checkout) {
               $hasInitialized = $true
               Write-Host "Repository $($repository.Name) has already been initialized. Skipping this step."
@@ -64,6 +67,9 @@ steps:
             } else {
               Write-Host "Skipping checkout as repo has already been initialized"
             }
+
+            write-host "BBP contents"
+            Get-ChildItem -Recurse
 
             Pop-Location
         }
