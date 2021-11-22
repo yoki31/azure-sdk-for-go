@@ -6,6 +6,7 @@ package azidentity
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -86,7 +87,23 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	if recording.GetRecordMode() == recording.RecordingMode {
+	switch recording.GetRecordMode() {
+	case recording.PlaybackMode:
+		// enable BodilessMatcher because we don't record request bodies
+		// TODO: add an API for this to sdk/internal
+		req, err := http.NewRequest("POST", "http://localhost:5000/Admin/SetMatcher", http.NoBody)
+		if err != nil {
+			panic(err)
+		}
+		req.Header["x-abstraction-identifier"] = []string{"BodilessMatcher"}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		if res.StatusCode != http.StatusOK {
+			log.Panicf("failed to enable BodilessMatcher: %v", res)
+		}
+	case recording.RecordingMode:
 		// remove default sanitizers such as the OAuth response sanitizer
 		err := recording.ResetSanitizers(nil)
 		if err != nil {
@@ -125,6 +142,7 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			panic(err)
 		}
+		// redact secrets returned by AAD
 		for _, key := range []string{"access_token", "device_code", "message", "refresh_token", "user_code"} {
 			err = recording.AddBodyKeySanitizer("$."+key, "redacted", "", nil)
 			if err != nil {
@@ -136,6 +154,7 @@ func TestMain(m *testing.M) {
 			if err != nil {
 				panic(err)
 			}
+			// TODO: reset matcher
 		}()
 	}
 	os.Exit(m.Run())
