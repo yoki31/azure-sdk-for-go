@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,24 +32,29 @@ type BalancesClient struct {
 // NewBalancesClient creates a new instance of BalancesClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewBalancesClient(credential azcore.TokenCredential, options *arm.ClientOptions) *BalancesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewBalancesClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*BalancesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &BalancesClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // GetByBillingAccount - Gets the balances for a scope by billingAccountId. Balances are available via this API only for May
 // 1, 2014 or later.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // billingAccountID - BillingAccount ID
 // options - BalancesClientGetByBillingAccountOptions contains the optional parameters for the BalancesClient.GetByBillingAccount
 // method.
@@ -81,13 +87,13 @@ func (client *BalancesClient) getByBillingAccountCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByBillingAccountHandleResponse handles the GetByBillingAccount response.
 func (client *BalancesClient) getByBillingAccountHandleResponse(resp *http.Response) (BalancesClientGetByBillingAccountResponse, error) {
-	result := BalancesClientGetByBillingAccountResponse{RawResponse: resp}
+	result := BalancesClientGetByBillingAccountResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Balance); err != nil {
 		return BalancesClientGetByBillingAccountResponse{}, err
 	}
@@ -97,6 +103,7 @@ func (client *BalancesClient) getByBillingAccountHandleResponse(resp *http.Respo
 // GetForBillingPeriodByBillingAccount - Gets the balances for a scope by billing period and billingAccountId. Balances are
 // available via this API only for May 1, 2014 or later.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // billingAccountID - BillingAccount ID
 // billingPeriodName - Billing Period Name.
 // options - BalancesClientGetForBillingPeriodByBillingAccountOptions contains the optional parameters for the BalancesClient.GetForBillingPeriodByBillingAccount
@@ -134,13 +141,13 @@ func (client *BalancesClient) getForBillingPeriodByBillingAccountCreateRequest(c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getForBillingPeriodByBillingAccountHandleResponse handles the GetForBillingPeriodByBillingAccount response.
 func (client *BalancesClient) getForBillingPeriodByBillingAccountHandleResponse(resp *http.Response) (BalancesClientGetForBillingPeriodByBillingAccountResponse, error) {
-	result := BalancesClientGetForBillingPeriodByBillingAccountResponse{RawResponse: resp}
+	result := BalancesClientGetForBillingPeriodByBillingAccountResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Balance); err != nil {
 		return BalancesClientGetForBillingPeriodByBillingAccountResponse{}, err
 	}

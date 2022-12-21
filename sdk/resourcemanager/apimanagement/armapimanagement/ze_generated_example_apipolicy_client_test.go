@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,87 +17,101 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/apimanagement/armapimanagement"
 )
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadApiPolicy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadApiPolicy.json
 func ExampleAPIPolicyClient_GetEntityTag() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIPolicyClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIPolicyClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.GetEntityTag(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		armapimanagement.PolicyIDName("policy"),
+		"rg1",
+		"apimService1",
+		"57d1f7558aa04f15146d9d8a",
+		armapimanagement.PolicyIDNamePolicy,
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetApiPolicy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetApiPolicy.json
 func ExampleAPIPolicyClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIPolicyClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIPolicyClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		armapimanagement.PolicyIDName("policy"),
+		"rg1",
+		"apimService1",
+		"5600b59475ff190048040001",
+		armapimanagement.PolicyIDNamePolicy,
 		&armapimanagement.APIPolicyClientGetOptions{Format: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.APIPolicyClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateApiPolicy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateApiPolicy.json
 func ExampleAPIPolicyClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIPolicyClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIPolicyClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		armapimanagement.PolicyIDName("policy"),
+		"rg1",
+		"apimService1",
+		"5600b57e7e8880006a040001",
+		armapimanagement.PolicyIDNamePolicy,
 		armapimanagement.PolicyContract{
 			Properties: &armapimanagement.PolicyContractProperties{
-				Format: armapimanagement.PolicyContentFormat("xml").ToPtr(),
-				Value:  to.StringPtr("<value>"),
+				Format: to.Ptr(armapimanagement.PolicyContentFormatXML),
+				Value:  to.Ptr("<policies> <inbound /> <backend>    <forward-request />  </backend>  <outbound /></policies>"),
 			},
 		},
-		&armapimanagement.APIPolicyClientCreateOrUpdateOptions{IfMatch: to.StringPtr("<if-match>")})
+		&armapimanagement.APIPolicyClientCreateOrUpdateOptions{IfMatch: to.Ptr("*")})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.APIPolicyClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteApiPolicy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteApiPolicy.json
 func ExampleAPIPolicyClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIPolicyClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIPolicyClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		armapimanagement.PolicyIDName("policy"),
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"loggerId",
+		armapimanagement.PolicyIDNamePolicy,
+		"*",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

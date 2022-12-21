@@ -1,3 +1,6 @@
+//go:build go1.18
+// +build go1.18
+
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
@@ -41,8 +44,8 @@ func TestIMDSEndpointParse(t *testing.T) {
 func TestManagedIdentityClient_UserAgent(t *testing.T) {
 	srv, close := mock.NewServer()
 	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(accessTokenRespSuccess)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "..."})
+	srv.AppendResponse(mock.WithBody(accessTokenRespSuccess))
+	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL()})
 	options := ManagedIdentityCredentialOptions{
 		ClientOptions: azcore.ClientOptions{
 			Transport: srv, PerCallPolicies: []policy.Policy{userAgentValidatingPolicy{t: t}},
@@ -64,8 +67,8 @@ func TestManagedIdentityClient_UserAgent(t *testing.T) {
 func TestManagedIdentityClient_ApplicationID(t *testing.T) {
 	srv, close := mock.NewServer()
 	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(accessTokenRespSuccess)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "..."})
+	srv.AppendResponse(mock.WithBody(accessTokenRespSuccess))
+	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL()})
 	appID := "customvalue"
 	options := ManagedIdentityCredentialOptions{
 		ClientOptions: azcore.ClientOptions{

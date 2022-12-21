@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ArtifactSourcesClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewArtifactSourcesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ArtifactSourcesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewArtifactSourcesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ArtifactSourcesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ArtifactSourcesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or replace an existing artifact source.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the artifact source.
@@ -99,13 +105,13 @@ func (client *ArtifactSourcesClient) createOrUpdateCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, artifactSource)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ArtifactSourcesClient) createOrUpdateHandleResponse(resp *http.Response) (ArtifactSourcesClientCreateOrUpdateResponse, error) {
-	result := ArtifactSourcesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ArtifactSourcesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArtifactSource); err != nil {
 		return ArtifactSourcesClientCreateOrUpdateResponse{}, err
 	}
@@ -114,6 +120,7 @@ func (client *ArtifactSourcesClient) createOrUpdateHandleResponse(resp *http.Res
 
 // Delete - Delete artifact source.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the artifact source.
@@ -130,7 +137,7 @@ func (client *ArtifactSourcesClient) Delete(ctx context.Context, resourceGroupNa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ArtifactSourcesClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ArtifactSourcesClientDeleteResponse{RawResponse: resp}, nil
+	return ArtifactSourcesClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -159,12 +166,13 @@ func (client *ArtifactSourcesClient) deleteCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get artifact source.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the artifact source.
@@ -213,34 +221,51 @@ func (client *ArtifactSourcesClient) getCreateRequest(ctx context.Context, resou
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ArtifactSourcesClient) getHandleResponse(resp *http.Response) (ArtifactSourcesClientGetResponse, error) {
-	result := ArtifactSourcesClientGetResponse{RawResponse: resp}
+	result := ArtifactSourcesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArtifactSource); err != nil {
 		return ArtifactSourcesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - List artifact sources in a given lab.
+// NewListPager - List artifact sources in a given lab.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // options - ArtifactSourcesClientListOptions contains the optional parameters for the ArtifactSourcesClient.List method.
-func (client *ArtifactSourcesClient) List(resourceGroupName string, labName string, options *ArtifactSourcesClientListOptions) *ArtifactSourcesClientListPager {
-	return &ArtifactSourcesClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, labName, options)
+func (client *ArtifactSourcesClient) NewListPager(resourceGroupName string, labName string, options *ArtifactSourcesClientListOptions) *runtime.Pager[ArtifactSourcesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ArtifactSourcesClientListResponse]{
+		More: func(page ArtifactSourcesClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ArtifactSourcesClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ArtifactSourceList.NextLink)
+		Fetcher: func(ctx context.Context, page *ArtifactSourcesClientListResponse) (ArtifactSourcesClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, labName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ArtifactSourcesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ArtifactSourcesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ArtifactSourcesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -277,13 +302,13 @@ func (client *ArtifactSourcesClient) listCreateRequest(ctx context.Context, reso
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ArtifactSourcesClient) listHandleResponse(resp *http.Response) (ArtifactSourcesClientListResponse, error) {
-	result := ArtifactSourcesClientListResponse{RawResponse: resp}
+	result := ArtifactSourcesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArtifactSourceList); err != nil {
 		return ArtifactSourcesClientListResponse{}, err
 	}
@@ -292,6 +317,7 @@ func (client *ArtifactSourcesClient) listHandleResponse(resp *http.Response) (Ar
 
 // Update - Allows modifying tags of artifact sources. All other properties will be ignored.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the artifact source.
@@ -338,13 +364,13 @@ func (client *ArtifactSourcesClient) updateCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, artifactSource)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ArtifactSourcesClient) updateHandleResponse(resp *http.Response) (ArtifactSourcesClientUpdateResponse, error) {
-	result := ArtifactSourcesClientUpdateResponse{RawResponse: resp}
+	result := ArtifactSourcesClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArtifactSource); err != nil {
 		return ArtifactSourcesClientUpdateResponse{}, err
 	}

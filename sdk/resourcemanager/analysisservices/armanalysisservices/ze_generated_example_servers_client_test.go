@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,293 +12,346 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/analysisservices/armanalysisservices"
 )
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/getServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/getServer.json
 func ExampleServersClient_GetDetails() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetDetails(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientGetDetailsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/createServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/createServer.json
 func ExampleServersClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		armanalysisservices.Server{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("West US"),
 			SKU: &armanalysisservices.ResourceSKU{
-				Name:     to.StringPtr("<name>"),
-				Capacity: to.Int32Ptr(1),
-				Tier:     armanalysisservices.SKUTier("Standard").ToPtr(),
+				Name:     to.Ptr("S1"),
+				Capacity: to.Ptr[int32](1),
+				Tier:     to.Ptr(armanalysisservices.SKUTierStandard),
 			},
 			Tags: map[string]*string{
-				"testKey": to.StringPtr("testValue"),
+				"testKey": to.Ptr("testValue"),
 			},
 			Properties: &armanalysisservices.ServerProperties{
 				AsAdministrators: &armanalysisservices.ServerAdministrators{
 					Members: []*string{
-						to.StringPtr("azsdktest@microsoft.com"),
-						to.StringPtr("azsdktest2@microsoft.com")},
+						to.Ptr("azsdktest@microsoft.com"),
+						to.Ptr("azsdktest2@microsoft.com")},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/deleteServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/deleteServer.json
 func ExampleServersClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/updateServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/updateServer.json
 func ExampleServersClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		armanalysisservices.ServerUpdateParameters{
 			Properties: &armanalysisservices.ServerMutableProperties{
 				AsAdministrators: &armanalysisservices.ServerAdministrators{
 					Members: []*string{
-						to.StringPtr("azsdktest@microsoft.com"),
-						to.StringPtr("azsdktest2@microsoft.com")},
+						to.Ptr("azsdktest@microsoft.com"),
+						to.Ptr("azsdktest2@microsoft.com")},
 				},
 			},
 			SKU: &armanalysisservices.ResourceSKU{
-				Name:     to.StringPtr("<name>"),
-				Capacity: to.Int32Ptr(1),
-				Tier:     armanalysisservices.SKUTier("Standard").ToPtr(),
+				Name:     to.Ptr("S1"),
+				Capacity: to.Ptr[int32](1),
+				Tier:     to.Ptr(armanalysisservices.SKUTierStandard),
 			},
 			Tags: map[string]*string{
-				"testKey": to.StringPtr("testValue"),
+				"testKey": to.Ptr("testValue"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/suspendServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/suspendServer.json
 func ExampleServersClient_BeginSuspend() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginSuspend(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/resumeServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/resumeServer.json
 func ExampleServersClient_BeginResume() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginResume(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listServersInResourceGroup.json
-func ExampleServersClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listServersInResourceGroup.json
+func ExampleServersClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
-	res, err := client.ListByResourceGroup(ctx,
-		"<resource-group-name>",
-		nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientListByResourceGroupResult)
+	pager := client.NewListByResourceGroupPager("TestRG",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listServers.json
-func ExampleServersClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listServers.json
+func ExampleServersClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
-	res, err := client.List(ctx,
-		nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientListResult)
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listGatewayStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/listGatewayStatus.json
 func ExampleServersClient_ListGatewayStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListGatewayStatus(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientListGatewayStatusResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/dissociateGateway.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/dissociateGateway.json
 func ExampleServersClient_DissociateGateway() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.DissociateGateway(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/checkNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/checkNameAvailability.json
 func ExampleServersClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<location>",
+		"West US",
 		armanalysisservices.CheckServerNameAvailabilityParameters{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("azsdktest"),
+			Type: to.Ptr("Microsoft.AnalysisServices/servers"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/operationResults.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/operationResults.json
 func ExampleServersClient_ListOperationResults() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.ListOperationResults(ctx,
-		"<location>",
-		"<operation-id>",
+		"West US",
+		"00000000000000000000000000000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/operationStatuses.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/analysisservices/resource-manager/Microsoft.AnalysisServices/stable/2017-08-01/examples/operationStatuses.json
 func ExampleServersClient_ListOperationStatuses() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armanalysisservices.NewServersClient("<subscription-id>", cred, nil)
+	client, err := armanalysisservices.NewServersClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListOperationStatuses(ctx,
-		"<location>",
-		"<operation-id>",
+		"West US",
+		"testoperationid",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServersClientListOperationStatusesResult)
+	// TODO: use response item
+	_ = res
 }

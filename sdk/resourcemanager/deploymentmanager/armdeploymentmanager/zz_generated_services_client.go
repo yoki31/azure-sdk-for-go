@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ServicesClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServicesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServicesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServicesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServicesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServicesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Synchronously creates a new service or updates an existing service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serviceTopologyName - The name of the service topology .
 // serviceName - The name of the service resource.
@@ -98,13 +104,13 @@ func (client *ServicesClient) createOrUpdateCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serviceInfo)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ServicesClient) createOrUpdateHandleResponse(resp *http.Response) (ServicesClientCreateOrUpdateResponse, error) {
-	result := ServicesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ServicesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceResource); err != nil {
 		return ServicesClientCreateOrUpdateResponse{}, err
 	}
@@ -113,6 +119,7 @@ func (client *ServicesClient) createOrUpdateHandleResponse(resp *http.Response) 
 
 // Delete - Deletes the service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serviceTopologyName - The name of the service topology .
 // serviceName - The name of the service resource.
@@ -129,7 +136,7 @@ func (client *ServicesClient) Delete(ctx context.Context, resourceGroupName stri
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ServicesClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ServicesClientDeleteResponse{RawResponse: resp}, nil
+	return ServicesClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -158,12 +165,13 @@ func (client *ServicesClient) deleteCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serviceTopologyName - The name of the service topology .
 // serviceName - The name of the service resource.
@@ -209,13 +217,13 @@ func (client *ServicesClient) getCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServicesClient) getHandleResponse(resp *http.Response) (ServicesClientGetResponse, error) {
-	result := ServicesClientGetResponse{RawResponse: resp}
+	result := ServicesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceResource); err != nil {
 		return ServicesClientGetResponse{}, err
 	}
@@ -224,6 +232,7 @@ func (client *ServicesClient) getHandleResponse(resp *http.Response) (ServicesCl
 
 // List - Lists the services in the service topology.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serviceTopologyName - The name of the service topology .
 // options - ServicesClientListOptions contains the optional parameters for the ServicesClient.List method.
@@ -264,13 +273,13 @@ func (client *ServicesClient) listCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ServicesClient) listHandleResponse(resp *http.Response) (ServicesClientListResponse, error) {
-	result := ServicesClientListResponse{RawResponse: resp}
+	result := ServicesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceResourceArray); err != nil {
 		return ServicesClientListResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,116 +12,126 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetWorkloadClassifier.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetWorkloadClassifier.json
 func ExampleWorkloadClassifiersClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewWorkloadClassifiersClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewWorkloadClassifiersClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<workload-group-name>",
-		"<workload-classifier-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		"wlm_workloadgroup",
+		"wlm_classifier",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkloadClassifiersClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateOrUpdateWorkloadClassifierMax.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateOrUpdateWorkloadClassifierMax.json
 func ExampleWorkloadClassifiersClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewWorkloadClassifiersClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewWorkloadClassifiersClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<workload-group-name>",
-		"<workload-classifier-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		"wlm_workloadgroup",
+		"wlm_workloadclassifier",
 		armsql.WorkloadClassifier{
 			Properties: &armsql.WorkloadClassifierProperties{
-				Context:    to.StringPtr("<context>"),
-				EndTime:    to.StringPtr("<end-time>"),
-				Importance: to.StringPtr("<importance>"),
-				Label:      to.StringPtr("<label>"),
-				MemberName: to.StringPtr("<member-name>"),
-				StartTime:  to.StringPtr("<start-time>"),
+				Context:    to.Ptr("test_context"),
+				EndTime:    to.Ptr("14:00"),
+				Importance: to.Ptr("high"),
+				Label:      to.Ptr("test_label"),
+				MemberName: to.Ptr("dbo"),
+				StartTime:  to.Ptr("12:00"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkloadClassifiersClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DeleteWorkloadClassifier.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DeleteWorkloadClassifier.json
 func ExampleWorkloadClassifiersClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewWorkloadClassifiersClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewWorkloadClassifiersClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<workload-group-name>",
-		"<workload-classifier-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		"wlm_workloadgroup",
+		"wlm_workloadclassifier",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetWorkloadClassifierList.json
-func ExampleWorkloadClassifiersClient_ListByWorkloadGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetWorkloadClassifierList.json
+func ExampleWorkloadClassifiersClient_NewListByWorkloadGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewWorkloadClassifiersClient("<subscription-id>", cred, nil)
-	pager := client.ListByWorkloadGroup("<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<workload-group-name>",
+	client, err := armsql.NewWorkloadClassifiersClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByWorkloadGroupPager("Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		"wlm_workloadgroup",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

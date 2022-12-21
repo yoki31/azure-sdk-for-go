@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,49 @@ type ClustersClient struct {
 // subscriptionID - The customer subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClustersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ClustersClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClustersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ClustersClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ClustersClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create or update a Service Fabric cluster resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // parameters - The cluster resource.
 // options - ClustersClientBeginCreateOrUpdateOptions contains the optional parameters for the ClustersClient.BeginCreateOrUpdate
 // method.
-func (client *ClustersClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, clusterName string, parameters Cluster, options *ClustersClientBeginCreateOrUpdateOptions) (ClustersClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, clusterName, parameters, options)
-	if err != nil {
-		return ClustersClientCreateOrUpdatePollerResponse{}, err
+func (client *ClustersClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, clusterName string, parameters Cluster, options *ClustersClientBeginCreateOrUpdateOptions) (*runtime.Poller[ClustersClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, clusterName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClustersClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClustersClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClustersClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ClustersClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ClustersClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ClustersClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or update a Service Fabric cluster resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *ClustersClient) createOrUpdate(ctx context.Context, resourceGroupName string, clusterName string, parameters Cluster, options *ClustersClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, clusterName, parameters, options)
 	if err != nil {
@@ -113,12 +114,13 @@ func (client *ClustersClient) createOrUpdateCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Delete - Delete a Service Fabric cluster resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // options - ClustersClientDeleteOptions contains the optional parameters for the ClustersClient.Delete method.
@@ -134,7 +136,7 @@ func (client *ClustersClient) Delete(ctx context.Context, resourceGroupName stri
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ClustersClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ClustersClientDeleteResponse{RawResponse: resp}, nil
+	return ClustersClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -159,12 +161,13 @@ func (client *ClustersClient) deleteCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a Service Fabric cluster resource created or in the process of being created in the specified resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // options - ClustersClientGetOptions contains the optional parameters for the ClustersClient.Get method.
@@ -205,13 +208,13 @@ func (client *ClustersClient) getCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ClustersClient) getHandleResponse(resp *http.Response) (ClustersClientGetResponse, error) {
-	result := ClustersClientGetResponse{RawResponse: resp}
+	result := ClustersClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Cluster); err != nil {
 		return ClustersClientGetResponse{}, err
 	}
@@ -220,6 +223,7 @@ func (client *ClustersClient) getHandleResponse(resp *http.Response) (ClustersCl
 
 // List - Gets all Service Fabric cluster resources created or in the process of being created in the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // options - ClustersClientListOptions contains the optional parameters for the ClustersClient.List method.
 func (client *ClustersClient) List(ctx context.Context, options *ClustersClientListOptions) (ClustersClientListResponse, error) {
 	req, err := client.listCreateRequest(ctx, options)
@@ -250,13 +254,13 @@ func (client *ClustersClient) listCreateRequest(ctx context.Context, options *Cl
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ClustersClient) listHandleResponse(resp *http.Response) (ClustersClientListResponse, error) {
-	result := ClustersClientListResponse{RawResponse: resp}
+	result := ClustersClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterListResult); err != nil {
 		return ClustersClientListResponse{}, err
 	}
@@ -266,6 +270,7 @@ func (client *ClustersClient) listHandleResponse(resp *http.Response) (ClustersC
 // ListByResourceGroup - Gets all Service Fabric cluster resources created or in the process of being created in the resource
 // group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // options - ClustersClientListByResourceGroupOptions contains the optional parameters for the ClustersClient.ListByResourceGroup
 // method.
@@ -302,13 +307,13 @@ func (client *ClustersClient) listByResourceGroupCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ClustersClient) listByResourceGroupHandleResponse(resp *http.Response) (ClustersClientListByResourceGroupResponse, error) {
-	result := ClustersClientListByResourceGroupResponse{RawResponse: resp}
+	result := ClustersClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterListResult); err != nil {
 		return ClustersClientListByResourceGroupResponse{}, err
 	}
@@ -319,6 +324,7 @@ func (client *ClustersClient) listByResourceGroupHandleResponse(resp *http.Respo
 // cluster version. If a target is given, it will provide the required path to get from the current
 // cluster version to the target version.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // options - ClustersClientListUpgradableVersionsOptions contains the optional parameters for the ClustersClient.ListUpgradableVersions
@@ -360,7 +366,7 @@ func (client *ClustersClient) listUpgradableVersionsCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.VersionsDescription != nil {
 		return req, runtime.MarshalAsJSON(req, *options.VersionsDescription)
 	}
@@ -369,7 +375,7 @@ func (client *ClustersClient) listUpgradableVersionsCreateRequest(ctx context.Co
 
 // listUpgradableVersionsHandleResponse handles the ListUpgradableVersions response.
 func (client *ClustersClient) listUpgradableVersionsHandleResponse(resp *http.Response) (ClustersClientListUpgradableVersionsResponse, error) {
-	result := ClustersClientListUpgradableVersionsResponse{RawResponse: resp}
+	result := ClustersClientListUpgradableVersionsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.UpgradableVersionPathResult); err != nil {
 		return ClustersClientListUpgradableVersionsResponse{}, err
 	}
@@ -378,30 +384,26 @@ func (client *ClustersClient) listUpgradableVersionsHandleResponse(resp *http.Re
 
 // BeginUpdate - Update the configuration of a Service Fabric cluster resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // parameters - The parameters which contains the property value and property name which used to update the cluster configuration.
 // options - ClustersClientBeginUpdateOptions contains the optional parameters for the ClustersClient.BeginUpdate method.
-func (client *ClustersClient) BeginUpdate(ctx context.Context, resourceGroupName string, clusterName string, parameters ClusterUpdateParameters, options *ClustersClientBeginUpdateOptions) (ClustersClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, clusterName, parameters, options)
-	if err != nil {
-		return ClustersClientUpdatePollerResponse{}, err
+func (client *ClustersClient) BeginUpdate(ctx context.Context, resourceGroupName string, clusterName string, parameters ClusterUpdateParameters, options *ClustersClientBeginUpdateOptions) (*runtime.Poller[ClustersClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, clusterName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClustersClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClustersClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClustersClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ClustersClient.Update", "", resp, client.pl)
-	if err != nil {
-		return ClustersClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &ClustersClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Update the configuration of a Service Fabric cluster resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *ClustersClient) update(ctx context.Context, resourceGroupName string, clusterName string, parameters ClusterUpdateParameters, options *ClustersClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, clusterName, parameters, options)
 	if err != nil {
@@ -439,6 +441,6 @@ func (client *ClustersClient) updateCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

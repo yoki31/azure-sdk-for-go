@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -88,6 +88,45 @@ func unmarshalImageTemplateDistributorClassificationArray(rawMsg json.RawMessage
 	fArray := make([]ImageTemplateDistributorClassification, len(rawMessages))
 	for index, rawMessage := range rawMessages {
 		f, err := unmarshalImageTemplateDistributorClassification(rawMessage)
+		if err != nil {
+			return nil, err
+		}
+		fArray[index] = f
+	}
+	return fArray, nil
+}
+
+func unmarshalImageTemplateInVMValidatorClassification(rawMsg json.RawMessage) (ImageTemplateInVMValidatorClassification, error) {
+	if rawMsg == nil {
+		return nil, nil
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(rawMsg, &m); err != nil {
+		return nil, err
+	}
+	var b ImageTemplateInVMValidatorClassification
+	switch m["type"] {
+	case "PowerShell":
+		b = &ImageTemplatePowerShellValidator{}
+	case "Shell":
+		b = &ImageTemplateShellValidator{}
+	default:
+		b = &ImageTemplateInVMValidator{}
+	}
+	return b, json.Unmarshal(rawMsg, b)
+}
+
+func unmarshalImageTemplateInVMValidatorClassificationArray(rawMsg json.RawMessage) ([]ImageTemplateInVMValidatorClassification, error) {
+	if rawMsg == nil {
+		return nil, nil
+	}
+	var rawMessages []json.RawMessage
+	if err := json.Unmarshal(rawMsg, &rawMessages); err != nil {
+		return nil, err
+	}
+	fArray := make([]ImageTemplateInVMValidatorClassification, len(rawMessages))
+	for index, rawMessage := range rawMessages {
+		f, err := unmarshalImageTemplateInVMValidatorClassification(rawMessage)
 		if err != nil {
 			return nil, err
 		}

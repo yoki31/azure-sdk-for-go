@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,195 +12,213 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/apimanagement/armapimanagement"
 )
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListApis.json
-func ExampleAPIClient_ListByService() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListApis.json
+func ExampleAPIClient_NewListByServicePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
-	pager := client.ListByService("<resource-group-name>",
-		"<service-name>",
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServicePager("rg1",
+		"apimService1",
 		&armapimanagement.APIClientListByServiceOptions{Filter: nil,
 			Top:                 nil,
 			Skip:                nil,
 			Tags:                nil,
 			ExpandAPIVersionSet: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadApi.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadApi.json
 func ExampleAPIClient_GetEntityTag() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.GetEntityTag(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
+		"rg1",
+		"apimService1",
+		"57d1f7558aa04f15146d9d8a",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetApiContract.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetApiContract.json
 func ExampleAPIClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
+		"rg1",
+		"apimService1",
+		"57d1f7558aa04f15146d9d8a",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.APIClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateApi.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateApi.json
 func ExampleAPIClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
+		"rg1",
+		"apimService1",
+		"tempgroup",
 		armapimanagement.APICreateOrUpdateParameter{
 			Properties: &armapimanagement.APICreateOrUpdateProperties{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("apidescription5200"),
 				AuthenticationSettings: &armapimanagement.AuthenticationSettingsContract{
 					OAuth2: &armapimanagement.OAuth2AuthenticationSettingsContract{
-						AuthorizationServerID: to.StringPtr("<authorization-server-id>"),
-						Scope:                 to.StringPtr("<scope>"),
+						AuthorizationServerID: to.Ptr("authorizationServerId2283"),
+						Scope:                 to.Ptr("oauth2scope2580"),
 					},
 				},
 				SubscriptionKeyParameterNames: &armapimanagement.SubscriptionKeyParameterNamesContract{
-					Header: to.StringPtr("<header>"),
-					Query:  to.StringPtr("<query>"),
+					Header: to.Ptr("header4520"),
+					Query:  to.Ptr("query3037"),
 				},
-				Path:        to.StringPtr("<path>"),
-				DisplayName: to.StringPtr("<display-name>"),
+				Path:        to.Ptr("newapiPath"),
+				DisplayName: to.Ptr("apiname1463"),
 				Protocols: []*armapimanagement.Protocol{
-					armapimanagement.Protocol("https").ToPtr(),
-					armapimanagement.Protocol("http").ToPtr()},
-				ServiceURL: to.StringPtr("<service-url>"),
+					to.Ptr(armapimanagement.ProtocolHTTPS),
+					to.Ptr(armapimanagement.ProtocolHTTP)},
+				ServiceURL: to.Ptr("http://newechoapi.cloudapp.net/api"),
 			},
 		},
 		&armapimanagement.APIClientBeginCreateOrUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.APIClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementUpdateApi.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementUpdateApi.json
 func ExampleAPIClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"echo-api",
+		"*",
 		armapimanagement.APIUpdateContract{
 			Properties: &armapimanagement.APIContractUpdateProperties{
-				Path:        to.StringPtr("<path>"),
-				DisplayName: to.StringPtr("<display-name>"),
-				ServiceURL:  to.StringPtr("<service-url>"),
+				Path:        to.Ptr("newecho"),
+				DisplayName: to.Ptr("Echo API New"),
+				ServiceURL:  to.Ptr("http://echoapi.cloudapp.net/api2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.APIClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteApi.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteApi.json
 func ExampleAPIClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<api-id>",
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"echo-api",
+		"*",
 		&armapimanagement.APIClientDeleteOptions{DeleteRevisions: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListApisByTags.json
-func ExampleAPIClient_ListByTags() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListApisByTags.json
+func ExampleAPIClient_NewListByTagsPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAPIClient("<subscription-id>", cred, nil)
-	pager := client.ListByTags("<resource-group-name>",
-		"<service-name>",
+	client, err := armapimanagement.NewAPIClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByTagsPager("rg1",
+		"apimService1",
 		&armapimanagement.APIClientListByTagsOptions{Filter: nil,
 			Top:                  nil,
 			Skip:                 nil,
 			IncludeNotTaggedApis: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -29,23 +30,28 @@ type SitesClient struct {
 // NewSitesClient creates a new instance of SitesClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSitesClient(credential azcore.TokenCredential, options *arm.ClientOptions) *SitesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSitesClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*SitesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SitesClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or update IoT site
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // siteModel - The IoT sites model
 // options - SitesClientCreateOrUpdateOptions contains the optional parameters for the SitesClient.CreateOrUpdate method.
@@ -75,13 +81,13 @@ func (client *SitesClient) createOrUpdateCreateRequest(ctx context.Context, scop
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, siteModel)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SitesClient) createOrUpdateHandleResponse(resp *http.Response) (SitesClientCreateOrUpdateResponse, error) {
-	result := SitesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SitesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SiteModel); err != nil {
 		return SitesClientCreateOrUpdateResponse{}, err
 	}
@@ -90,6 +96,7 @@ func (client *SitesClient) createOrUpdateHandleResponse(resp *http.Response) (Si
 
 // Delete - Delete IoT site
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // options - SitesClientDeleteOptions contains the optional parameters for the SitesClient.Delete method.
 func (client *SitesClient) Delete(ctx context.Context, scope string, options *SitesClientDeleteOptions) (SitesClientDeleteResponse, error) {
@@ -104,7 +111,7 @@ func (client *SitesClient) Delete(ctx context.Context, scope string, options *Si
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return SitesClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SitesClientDeleteResponse{RawResponse: resp}, nil
+	return SitesClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -118,12 +125,13 @@ func (client *SitesClient) deleteCreateRequest(ctx context.Context, scope string
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get IoT site
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // options - SitesClientGetOptions contains the optional parameters for the SitesClient.Get method.
 func (client *SitesClient) Get(ctx context.Context, scope string, options *SitesClientGetOptions) (SitesClientGetResponse, error) {
@@ -152,13 +160,13 @@ func (client *SitesClient) getCreateRequest(ctx context.Context, scope string, o
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SitesClient) getHandleResponse(resp *http.Response) (SitesClientGetResponse, error) {
-	result := SitesClientGetResponse{RawResponse: resp}
+	result := SitesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SiteModel); err != nil {
 		return SitesClientGetResponse{}, err
 	}
@@ -167,6 +175,7 @@ func (client *SitesClient) getHandleResponse(resp *http.Response) (SitesClientGe
 
 // List - List IoT sites
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // options - SitesClientListOptions contains the optional parameters for the SitesClient.List method.
 func (client *SitesClient) List(ctx context.Context, scope string, options *SitesClientListOptions) (SitesClientListResponse, error) {
@@ -195,13 +204,13 @@ func (client *SitesClient) listCreateRequest(ctx context.Context, scope string, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *SitesClient) listHandleResponse(resp *http.Response) (SitesClientListResponse, error) {
-	result := SitesClientListResponse{RawResponse: resp}
+	result := SitesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SitesList); err != nil {
 		return SitesClientListResponse{}, err
 	}

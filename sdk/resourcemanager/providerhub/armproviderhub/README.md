@@ -1,8 +1,8 @@
-# Azure Probider HUB Module for Go
+# Azure Provider HUB Module for Go
 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/providerhub/armproviderhub)](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/providerhub/armproviderhub)
 
-The `armproviderhub` module provides operations for working with Azure Probider HUB.
+The `armproviderhub` module provides operations for working with Azure Provider HUB.
 
 [Source code](https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/resourcemanager/providerhub/armproviderhub)
 
@@ -11,13 +11,13 @@ The `armproviderhub` module provides operations for working with Azure Probider 
 ## Prerequisites
 
 - an [Azure subscription](https://azure.microsoft.com/free/)
-- Go 1.16 or above
+- Go 1.18 or above (You could download and install the latest version of Go from [here](https://go.dev/doc/install). It will replace the existing Go on your machine. If you want to install multiple Go versions on the same machine, you could refer this [doc](https://go.dev/doc/manage-install).)
 
 ## Install the package
 
 This project uses [Go modules](https://github.com/golang/go/wiki/Modules) for versioning and dependency management.
 
-Install the Azure Probider HUB module:
+Install the Azure Provider HUB module:
 
 ```sh
 go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/providerhub/armproviderhub
@@ -25,7 +25,7 @@ go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/providerhub/armprov
 
 ## Authorization
 
-When creating a client, you will need to provide a credential for authenticating with Azure Probider HUB.  The `azidentity` module provides facilities for various ways of authenticating with Azure including client/secret, certificate, managed identity, and more.
+When creating a client, you will need to provide a credential for authenticating with Azure Provider HUB.  The `azidentity` module provides facilities for various ways of authenticating with Azure including client/secret, certificate, managed identity, and more.
 
 ```go
 cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -35,25 +35,27 @@ For more information on authentication, please see the documentation for `aziden
 
 ## Clients
 
-Azure Probider HUB modules consist of one or more clients.  A client groups a set of related APIs, providing access to its functionality within the specified subscription.  Create one or more clients to access the APIs you require using your credential.
+Azure Provider HUB modules consist of one or more clients.  A client groups a set of related APIs, providing access to its functionality within the specified subscription.  Create one or more clients to access the APIs you require using your credential.
 
 ```go
-client := armproviderhub.NewProviderHubClient(<subscription ID>, cred, nil)
+client, err := armproviderhub.NewClient(<subscription ID>, cred, nil)
 ```
 
 You can use `ClientOptions` in package `github.com/Azure/azure-sdk-for-go/sdk/azcore/arm` to set endpoint to connect with public and sovereign clouds as well as Azure Stack. For more information, please see the documentation for `azcore` at [pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azcore](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azcore).
 
 ```go
-options = arm.ClientOptions{
-    Host: arm.AzureChina,
+options := arm.ClientOptions {
+    ClientOptions: azcore.ClientOptions {
+        Cloud: cloud.AzureChina,
+    },
 }
-client := armproviderhub.NewProviderHubClient(<subscription ID>, cred, &options)
+client, err := armproviderhub.NewClient(<subscription ID>, cred, &options)
 ```
 
 ## Provide Feedback
 
 If you encounter bugs or have suggestions, please
-[open an issue](https://github.com/Azure/azure-sdk-for-go/issues) and assign the `Probider HUB` label.
+[open an issue](https://github.com/Azure/azure-sdk-for-go/issues) and assign the `Provider HUB` label.
 
 # Contributing
 

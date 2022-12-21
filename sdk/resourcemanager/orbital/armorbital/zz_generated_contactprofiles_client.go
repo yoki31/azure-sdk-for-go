@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,51 @@ type ContactProfilesClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewContactProfilesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ContactProfilesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewContactProfilesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ContactProfilesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ContactProfilesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a contact profile
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // contactProfileName - Contact Profile Name
 // parameters - The parameters to provide for the created Contact Profile.
 // options - ContactProfilesClientBeginCreateOrUpdateOptions contains the optional parameters for the ContactProfilesClient.BeginCreateOrUpdate
 // method.
-func (client *ContactProfilesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, contactProfileName string, parameters ContactProfile, options *ContactProfilesClientBeginCreateOrUpdateOptions) (ContactProfilesClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, contactProfileName, parameters, options)
-	if err != nil {
-		return ContactProfilesClientCreateOrUpdatePollerResponse{}, err
+func (client *ContactProfilesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, contactProfileName string, parameters ContactProfile, options *ContactProfilesClientBeginCreateOrUpdateOptions) (*runtime.Poller[ContactProfilesClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, contactProfileName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ContactProfilesClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ContactProfilesClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ContactProfilesClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ContactProfilesClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return ContactProfilesClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ContactProfilesClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a contact profile
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 func (client *ContactProfilesClient) createOrUpdate(ctx context.Context, resourceGroupName string, contactProfileName string, parameters ContactProfile, options *ContactProfilesClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, contactProfileName, parameters, options)
 	if err != nil {
@@ -94,14 +97,14 @@ func (client *ContactProfilesClient) createOrUpdate(ctx context.Context, resourc
 // createOrUpdateCreateRequest creates the CreateOrUpdate request.
 func (client *ContactProfilesClient) createOrUpdateCreateRequest(ctx context.Context, resourceGroupName string, contactProfileName string, parameters ContactProfile, options *ContactProfilesClientBeginCreateOrUpdateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Orbital/contactProfiles/{contactProfileName}"
-	if client.subscriptionID == "" {
-		return nil, errors.New("parameter client.subscriptionID cannot be empty")
-	}
-	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if resourceGroupName == "" {
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if contactProfileName == "" {
 		return nil, errors.New("parameter contactProfileName cannot be empty")
 	}
@@ -111,38 +114,36 @@ func (client *ContactProfilesClient) createOrUpdateCreateRequest(ctx context.Con
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a specified contact profile resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // contactProfileName - Contact Profile Name
 // options - ContactProfilesClientBeginDeleteOptions contains the optional parameters for the ContactProfilesClient.BeginDelete
 // method.
-func (client *ContactProfilesClient) BeginDelete(ctx context.Context, resourceGroupName string, contactProfileName string, options *ContactProfilesClientBeginDeleteOptions) (ContactProfilesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, contactProfileName, options)
-	if err != nil {
-		return ContactProfilesClientDeletePollerResponse{}, err
+func (client *ContactProfilesClient) BeginDelete(ctx context.Context, resourceGroupName string, contactProfileName string, options *ContactProfilesClientBeginDeleteOptions) (*runtime.Poller[ContactProfilesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, contactProfileName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ContactProfilesClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ContactProfilesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ContactProfilesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ContactProfilesClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return ContactProfilesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ContactProfilesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a specified contact profile resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 func (client *ContactProfilesClient) deleteOperation(ctx context.Context, resourceGroupName string, contactProfileName string, options *ContactProfilesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, contactProfileName, options)
 	if err != nil {
@@ -161,14 +162,14 @@ func (client *ContactProfilesClient) deleteOperation(ctx context.Context, resour
 // deleteCreateRequest creates the Delete request.
 func (client *ContactProfilesClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, contactProfileName string, options *ContactProfilesClientBeginDeleteOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Orbital/contactProfiles/{contactProfileName}"
-	if client.subscriptionID == "" {
-		return nil, errors.New("parameter client.subscriptionID cannot be empty")
-	}
-	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if resourceGroupName == "" {
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if contactProfileName == "" {
 		return nil, errors.New("parameter contactProfileName cannot be empty")
 	}
@@ -178,14 +179,15 @@ func (client *ContactProfilesClient) deleteCreateRequest(ctx context.Context, re
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the specified contact Profile in a specified resource group
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // contactProfileName - Contact Profile Name
 // options - ContactProfilesClientGetOptions contains the optional parameters for the ContactProfilesClient.Get method.
@@ -207,14 +209,14 @@ func (client *ContactProfilesClient) Get(ctx context.Context, resourceGroupName 
 // getCreateRequest creates the Get request.
 func (client *ContactProfilesClient) getCreateRequest(ctx context.Context, resourceGroupName string, contactProfileName string, options *ContactProfilesClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Orbital/contactProfiles/{contactProfileName}"
-	if client.subscriptionID == "" {
-		return nil, errors.New("parameter client.subscriptionID cannot be empty")
-	}
-	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if resourceGroupName == "" {
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if contactProfileName == "" {
 		return nil, errors.New("parameter contactProfileName cannot be empty")
 	}
@@ -224,88 +226,119 @@ func (client *ContactProfilesClient) getCreateRequest(ctx context.Context, resou
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ContactProfilesClient) getHandleResponse(resp *http.Response) (ContactProfilesClientGetResponse, error) {
-	result := ContactProfilesClientGetResponse{RawResponse: resp}
+	result := ContactProfilesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ContactProfile); err != nil {
 		return ContactProfilesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Returns list of contact profiles
+// NewListPager - Returns list of contact profiles by Resource Group
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - ContactProfilesClientListOptions contains the optional parameters for the ContactProfilesClient.List method.
-func (client *ContactProfilesClient) List(ctx context.Context, resourceGroupName string, options *ContactProfilesClientListOptions) (ContactProfilesClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, resourceGroupName, options)
-	if err != nil {
-		return ContactProfilesClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ContactProfilesClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ContactProfilesClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *ContactProfilesClient) NewListPager(resourceGroupName string, options *ContactProfilesClientListOptions) *runtime.Pager[ContactProfilesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ContactProfilesClientListResponse]{
+		More: func(page ContactProfilesClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
+		},
+		Fetcher: func(ctx context.Context, page *ContactProfilesClientListResponse) (ContactProfilesClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ContactProfilesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ContactProfilesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ContactProfilesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
 func (client *ContactProfilesClient) listCreateRequest(ctx context.Context, resourceGroupName string, options *ContactProfilesClientListOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Orbital/contactProfiles"
-	if client.subscriptionID == "" {
-		return nil, errors.New("parameter client.subscriptionID cannot be empty")
-	}
-	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if resourceGroupName == "" {
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
+	if options != nil && options.Skiptoken != nil {
+		reqQP.Set("$skiptoken", *options.Skiptoken)
+	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ContactProfilesClient) listHandleResponse(resp *http.Response) (ContactProfilesClientListResponse, error) {
-	result := ContactProfilesClientListResponse{RawResponse: resp}
+	result := ContactProfilesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ContactProfileListResult); err != nil {
 		return ContactProfilesClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Returns list of contact profiles
+// NewListBySubscriptionPager - Returns list of contact profiles by Subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // options - ContactProfilesClientListBySubscriptionOptions contains the optional parameters for the ContactProfilesClient.ListBySubscription
 // method.
-func (client *ContactProfilesClient) ListBySubscription(ctx context.Context, options *ContactProfilesClientListBySubscriptionOptions) (ContactProfilesClientListBySubscriptionResponse, error) {
-	req, err := client.listBySubscriptionCreateRequest(ctx, options)
-	if err != nil {
-		return ContactProfilesClientListBySubscriptionResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ContactProfilesClientListBySubscriptionResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ContactProfilesClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listBySubscriptionHandleResponse(resp)
+func (client *ContactProfilesClient) NewListBySubscriptionPager(options *ContactProfilesClientListBySubscriptionOptions) *runtime.Pager[ContactProfilesClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ContactProfilesClientListBySubscriptionResponse]{
+		More: func(page ContactProfilesClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
+		},
+		Fetcher: func(ctx context.Context, page *ContactProfilesClientListBySubscriptionResponse) (ContactProfilesClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ContactProfilesClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ContactProfilesClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ContactProfilesClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
+		},
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -320,54 +353,75 @@ func (client *ContactProfilesClient) listBySubscriptionCreateRequest(ctx context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
+	if options != nil && options.Skiptoken != nil {
+		reqQP.Set("$skiptoken", *options.Skiptoken)
+	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *ContactProfilesClient) listBySubscriptionHandleResponse(resp *http.Response) (ContactProfilesClientListBySubscriptionResponse, error) {
-	result := ContactProfilesClientListBySubscriptionResponse{RawResponse: resp}
+	result := ContactProfilesClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ContactProfileListResult); err != nil {
 		return ContactProfilesClientListBySubscriptionResponse{}, err
 	}
 	return result, nil
 }
 
-// UpdateTags - Updates the specified contact profile tags.
+// BeginUpdateTags - Updates the specified contact profile tags.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // contactProfileName - Contact Profile Name
 // parameters - Parameters supplied to update contact profile tags.
-// options - ContactProfilesClientUpdateTagsOptions contains the optional parameters for the ContactProfilesClient.UpdateTags
+// options - ContactProfilesClientBeginUpdateTagsOptions contains the optional parameters for the ContactProfilesClient.BeginUpdateTags
 // method.
-func (client *ContactProfilesClient) UpdateTags(ctx context.Context, resourceGroupName string, contactProfileName string, parameters TagsObject, options *ContactProfilesClientUpdateTagsOptions) (ContactProfilesClientUpdateTagsResponse, error) {
+func (client *ContactProfilesClient) BeginUpdateTags(ctx context.Context, resourceGroupName string, contactProfileName string, parameters TagsObject, options *ContactProfilesClientBeginUpdateTagsOptions) (*runtime.Poller[ContactProfilesClientUpdateTagsResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.updateTags(ctx, resourceGroupName, contactProfileName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ContactProfilesClientUpdateTagsResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ContactProfilesClientUpdateTagsResponse](options.ResumeToken, client.pl, nil)
+	}
+}
+
+// UpdateTags - Updates the specified contact profile tags.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-03-01
+func (client *ContactProfilesClient) updateTags(ctx context.Context, resourceGroupName string, contactProfileName string, parameters TagsObject, options *ContactProfilesClientBeginUpdateTagsOptions) (*http.Response, error) {
 	req, err := client.updateTagsCreateRequest(ctx, resourceGroupName, contactProfileName, parameters, options)
 	if err != nil {
-		return ContactProfilesClientUpdateTagsResponse{}, err
+		return nil, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return ContactProfilesClientUpdateTagsResponse{}, err
+		return nil, err
 	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ContactProfilesClientUpdateTagsResponse{}, runtime.NewResponseError(resp)
+	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
+		return nil, runtime.NewResponseError(resp)
 	}
-	return client.updateTagsHandleResponse(resp)
+	return resp, nil
 }
 
 // updateTagsCreateRequest creates the UpdateTags request.
-func (client *ContactProfilesClient) updateTagsCreateRequest(ctx context.Context, resourceGroupName string, contactProfileName string, parameters TagsObject, options *ContactProfilesClientUpdateTagsOptions) (*policy.Request, error) {
+func (client *ContactProfilesClient) updateTagsCreateRequest(ctx context.Context, resourceGroupName string, contactProfileName string, parameters TagsObject, options *ContactProfilesClientBeginUpdateTagsOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Orbital/contactProfiles/{contactProfileName}"
-	if client.subscriptionID == "" {
-		return nil, errors.New("parameter client.subscriptionID cannot be empty")
-	}
-	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if resourceGroupName == "" {
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
 	if contactProfileName == "" {
 		return nil, errors.New("parameter contactProfileName cannot be empty")
 	}
@@ -377,17 +431,8 @@ func (client *ContactProfilesClient) updateTagsCreateRequest(ctx context.Context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-04-04-preview")
+	reqQP.Set("api-version", "2022-03-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
-}
-
-// updateTagsHandleResponse handles the UpdateTags response.
-func (client *ContactProfilesClient) updateTagsHandleResponse(resp *http.Response) (ContactProfilesClientUpdateTagsResponse, error) {
-	result := ContactProfilesClientUpdateTagsResponse{RawResponse: resp}
-	if err := runtime.UnmarshalAsJSON(resp, &result.ContactProfile); err != nil {
-		return ContactProfilesClientUpdateTagsResponse{}, err
-	}
-	return result, nil
 }

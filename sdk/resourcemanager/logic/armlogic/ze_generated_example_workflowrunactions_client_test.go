@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -16,70 +16,83 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/logic/armlogic"
 )
 
-// x-ms-original-file: specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_List.json
-func ExampleWorkflowRunActionsClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_List.json
+func ExampleWorkflowRunActionsClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armlogic.NewWorkflowRunActionsClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<workflow-name>",
-		"<run-name>",
+	client, err := armlogic.NewWorkflowRunActionsClient("34adfa4f-cedf-4dc0-ba29-b6d1a69ab345", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("test-resource-group",
+		"test-workflow",
+		"08586676746934337772206998657CU22",
 		&armlogic.WorkflowRunActionsClientListOptions{Top: nil,
 			Filter: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_Get.json
 func ExampleWorkflowRunActionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armlogic.NewWorkflowRunActionsClient("<subscription-id>", cred, nil)
+	client, err := armlogic.NewWorkflowRunActionsClient("34adfa4f-cedf-4dc0-ba29-b6d1a69ab345", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workflow-name>",
-		"<run-name>",
-		"<action-name>",
+		"test-resource-group",
+		"test-workflow",
+		"08586676746934337772206998657CU22",
+		"HTTP",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkflowRunActionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_ListExpressionTraces.json
-func ExampleWorkflowRunActionsClient_ListExpressionTraces() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/examples/WorkflowRunActions_ListExpressionTraces.json
+func ExampleWorkflowRunActionsClient_NewListExpressionTracesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armlogic.NewWorkflowRunActionsClient("<subscription-id>", cred, nil)
-	res, err := client.ListExpressionTraces(ctx,
-		"<resource-group-name>",
-		"<workflow-name>",
-		"<run-name>",
-		"<action-name>",
-		nil)
+	client, err := armlogic.NewWorkflowRunActionsClient("34adfa4f-cedf-4dc0-ba29-b6d1a69ab345", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkflowRunActionsClientListExpressionTracesResult)
+	pager := client.NewListExpressionTracesPager("testResourceGroup",
+		"testFlow",
+		"08586776228332053161046300351",
+		"testAction",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Inputs {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }

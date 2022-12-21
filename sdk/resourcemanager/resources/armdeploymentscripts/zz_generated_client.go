@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,48 +35,48 @@ type Client struct {
 // subscriptionID - Subscription Id which forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *Client {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*Client, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &Client{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Creates a deployment script.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // deploymentScript - Deployment script supplied to the operation.
 // options - ClientBeginCreateOptions contains the optional parameters for the Client.BeginCreate method.
-func (client *Client) BeginCreate(ctx context.Context, resourceGroupName string, scriptName string, deploymentScript DeploymentScriptClassification, options *ClientBeginCreateOptions) (ClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, scriptName, deploymentScript, options)
-	if err != nil {
-		return ClientCreatePollerResponse{}, err
+func (client *Client) BeginCreate(ctx context.Context, resourceGroupName string, scriptName string, deploymentScript DeploymentScriptClassification, options *ClientBeginCreateOptions) (*runtime.Poller[ClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, scriptName, deploymentScript, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("Client.Create", "", resp, client.pl)
-	if err != nil {
-		return ClientCreatePollerResponse{}, err
-	}
-	result.Poller = &ClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Creates a deployment script.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 func (client *Client) create(ctx context.Context, resourceGroupName string, scriptName string, deploymentScript DeploymentScriptClassification, options *ClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, scriptName, deploymentScript, options)
 	if err != nil {
@@ -113,12 +114,13 @@ func (client *Client) createCreateRequest(ctx context.Context, resourceGroupName
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, deploymentScript)
 }
 
 // Delete - Deletes a deployment script. When operation completes, status code 200 returned without content.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // options - ClientDeleteOptions contains the optional parameters for the Client.Delete method.
@@ -134,7 +136,7 @@ func (client *Client) Delete(ctx context.Context, resourceGroupName string, scri
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ClientDeleteResponse{RawResponse: resp}, nil
+	return ClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -159,12 +161,13 @@ func (client *Client) deleteCreateRequest(ctx context.Context, resourceGroupName
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a deployment script with a given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // options - ClientGetOptions contains the optional parameters for the Client.Get method.
@@ -205,13 +208,13 @@ func (client *Client) getCreateRequest(ctx context.Context, resourceGroupName st
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *Client) getHandleResponse(resp *http.Response) (ClientGetResponse, error) {
-	result := ClientGetResponse{RawResponse: resp}
+	result := ClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return ClientGetResponse{}, err
 	}
@@ -220,6 +223,7 @@ func (client *Client) getHandleResponse(resp *http.Response) (ClientGetResponse,
 
 // GetLogs - Gets deployment script logs for a given deployment script name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // options - ClientGetLogsOptions contains the optional parameters for the Client.GetLogs method.
@@ -260,13 +264,13 @@ func (client *Client) getLogsCreateRequest(ctx context.Context, resourceGroupNam
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getLogsHandleResponse handles the GetLogs response.
 func (client *Client) getLogsHandleResponse(resp *http.Response) (ClientGetLogsResponse, error) {
-	result := ClientGetLogsResponse{RawResponse: resp}
+	result := ClientGetLogsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScriptLogsList); err != nil {
 		return ClientGetLogsResponse{}, err
 	}
@@ -275,6 +279,7 @@ func (client *Client) getLogsHandleResponse(resp *http.Response) (ClientGetLogsR
 
 // GetLogsDefault - Gets deployment script logs for a given deployment script name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // options - ClientGetLogsDefaultOptions contains the optional parameters for the Client.GetLogsDefault method.
@@ -318,33 +323,50 @@ func (client *Client) getLogsDefaultCreateRequest(ctx context.Context, resourceG
 		reqQP.Set("tail", strconv.FormatInt(int64(*options.Tail), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getLogsDefaultHandleResponse handles the GetLogsDefault response.
 func (client *Client) getLogsDefaultHandleResponse(resp *http.Response) (ClientGetLogsDefaultResponse, error) {
-	result := ClientGetLogsDefaultResponse{RawResponse: resp}
+	result := ClientGetLogsDefaultResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScriptLog); err != nil {
 		return ClientGetLogsDefaultResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Lists deployments scripts.
+// NewListByResourceGroupPager - Lists deployments scripts.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - ClientListByResourceGroupOptions contains the optional parameters for the Client.ListByResourceGroup method.
-func (client *Client) ListByResourceGroup(resourceGroupName string, options *ClientListByResourceGroupOptions) *ClientListByResourceGroupPager {
-	return &ClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *Client) NewListByResourceGroupPager(resourceGroupName string, options *ClientListByResourceGroupOptions) *runtime.Pager[ClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListByResourceGroupResponse]{
+		More: func(page ClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentScriptListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListByResourceGroupResponse) (ClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -365,32 +387,49 @@ func (client *Client) listByResourceGroupCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *Client) listByResourceGroupHandleResponse(resp *http.Response) (ClientListByResourceGroupResponse, error) {
-	result := ClientListByResourceGroupResponse{RawResponse: resp}
+	result := ClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentScriptListResult); err != nil {
 		return ClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Lists all deployment scripts for a given subscription.
+// NewListBySubscriptionPager - Lists all deployment scripts for a given subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // options - ClientListBySubscriptionOptions contains the optional parameters for the Client.ListBySubscription method.
-func (client *Client) ListBySubscription(options *ClientListBySubscriptionOptions) *ClientListBySubscriptionPager {
-	return &ClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *Client) NewListBySubscriptionPager(options *ClientListBySubscriptionOptions) *runtime.Pager[ClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListBySubscriptionResponse]{
+		More: func(page ClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentScriptListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListBySubscriptionResponse) (ClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -407,13 +446,13 @@ func (client *Client) listBySubscriptionCreateRequest(ctx context.Context, optio
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *Client) listBySubscriptionHandleResponse(resp *http.Response) (ClientListBySubscriptionResponse, error) {
-	result := ClientListBySubscriptionResponse{RawResponse: resp}
+	result := ClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentScriptListResult); err != nil {
 		return ClientListBySubscriptionResponse{}, err
 	}
@@ -422,6 +461,7 @@ func (client *Client) listBySubscriptionHandleResponse(resp *http.Response) (Cli
 
 // Update - Updates deployment script tags with specified values.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scriptName - Name of the deployment script.
 // options - ClientUpdateOptions contains the optional parameters for the Client.Update method.
@@ -462,7 +502,7 @@ func (client *Client) updateCreateRequest(ctx context.Context, resourceGroupName
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.DeploymentScript != nil {
 		return req, runtime.MarshalAsJSON(req, *options.DeploymentScript)
 	}
@@ -471,7 +511,7 @@ func (client *Client) updateCreateRequest(ctx context.Context, resourceGroupName
 
 // updateHandleResponse handles the Update response.
 func (client *Client) updateHandleResponse(resp *http.Response) (ClientUpdateResponse, error) {
-	result := ClientUpdateResponse{RawResponse: resp}
+	result := ClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return ClientUpdateResponse{}, err
 	}

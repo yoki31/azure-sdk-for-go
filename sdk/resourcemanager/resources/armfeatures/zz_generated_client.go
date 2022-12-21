@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type Client struct {
 // subscriptionID - The Azure subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *Client {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*Client, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &Client{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets the preview feature with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceProviderNamespace - The resource provider namespace for the feature.
 // featureName - The name of the feature to get.
 // options - ClientGetOptions contains the optional parameters for the Client.Get method.
@@ -91,33 +97,50 @@ func (client *Client) getCreateRequest(ctx context.Context, resourceProviderName
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, text/json")
+	req.Raw().Header["Accept"] = []string{"application/json, text/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *Client) getHandleResponse(resp *http.Response) (ClientGetResponse, error) {
-	result := ClientGetResponse{RawResponse: resp}
+	result := ClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FeatureResult); err != nil {
 		return ClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets all the preview features in a provider namespace that are available through AFEC for the subscription.
+// NewListPager - Gets all the preview features in a provider namespace that are available through AFEC for the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceProviderNamespace - The namespace of the resource provider for getting features.
 // options - ClientListOptions contains the optional parameters for the Client.List method.
-func (client *Client) List(resourceProviderNamespace string, options *ClientListOptions) *ClientListPager {
-	return &ClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceProviderNamespace, options)
+func (client *Client) NewListPager(resourceProviderNamespace string, options *ClientListOptions) *runtime.Pager[ClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListResponse]{
+		More: func(page ClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.FeatureOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListResponse) (ClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceProviderNamespace, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -138,32 +161,49 @@ func (client *Client) listCreateRequest(ctx context.Context, resourceProviderNam
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, text/json")
+	req.Raw().Header["Accept"] = []string{"application/json, text/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *Client) listHandleResponse(resp *http.Response) (ClientListResponse, error) {
-	result := ClientListResponse{RawResponse: resp}
+	result := ClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FeatureOperationsListResult); err != nil {
 		return ClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAll - Gets all the preview features that are available through AFEC for the subscription.
+// NewListAllPager - Gets all the preview features that are available through AFEC for the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // options - ClientListAllOptions contains the optional parameters for the Client.ListAll method.
-func (client *Client) ListAll(options *ClientListAllOptions) *ClientListAllPager {
-	return &ClientListAllPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAllCreateRequest(ctx, options)
+func (client *Client) NewListAllPager(options *ClientListAllOptions) *runtime.Pager[ClientListAllResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListAllResponse]{
+		More: func(page ClientListAllResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListAllResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.FeatureOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListAllResponse) (ClientListAllResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAllCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListAllResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListAllResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListAllResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAllHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAllCreateRequest creates the ListAll request.
@@ -180,13 +220,13 @@ func (client *Client) listAllCreateRequest(ctx context.Context, options *ClientL
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, text/json")
+	req.Raw().Header["Accept"] = []string{"application/json, text/json"}
 	return req, nil
 }
 
 // listAllHandleResponse handles the ListAll response.
 func (client *Client) listAllHandleResponse(resp *http.Response) (ClientListAllResponse, error) {
-	result := ClientListAllResponse{RawResponse: resp}
+	result := ClientListAllResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FeatureOperationsListResult); err != nil {
 		return ClientListAllResponse{}, err
 	}
@@ -195,6 +235,7 @@ func (client *Client) listAllHandleResponse(resp *http.Response) (ClientListAllR
 
 // Register - Registers the preview feature for the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceProviderNamespace - The namespace of the resource provider.
 // featureName - The name of the feature to register.
 // options - ClientRegisterOptions contains the optional parameters for the Client.Register method.
@@ -235,13 +276,13 @@ func (client *Client) registerCreateRequest(ctx context.Context, resourceProvide
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, text/json")
+	req.Raw().Header["Accept"] = []string{"application/json, text/json"}
 	return req, nil
 }
 
 // registerHandleResponse handles the Register response.
 func (client *Client) registerHandleResponse(resp *http.Response) (ClientRegisterResponse, error) {
-	result := ClientRegisterResponse{RawResponse: resp}
+	result := ClientRegisterResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FeatureResult); err != nil {
 		return ClientRegisterResponse{}, err
 	}
@@ -250,6 +291,7 @@ func (client *Client) registerHandleResponse(resp *http.Response) (ClientRegiste
 
 // Unregister - Unregisters the preview feature for the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceProviderNamespace - The namespace of the resource provider.
 // featureName - The name of the feature to unregister.
 // options - ClientUnregisterOptions contains the optional parameters for the Client.Unregister method.
@@ -290,13 +332,13 @@ func (client *Client) unregisterCreateRequest(ctx context.Context, resourceProvi
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, text/json")
+	req.Raw().Header["Accept"] = []string{"application/json, text/json"}
 	return req, nil
 }
 
 // unregisterHandleResponse handles the Unregister response.
 func (client *Client) unregisterHandleResponse(resp *http.Response) (ClientUnregisterResponse, error) {
-	result := ClientUnregisterResponse{RawResponse: resp}
+	result := ClientUnregisterResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FeatureResult); err != nil {
 		return ClientUnregisterResponse{}, err
 	}

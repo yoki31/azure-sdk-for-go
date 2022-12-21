@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type DelegationSettingsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDelegationSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DelegationSettingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDelegationSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DelegationSettingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DelegationSettingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or Update Delegation settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // parameters - Create or update parameters.
@@ -95,15 +101,15 @@ func (client *DelegationSettingsClient) createOrUpdateCreateRequest(ctx context.
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *DelegationSettingsClient) createOrUpdateHandleResponse(resp *http.Response) (DelegationSettingsClientCreateOrUpdateResponse, error) {
-	result := DelegationSettingsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := DelegationSettingsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PortalDelegationSettings); err != nil {
 		return DelegationSettingsClientCreateOrUpdateResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *DelegationSettingsClient) createOrUpdateHandleResponse(resp *http.
 
 // Get - Get Delegation Settings for the Portal.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - DelegationSettingsClientGetOptions contains the optional parameters for the DelegationSettingsClient.Get method.
@@ -152,13 +159,13 @@ func (client *DelegationSettingsClient) getCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DelegationSettingsClient) getHandleResponse(resp *http.Response) (DelegationSettingsClientGetResponse, error) {
-	result := DelegationSettingsClientGetResponse{RawResponse: resp}
+	result := DelegationSettingsClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -169,6 +176,7 @@ func (client *DelegationSettingsClient) getHandleResponse(resp *http.Response) (
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the DelegationSettings.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - DelegationSettingsClientGetEntityTagOptions contains the optional parameters for the DelegationSettingsClient.GetEntityTag
@@ -181,6 +189,9 @@ func (client *DelegationSettingsClient) GetEntityTag(ctx context.Context, resour
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return DelegationSettingsClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return DelegationSettingsClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -207,24 +218,23 @@ func (client *DelegationSettingsClient) getEntityTagCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *DelegationSettingsClient) getEntityTagHandleResponse(resp *http.Response) (DelegationSettingsClientGetEntityTagResponse, error) {
-	result := DelegationSettingsClientGetEntityTagResponse{RawResponse: resp}
+	result := DelegationSettingsClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
 // ListSecrets - Gets the secret validation key of the DelegationSettings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - DelegationSettingsClientListSecretsOptions contains the optional parameters for the DelegationSettingsClient.ListSecrets
@@ -266,13 +276,13 @@ func (client *DelegationSettingsClient) listSecretsCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSecretsHandleResponse handles the ListSecrets response.
 func (client *DelegationSettingsClient) listSecretsHandleResponse(resp *http.Response) (DelegationSettingsClientListSecretsResponse, error) {
-	result := DelegationSettingsClientListSecretsResponse{RawResponse: resp}
+	result := DelegationSettingsClientListSecretsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PortalSettingValidationKeyContract); err != nil {
 		return DelegationSettingsClientListSecretsResponse{}, err
 	}
@@ -281,6 +291,7 @@ func (client *DelegationSettingsClient) listSecretsHandleResponse(resp *http.Res
 
 // Update - Update Delegation settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // ifMatch - ETag of the Entity. ETag should match the current entity state from the header response of the GET request or
@@ -300,7 +311,7 @@ func (client *DelegationSettingsClient) Update(ctx context.Context, resourceGrou
 	if !runtime.HasStatusCode(resp, http.StatusNoContent) {
 		return DelegationSettingsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return DelegationSettingsClientUpdateResponse{RawResponse: resp}, nil
+	return DelegationSettingsClientUpdateResponse{}, nil
 }
 
 // updateCreateRequest creates the Update request.
@@ -325,7 +336,7 @@ func (client *DelegationSettingsClient) updateCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

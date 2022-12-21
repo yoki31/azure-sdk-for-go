@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,70 +12,83 @@ import (
 	"context"
 	"log"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorList.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorList.json
 func ExampleDatabaseAdvisorsClient_ListByDatabase() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseAdvisorsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabaseAdvisorsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListByDatabase(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"workloadinsight-demos",
+		"misosisvr",
+		"IndexAdvisor_test_3",
 		&armsql.DatabaseAdvisorsClientListByDatabaseOptions{Expand: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabaseAdvisorsClientListByDatabaseResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorGet.json
 func ExampleDatabaseAdvisorsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseAdvisorsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabaseAdvisorsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<advisor-name>",
+		"workloadinsight-demos",
+		"misosisvr",
+		"IndexAdvisor_test_3",
+		"CreateIndex",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabaseAdvisorsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/DatabaseAdvisorUpdate.json
 func ExampleDatabaseAdvisorsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseAdvisorsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabaseAdvisorsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<advisor-name>",
+		"workloadinsight-demos",
+		"misosisvr",
+		"IndexAdvisor_test_3",
+		"CreateIndex",
 		armsql.Advisor{
 			Properties: &armsql.AdvisorProperties{
-				AutoExecuteStatus: armsql.AutoExecuteStatusDisabled.ToPtr(),
+				AutoExecuteStatus: to.Ptr(armsql.AutoExecuteStatusDisabled),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabaseAdvisorsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }

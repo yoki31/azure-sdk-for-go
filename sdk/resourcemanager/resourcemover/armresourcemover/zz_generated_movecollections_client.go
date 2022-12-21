@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armresourcemover
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -25,50 +25,62 @@ import (
 // MoveCollectionsClient contains the methods for the MoveCollections group.
 // Don't use this type directly, use NewMoveCollectionsClient() instead.
 type MoveCollectionsClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewMoveCollectionsClient creates a new instance of MoveCollectionsClient with the specified values.
-func NewMoveCollectionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *MoveCollectionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The Subscription ID.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewMoveCollectionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*MoveCollectionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &MoveCollectionsClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &MoveCollectionsClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
-// BeginBulkRemove - Removes the set of move resources included in the request body from move collection. The orchestration is done by service. To aid the
-// user to prerequisite the operation the client can call operation
+// BeginBulkRemove - Removes the set of move resources included in the request body from move collection. The orchestration
+// is done by service. To aid the user to prerequisite the operation the client can call operation
 // with validateOnly property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginBulkRemove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginBulkRemoveOptions) (MoveCollectionsBulkRemovePollerResponse, error) {
-	resp, err := client.bulkRemove(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsBulkRemovePollerResponse{}, err
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// options - MoveCollectionsClientBeginBulkRemoveOptions contains the optional parameters for the MoveCollectionsClient.BeginBulkRemove
+// method.
+func (client *MoveCollectionsClient) BeginBulkRemove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginBulkRemoveOptions) (*runtime.Poller[MoveCollectionsClientBulkRemoveResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.bulkRemove(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientBulkRemoveResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientBulkRemoveResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := MoveCollectionsBulkRemovePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.BulkRemove", "azure-async-operation", resp, client.pl, client.bulkRemoveHandleError)
-	if err != nil {
-		return MoveCollectionsBulkRemovePollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsBulkRemovePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
-// BulkRemove - Removes the set of move resources included in the request body from move collection. The orchestration is done by service. To aid the user
-// to prerequisite the operation the client can call operation
+// BulkRemove - Removes the set of move resources included in the request body from move collection. The orchestration is
+// done by service. To aid the user to prerequisite the operation the client can call operation
 // with validateOnly property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) bulkRemove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginBulkRemoveOptions) (*http.Response, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) bulkRemove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginBulkRemoveOptions) (*http.Response, error) {
 	req, err := client.bulkRemoveCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -78,13 +90,13 @@ func (client *MoveCollectionsClient) bulkRemove(ctx context.Context, resourceGro
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.bulkRemoveHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // bulkRemoveCreateRequest creates the BulkRemove request.
-func (client *MoveCollectionsClient) bulkRemoveCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginBulkRemoveOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) bulkRemoveCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginBulkRemoveOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/bulkRemove"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -98,62 +110,51 @@ func (client *MoveCollectionsClient) bulkRemoveCreateRequest(ctx context.Context
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
 	return req, nil
 }
 
-// bulkRemoveHandleError handles the BulkRemove error response.
-func (client *MoveCollectionsClient) bulkRemoveHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
+// BeginCommit - Commits the set of resources included in the request body. The commit operation is triggered on the moveResources
+// in the moveState 'CommitPending' or 'CommitFailed', on a successful completion the
+// moveResource moveState do a transition to Committed. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginCommitOptions contains the optional parameters for the MoveCollectionsClient.BeginCommit
+// method.
+func (client *MoveCollectionsClient) BeginCommit(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginCommitOptions) (*runtime.Poller[MoveCollectionsClientCommitResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.commit(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientCommitResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientCommitResponse](options.ResumeToken, client.pl, nil)
 	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }
 
-// BeginCommit - Commits the set of resources included in the request body. The commit operation is triggered on the moveResources in the moveState 'CommitPending'
-// or 'CommitFailed', on a successful completion the
-// moveResource moveState do a transition to Committed. To aid the user to prerequisite the operation the client can call operation with validateOnly property
-// set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginCommit(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginCommitOptions) (MoveCollectionsCommitPollerResponse, error) {
-	resp, err := client.commit(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsCommitPollerResponse{}, err
-	}
-	result := MoveCollectionsCommitPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.Commit", "azure-async-operation", resp, client.pl, client.commitHandleError)
-	if err != nil {
-		return MoveCollectionsCommitPollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsCommitPoller{
-		pt: pt,
-	}
-	return result, nil
-}
-
-// Commit - Commits the set of resources included in the request body. The commit operation is triggered on the moveResources in the moveState 'CommitPending'
-// or 'CommitFailed', on a successful completion the
-// moveResource moveState do a transition to Committed. To aid the user to prerequisite the operation the client can call operation with validateOnly property
-// set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) commit(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginCommitOptions) (*http.Response, error) {
+// Commit - Commits the set of resources included in the request body. The commit operation is triggered on the moveResources
+// in the moveState 'CommitPending' or 'CommitFailed', on a successful completion the
+// moveResource moveState do a transition to Committed. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) commit(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginCommitOptions) (*http.Response, error) {
 	req, err := client.commitCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -163,13 +164,13 @@ func (client *MoveCollectionsClient) commit(ctx context.Context, resourceGroupNa
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.commitHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // commitCreateRequest creates the Commit request.
-func (client *MoveCollectionsClient) commitCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginCommitOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) commitCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginCommitOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/commit"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -183,52 +184,43 @@ func (client *MoveCollectionsClient) commitCreateRequest(ctx context.Context, re
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
 	return req, nil
 }
 
-// commitHandleError handles the Commit error response.
-func (client *MoveCollectionsClient) commitHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Create - Creates or updates a move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) Create(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsCreateOptions) (MoveCollectionsCreateResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientCreateOptions contains the optional parameters for the MoveCollectionsClient.Create method.
+func (client *MoveCollectionsClient) Create(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientCreateOptions) (MoveCollectionsClientCreateResponse, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
-		return MoveCollectionsCreateResponse{}, err
+		return MoveCollectionsClientCreateResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return MoveCollectionsCreateResponse{}, err
+		return MoveCollectionsClientCreateResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusCreated) {
-		return MoveCollectionsCreateResponse{}, client.createHandleError(resp)
+		return MoveCollectionsClientCreateResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.createHandleResponse(resp)
 }
 
 // createCreateRequest creates the Create request.
-func (client *MoveCollectionsClient) createCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsCreateOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) createCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientCreateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -242,14 +234,14 @@ func (client *MoveCollectionsClient) createCreateRequest(ctx context.Context, re
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
@@ -257,50 +249,39 @@ func (client *MoveCollectionsClient) createCreateRequest(ctx context.Context, re
 }
 
 // createHandleResponse handles the Create response.
-func (client *MoveCollectionsClient) createHandleResponse(resp *http.Response) (MoveCollectionsCreateResponse, error) {
-	result := MoveCollectionsCreateResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) createHandleResponse(resp *http.Response) (MoveCollectionsClientCreateResponse, error) {
+	result := MoveCollectionsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MoveCollection); err != nil {
-		return MoveCollectionsCreateResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientCreateResponse{}, err
 	}
 	return result, nil
-}
-
-// createHandleError handles the Create error response.
-func (client *MoveCollectionsClient) createHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }
 
 // BeginDelete - Deletes a move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginDelete(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDeleteOptions) (MoveCollectionsDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsDeletePollerResponse{}, err
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginDeleteOptions contains the optional parameters for the MoveCollectionsClient.BeginDelete
+// method.
+func (client *MoveCollectionsClient) BeginDelete(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDeleteOptions) (*runtime.Poller[MoveCollectionsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := MoveCollectionsDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.Delete", "azure-async-operation", resp, client.pl, client.deleteHandleError)
-	if err != nil {
-		return MoveCollectionsDeletePollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) deleteOperation(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDeleteOptions) (*http.Response, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) deleteOperation(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -310,13 +291,13 @@ func (client *MoveCollectionsClient) deleteOperation(ctx context.Context, resour
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted, http.StatusNoContent) {
-		return nil, client.deleteHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // deleteCreateRequest creates the Delete request.
-func (client *MoveCollectionsClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDeleteOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDeleteOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -330,59 +311,48 @@ func (client *MoveCollectionsClient) deleteCreateRequest(ctx context.Context, re
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// deleteHandleError handles the Delete error response.
-func (client *MoveCollectionsClient) deleteHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
+// BeginDiscard - Discards the set of resources included in the request body. The discard operation is triggered on the moveResources
+// in the moveState 'CommitPending' or 'DiscardFailed', on a successful completion the
+// moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginDiscardOptions contains the optional parameters for the MoveCollectionsClient.BeginDiscard
+// method.
+func (client *MoveCollectionsClient) BeginDiscard(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDiscardOptions) (*runtime.Poller[MoveCollectionsClientDiscardResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.discard(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientDiscardResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientDiscardResponse](options.ResumeToken, client.pl, nil)
 	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }
 
-// BeginDiscard - Discards the set of resources included in the request body. The discard operation is triggered on the moveResources in the moveState 'CommitPending'
-// or 'DiscardFailed', on a successful completion the
-// moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with validateOnly
-// property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginDiscard(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDiscardOptions) (MoveCollectionsDiscardPollerResponse, error) {
-	resp, err := client.discard(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsDiscardPollerResponse{}, err
-	}
-	result := MoveCollectionsDiscardPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.Discard", "azure-async-operation", resp, client.pl, client.discardHandleError)
-	if err != nil {
-		return MoveCollectionsDiscardPollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsDiscardPoller{
-		pt: pt,
-	}
-	return result, nil
-}
-
-// Discard - Discards the set of resources included in the request body. The discard operation is triggered on the moveResources in the moveState 'CommitPending'
-// or 'DiscardFailed', on a successful completion the
-// moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with validateOnly
-// property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) discard(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDiscardOptions) (*http.Response, error) {
+// Discard - Discards the set of resources included in the request body. The discard operation is triggered on the moveResources
+// in the moveState 'CommitPending' or 'DiscardFailed', on a successful completion the
+// moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) discard(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDiscardOptions) (*http.Response, error) {
 	req, err := client.discardCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -392,13 +362,13 @@ func (client *MoveCollectionsClient) discard(ctx context.Context, resourceGroupN
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.discardHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // discardCreateRequest creates the Discard request.
-func (client *MoveCollectionsClient) discardCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginDiscardOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) discardCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginDiscardOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/discard"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -412,52 +382,43 @@ func (client *MoveCollectionsClient) discardCreateRequest(ctx context.Context, r
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
 	return req, nil
 }
 
-// discardHandleError handles the Discard error response.
-func (client *MoveCollectionsClient) discardHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Get - Gets the move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) Get(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsGetOptions) (MoveCollectionsGetResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientGetOptions contains the optional parameters for the MoveCollectionsClient.Get method.
+func (client *MoveCollectionsClient) Get(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientGetOptions) (MoveCollectionsClientGetResponse, error) {
 	req, err := client.getCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
-		return MoveCollectionsGetResponse{}, err
+		return MoveCollectionsClientGetResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return MoveCollectionsGetResponse{}, err
+		return MoveCollectionsClientGetResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return MoveCollectionsGetResponse{}, client.getHandleError(resp)
+		return MoveCollectionsClientGetResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getHandleResponse(resp)
 }
 
 // getCreateRequest creates the Get request.
-func (client *MoveCollectionsClient) getCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsGetOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) getCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -471,68 +432,57 @@ func (client *MoveCollectionsClient) getCreateRequest(ctx context.Context, resou
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *MoveCollectionsClient) getHandleResponse(resp *http.Response) (MoveCollectionsGetResponse, error) {
-	result := MoveCollectionsGetResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) getHandleResponse(resp *http.Response) (MoveCollectionsClientGetResponse, error) {
+	result := MoveCollectionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MoveCollection); err != nil {
-		return MoveCollectionsGetResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// getHandleError handles the Get error response.
-func (client *MoveCollectionsClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
+// BeginInitiateMove - Moves the set of resources included in the request body. The move operation is triggered after the
+// moveResources are in the moveState 'MovePending' or 'MoveFailed', on a successful completion the
+// moveResource moveState do a transition to CommitPending. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginInitiateMoveOptions contains the optional parameters for the MoveCollectionsClient.BeginInitiateMove
+// method.
+func (client *MoveCollectionsClient) BeginInitiateMove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginInitiateMoveOptions) (*runtime.Poller[MoveCollectionsClientInitiateMoveResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.initiateMove(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientInitiateMoveResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientInitiateMoveResponse](options.ResumeToken, client.pl, nil)
 	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }
 
-// BeginInitiateMove - Moves the set of resources included in the request body. The move operation is triggered after the moveResources are in the moveState
-// 'MovePending' or 'MoveFailed', on a successful completion the
-// moveResource moveState do a transition to CommitPending. To aid the user to prerequisite the operation the client can call operation with validateOnly
-// property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginInitiateMove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginInitiateMoveOptions) (MoveCollectionsInitiateMovePollerResponse, error) {
-	resp, err := client.initiateMove(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsInitiateMovePollerResponse{}, err
-	}
-	result := MoveCollectionsInitiateMovePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.InitiateMove", "azure-async-operation", resp, client.pl, client.initiateMoveHandleError)
-	if err != nil {
-		return MoveCollectionsInitiateMovePollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsInitiateMovePoller{
-		pt: pt,
-	}
-	return result, nil
-}
-
-// InitiateMove - Moves the set of resources included in the request body. The move operation is triggered after the moveResources are in the moveState
-// 'MovePending' or 'MoveFailed', on a successful completion the
-// moveResource moveState do a transition to CommitPending. To aid the user to prerequisite the operation the client can call operation with validateOnly
-// property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) initiateMove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginInitiateMoveOptions) (*http.Response, error) {
+// InitiateMove - Moves the set of resources included in the request body. The move operation is triggered after the moveResources
+// are in the moveState 'MovePending' or 'MoveFailed', on a successful completion the
+// moveResource moveState do a transition to CommitPending. To aid the user to prerequisite the operation the client can call
+// operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) initiateMove(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginInitiateMoveOptions) (*http.Response, error) {
 	req, err := client.initiateMoveCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -542,13 +492,13 @@ func (client *MoveCollectionsClient) initiateMove(ctx context.Context, resourceG
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.initiateMoveHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // initiateMoveCreateRequest creates the InitiateMove request.
-func (client *MoveCollectionsClient) initiateMoveCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginInitiateMoveOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) initiateMoveCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginInitiateMoveOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/initiateMove"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -562,49 +512,56 @@ func (client *MoveCollectionsClient) initiateMoveCreateRequest(ctx context.Conte
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
 	return req, nil
 }
 
-// initiateMoveHandleError handles the InitiateMove error response.
-func (client *MoveCollectionsClient) initiateMoveHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// ListMoveCollectionsByResourceGroup - Get all the Move Collections in the resource group.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) ListMoveCollectionsByResourceGroup(resourceGroupName string, options *MoveCollectionsListMoveCollectionsByResourceGroupOptions) *MoveCollectionsListMoveCollectionsByResourceGroupPager {
-	return &MoveCollectionsListMoveCollectionsByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listMoveCollectionsByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+// NewListMoveCollectionsByResourceGroupPager - Get all the Move Collections in the resource group.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// options - MoveCollectionsClientListMoveCollectionsByResourceGroupOptions contains the optional parameters for the MoveCollectionsClient.ListMoveCollectionsByResourceGroup
+// method.
+func (client *MoveCollectionsClient) NewListMoveCollectionsByResourceGroupPager(resourceGroupName string, options *MoveCollectionsClientListMoveCollectionsByResourceGroupOptions) *runtime.Pager[MoveCollectionsClientListMoveCollectionsByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[MoveCollectionsClientListMoveCollectionsByResourceGroupResponse]{
+		More: func(page MoveCollectionsClientListMoveCollectionsByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp MoveCollectionsListMoveCollectionsByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.MoveCollectionResultList.NextLink)
+		Fetcher: func(ctx context.Context, page *MoveCollectionsClientListMoveCollectionsByResourceGroupResponse) (MoveCollectionsClientListMoveCollectionsByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listMoveCollectionsByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return MoveCollectionsClientListMoveCollectionsByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return MoveCollectionsClientListMoveCollectionsByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return MoveCollectionsClientListMoveCollectionsByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listMoveCollectionsByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listMoveCollectionsByResourceGroupCreateRequest creates the ListMoveCollectionsByResourceGroup request.
-func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupCreateRequest(ctx context.Context, resourceGroupName string, options *MoveCollectionsListMoveCollectionsByResourceGroupOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupCreateRequest(ctx context.Context, resourceGroupName string, options *MoveCollectionsClientListMoveCollectionsByResourceGroupOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -614,112 +571,111 @@ func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupCreateReq
 		return nil, errors.New("parameter resourceGroupName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listMoveCollectionsByResourceGroupHandleResponse handles the ListMoveCollectionsByResourceGroup response.
-func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupHandleResponse(resp *http.Response) (MoveCollectionsListMoveCollectionsByResourceGroupResponse, error) {
-	result := MoveCollectionsListMoveCollectionsByResourceGroupResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupHandleResponse(resp *http.Response) (MoveCollectionsClientListMoveCollectionsByResourceGroupResponse, error) {
+	result := MoveCollectionsClientListMoveCollectionsByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MoveCollectionResultList); err != nil {
-		return MoveCollectionsListMoveCollectionsByResourceGroupResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientListMoveCollectionsByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// listMoveCollectionsByResourceGroupHandleError handles the ListMoveCollectionsByResourceGroup error response.
-func (client *MoveCollectionsClient) listMoveCollectionsByResourceGroupHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// ListMoveCollectionsBySubscription - Get all the Move Collections in the subscription.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) ListMoveCollectionsBySubscription(options *MoveCollectionsListMoveCollectionsBySubscriptionOptions) *MoveCollectionsListMoveCollectionsBySubscriptionPager {
-	return &MoveCollectionsListMoveCollectionsBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listMoveCollectionsBySubscriptionCreateRequest(ctx, options)
+// NewListMoveCollectionsBySubscriptionPager - Get all the Move Collections in the subscription.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// options - MoveCollectionsClientListMoveCollectionsBySubscriptionOptions contains the optional parameters for the MoveCollectionsClient.ListMoveCollectionsBySubscription
+// method.
+func (client *MoveCollectionsClient) NewListMoveCollectionsBySubscriptionPager(options *MoveCollectionsClientListMoveCollectionsBySubscriptionOptions) *runtime.Pager[MoveCollectionsClientListMoveCollectionsBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[MoveCollectionsClientListMoveCollectionsBySubscriptionResponse]{
+		More: func(page MoveCollectionsClientListMoveCollectionsBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp MoveCollectionsListMoveCollectionsBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.MoveCollectionResultList.NextLink)
+		Fetcher: func(ctx context.Context, page *MoveCollectionsClientListMoveCollectionsBySubscriptionResponse) (MoveCollectionsClientListMoveCollectionsBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listMoveCollectionsBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return MoveCollectionsClientListMoveCollectionsBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return MoveCollectionsClientListMoveCollectionsBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return MoveCollectionsClientListMoveCollectionsBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listMoveCollectionsBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listMoveCollectionsBySubscriptionCreateRequest creates the ListMoveCollectionsBySubscription request.
-func (client *MoveCollectionsClient) listMoveCollectionsBySubscriptionCreateRequest(ctx context.Context, options *MoveCollectionsListMoveCollectionsBySubscriptionOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) listMoveCollectionsBySubscriptionCreateRequest(ctx context.Context, options *MoveCollectionsClientListMoveCollectionsBySubscriptionOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/providers/Microsoft.Migrate/moveCollections"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listMoveCollectionsBySubscriptionHandleResponse handles the ListMoveCollectionsBySubscription response.
-func (client *MoveCollectionsClient) listMoveCollectionsBySubscriptionHandleResponse(resp *http.Response) (MoveCollectionsListMoveCollectionsBySubscriptionResponse, error) {
-	result := MoveCollectionsListMoveCollectionsBySubscriptionResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) listMoveCollectionsBySubscriptionHandleResponse(resp *http.Response) (MoveCollectionsClientListMoveCollectionsBySubscriptionResponse, error) {
+	result := MoveCollectionsClientListMoveCollectionsBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MoveCollectionResultList); err != nil {
-		return MoveCollectionsListMoveCollectionsBySubscriptionResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientListMoveCollectionsBySubscriptionResponse{}, err
 	}
 	return result, nil
 }
 
-// listMoveCollectionsBySubscriptionHandleError handles the ListMoveCollectionsBySubscription error response.
-func (client *MoveCollectionsClient) listMoveCollectionsBySubscriptionHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // ListRequiredFor - List of the move resources for which an arm resource is required for.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) ListRequiredFor(ctx context.Context, resourceGroupName string, moveCollectionName string, sourceID string, options *MoveCollectionsListRequiredForOptions) (MoveCollectionsListRequiredForResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// sourceID - The sourceId for which the api is invoked.
+// options - MoveCollectionsClientListRequiredForOptions contains the optional parameters for the MoveCollectionsClient.ListRequiredFor
+// method.
+func (client *MoveCollectionsClient) ListRequiredFor(ctx context.Context, resourceGroupName string, moveCollectionName string, sourceID string, options *MoveCollectionsClientListRequiredForOptions) (MoveCollectionsClientListRequiredForResponse, error) {
 	req, err := client.listRequiredForCreateRequest(ctx, resourceGroupName, moveCollectionName, sourceID, options)
 	if err != nil {
-		return MoveCollectionsListRequiredForResponse{}, err
+		return MoveCollectionsClientListRequiredForResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return MoveCollectionsListRequiredForResponse{}, err
+		return MoveCollectionsClientListRequiredForResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return MoveCollectionsListRequiredForResponse{}, client.listRequiredForHandleError(resp)
+		return MoveCollectionsClientListRequiredForResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.listRequiredForHandleResponse(resp)
 }
 
 // listRequiredForCreateRequest creates the ListRequiredFor request.
-func (client *MoveCollectionsClient) listRequiredForCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, sourceID string, options *MoveCollectionsListRequiredForOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) listRequiredForCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, sourceID string, options *MoveCollectionsClientListRequiredForOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/requiredFor"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -733,7 +689,7 @@ func (client *MoveCollectionsClient) listRequiredForCreateRequest(ctx context.Co
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
@@ -741,61 +697,50 @@ func (client *MoveCollectionsClient) listRequiredForCreateRequest(ctx context.Co
 	reqQP.Set("sourceId", sourceID)
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listRequiredForHandleResponse handles the ListRequiredFor response.
-func (client *MoveCollectionsClient) listRequiredForHandleResponse(resp *http.Response) (MoveCollectionsListRequiredForResponse, error) {
-	result := MoveCollectionsListRequiredForResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) listRequiredForHandleResponse(resp *http.Response) (MoveCollectionsClientListRequiredForResponse, error) {
+	result := MoveCollectionsClientListRequiredForResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RequiredForResourcesCollection); err != nil {
-		return MoveCollectionsListRequiredForResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientListRequiredForResponse{}, err
 	}
 	return result, nil
 }
 
-// listRequiredForHandleError handles the ListRequiredFor error response.
-func (client *MoveCollectionsClient) listRequiredForHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
+// BeginPrepare - Initiates prepare for the set of resources included in the request body. The prepare operation is on the
+// moveResources that are in the moveState 'PreparePending' or 'PrepareFailed', on a successful
+// completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the
+// client can call operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginPrepareOptions contains the optional parameters for the MoveCollectionsClient.BeginPrepare
+// method.
+func (client *MoveCollectionsClient) BeginPrepare(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginPrepareOptions) (*runtime.Poller[MoveCollectionsClientPrepareResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.prepare(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientPrepareResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientPrepareResponse](options.ResumeToken, client.pl, nil)
 	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }
 
-// BeginPrepare - Initiates prepare for the set of resources included in the request body. The prepare operation is on the moveResources that are in the
-// moveState 'PreparePending' or 'PrepareFailed', on a successful
-// completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with
-// validateOnly property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginPrepare(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginPrepareOptions) (MoveCollectionsPreparePollerResponse, error) {
-	resp, err := client.prepare(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsPreparePollerResponse{}, err
-	}
-	result := MoveCollectionsPreparePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.Prepare", "azure-async-operation", resp, client.pl, client.prepareHandleError)
-	if err != nil {
-		return MoveCollectionsPreparePollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsPreparePoller{
-		pt: pt,
-	}
-	return result, nil
-}
-
-// Prepare - Initiates prepare for the set of resources included in the request body. The prepare operation is on the moveResources that are in the moveState
-// 'PreparePending' or 'PrepareFailed', on a successful
-// completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with
-// validateOnly property set to true.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) prepare(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginPrepareOptions) (*http.Response, error) {
+// Prepare - Initiates prepare for the set of resources included in the request body. The prepare operation is on the moveResources
+// that are in the moveState 'PreparePending' or 'PrepareFailed', on a successful
+// completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the
+// client can call operation with validateOnly property set to true.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) prepare(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginPrepareOptions) (*http.Response, error) {
 	req, err := client.prepareCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -805,13 +750,13 @@ func (client *MoveCollectionsClient) prepare(ctx context.Context, resourceGroupN
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.prepareHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // prepareCreateRequest creates the Prepare request.
-func (client *MoveCollectionsClient) prepareCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginPrepareOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) prepareCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginPrepareOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/prepare"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -825,56 +770,45 @@ func (client *MoveCollectionsClient) prepareCreateRequest(ctx context.Context, r
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
 	return req, nil
 }
 
-// prepareHandleError handles the Prepare error response.
-func (client *MoveCollectionsClient) prepareHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // BeginResolveDependencies - Computes, resolves and validate the dependencies of the moveResources in the move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) BeginResolveDependencies(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginResolveDependenciesOptions) (MoveCollectionsResolveDependenciesPollerResponse, error) {
-	resp, err := client.resolveDependencies(ctx, resourceGroupName, moveCollectionName, options)
-	if err != nil {
-		return MoveCollectionsResolveDependenciesPollerResponse{}, err
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientBeginResolveDependenciesOptions contains the optional parameters for the MoveCollectionsClient.BeginResolveDependencies
+// method.
+func (client *MoveCollectionsClient) BeginResolveDependencies(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginResolveDependenciesOptions) (*runtime.Poller[MoveCollectionsClientResolveDependenciesResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.resolveDependencies(ctx, resourceGroupName, moveCollectionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[MoveCollectionsClientResolveDependenciesResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[MoveCollectionsClientResolveDependenciesResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := MoveCollectionsResolveDependenciesPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("MoveCollectionsClient.ResolveDependencies", "azure-async-operation", resp, client.pl, client.resolveDependenciesHandleError)
-	if err != nil {
-		return MoveCollectionsResolveDependenciesPollerResponse{}, err
-	}
-	result.Poller = &MoveCollectionsResolveDependenciesPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // ResolveDependencies - Computes, resolves and validate the dependencies of the moveResources in the move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) resolveDependencies(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginResolveDependenciesOptions) (*http.Response, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+func (client *MoveCollectionsClient) resolveDependencies(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginResolveDependenciesOptions) (*http.Response, error) {
 	req, err := client.resolveDependenciesCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
 		return nil, err
@@ -884,13 +818,13 @@ func (client *MoveCollectionsClient) resolveDependencies(ctx context.Context, re
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.resolveDependenciesHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // resolveDependenciesCreateRequest creates the ResolveDependencies request.
-func (client *MoveCollectionsClient) resolveDependenciesCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsBeginResolveDependenciesOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) resolveDependenciesCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientBeginResolveDependenciesOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/resolveDependencies"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -904,49 +838,40 @@ func (client *MoveCollectionsClient) resolveDependenciesCreateRequest(ctx contex
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// resolveDependenciesHandleError handles the ResolveDependencies error response.
-func (client *MoveCollectionsClient) resolveDependenciesHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Update - Updates a move collection.
-// If the operation fails it returns the *CloudError error type.
-func (client *MoveCollectionsClient) Update(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsUpdateOptions) (MoveCollectionsUpdateResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - MoveCollectionsClientUpdateOptions contains the optional parameters for the MoveCollectionsClient.Update method.
+func (client *MoveCollectionsClient) Update(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientUpdateOptions) (MoveCollectionsClientUpdateResponse, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
 	if err != nil {
-		return MoveCollectionsUpdateResponse{}, err
+		return MoveCollectionsClientUpdateResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return MoveCollectionsUpdateResponse{}, err
+		return MoveCollectionsClientUpdateResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return MoveCollectionsUpdateResponse{}, client.updateHandleError(resp)
+		return MoveCollectionsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.updateHandleResponse(resp)
 }
 
 // updateCreateRequest creates the Update request.
-func (client *MoveCollectionsClient) updateCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsUpdateOptions) (*policy.Request, error) {
+func (client *MoveCollectionsClient) updateCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *MoveCollectionsClientUpdateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -960,14 +885,14 @@ func (client *MoveCollectionsClient) updateCreateRequest(ctx context.Context, re
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodPatch, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPatch, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Body != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Body)
 	}
@@ -975,23 +900,10 @@ func (client *MoveCollectionsClient) updateCreateRequest(ctx context.Context, re
 }
 
 // updateHandleResponse handles the Update response.
-func (client *MoveCollectionsClient) updateHandleResponse(resp *http.Response) (MoveCollectionsUpdateResponse, error) {
-	result := MoveCollectionsUpdateResponse{RawResponse: resp}
+func (client *MoveCollectionsClient) updateHandleResponse(resp *http.Response) (MoveCollectionsClientUpdateResponse, error) {
+	result := MoveCollectionsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MoveCollection); err != nil {
-		return MoveCollectionsUpdateResponse{}, runtime.NewResponseError(err, resp)
+		return MoveCollectionsClientUpdateResponse{}, err
 	}
 	return result, nil
-}
-
-// updateHandleError handles the Update error response.
-func (client *MoveCollectionsClient) updateHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

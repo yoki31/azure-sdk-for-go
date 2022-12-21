@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type SensitivityLabelsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSensitivityLabelsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SensitivityLabelsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSensitivityLabelsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SensitivityLabelsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SensitivityLabelsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates the sensitivity label of a given column
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -116,13 +122,13 @@ func (client *SensitivityLabelsClient) createOrUpdateCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SensitivityLabelsClient) createOrUpdateHandleResponse(resp *http.Response) (SensitivityLabelsClientCreateOrUpdateResponse, error) {
-	result := SensitivityLabelsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SensitivityLabelsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensitivityLabel); err != nil {
 		return SensitivityLabelsClientCreateOrUpdateResponse{}, err
 	}
@@ -131,6 +137,7 @@ func (client *SensitivityLabelsClient) createOrUpdateHandleResponse(resp *http.R
 
 // Delete - Deletes the sensitivity label of a given column
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -152,7 +159,7 @@ func (client *SensitivityLabelsClient) Delete(ctx context.Context, resourceGroup
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensitivityLabelsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensitivityLabelsClientDeleteResponse{RawResponse: resp}, nil
+	return SensitivityLabelsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -199,6 +206,7 @@ func (client *SensitivityLabelsClient) deleteCreateRequest(ctx context.Context, 
 
 // DisableRecommendation - Disables sensitivity recommendations on a given column
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -220,7 +228,7 @@ func (client *SensitivityLabelsClient) DisableRecommendation(ctx context.Context
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensitivityLabelsClientDisableRecommendationResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensitivityLabelsClientDisableRecommendationResponse{RawResponse: resp}, nil
+	return SensitivityLabelsClientDisableRecommendationResponse{}, nil
 }
 
 // disableRecommendationCreateRequest creates the DisableRecommendation request.
@@ -268,6 +276,7 @@ func (client *SensitivityLabelsClient) disableRecommendationCreateRequest(ctx co
 // EnableRecommendation - Enables sensitivity recommendations on a given column (recommendations are enabled by default on
 // all columns)
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -289,7 +298,7 @@ func (client *SensitivityLabelsClient) EnableRecommendation(ctx context.Context,
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensitivityLabelsClientEnableRecommendationResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensitivityLabelsClientEnableRecommendationResponse{RawResponse: resp}, nil
+	return SensitivityLabelsClientEnableRecommendationResponse{}, nil
 }
 
 // enableRecommendationCreateRequest creates the EnableRecommendation request.
@@ -336,6 +345,7 @@ func (client *SensitivityLabelsClient) enableRecommendationCreateRequest(ctx con
 
 // Get - Gets the sensitivity label of a given column
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -402,37 +412,54 @@ func (client *SensitivityLabelsClient) getCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SensitivityLabelsClient) getHandleResponse(resp *http.Response) (SensitivityLabelsClientGetResponse, error) {
-	result := SensitivityLabelsClientGetResponse{RawResponse: resp}
+	result := SensitivityLabelsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensitivityLabel); err != nil {
 		return SensitivityLabelsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListCurrentByDatabase - Gets the sensitivity labels of a given database
+// NewListCurrentByDatabasePager - Gets the sensitivity labels of a given database
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // databaseName - The name of the database.
 // options - SensitivityLabelsClientListCurrentByDatabaseOptions contains the optional parameters for the SensitivityLabelsClient.ListCurrentByDatabase
 // method.
-func (client *SensitivityLabelsClient) ListCurrentByDatabase(resourceGroupName string, serverName string, databaseName string, options *SensitivityLabelsClientListCurrentByDatabaseOptions) *SensitivityLabelsClientListCurrentByDatabasePager {
-	return &SensitivityLabelsClientListCurrentByDatabasePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCurrentByDatabaseCreateRequest(ctx, resourceGroupName, serverName, databaseName, options)
+func (client *SensitivityLabelsClient) NewListCurrentByDatabasePager(resourceGroupName string, serverName string, databaseName string, options *SensitivityLabelsClientListCurrentByDatabaseOptions) *runtime.Pager[SensitivityLabelsClientListCurrentByDatabaseResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SensitivityLabelsClientListCurrentByDatabaseResponse]{
+		More: func(page SensitivityLabelsClientListCurrentByDatabaseResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SensitivityLabelsClientListCurrentByDatabaseResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SensitivityLabelListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SensitivityLabelsClientListCurrentByDatabaseResponse) (SensitivityLabelsClientListCurrentByDatabaseResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCurrentByDatabaseCreateRequest(ctx, resourceGroupName, serverName, databaseName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SensitivityLabelsClientListCurrentByDatabaseResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SensitivityLabelsClientListCurrentByDatabaseResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SensitivityLabelsClientListCurrentByDatabaseResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listCurrentByDatabaseHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCurrentByDatabaseCreateRequest creates the ListCurrentByDatabase request.
@@ -470,37 +497,54 @@ func (client *SensitivityLabelsClient) listCurrentByDatabaseCreateRequest(ctx co
 	}
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listCurrentByDatabaseHandleResponse handles the ListCurrentByDatabase response.
 func (client *SensitivityLabelsClient) listCurrentByDatabaseHandleResponse(resp *http.Response) (SensitivityLabelsClientListCurrentByDatabaseResponse, error) {
-	result := SensitivityLabelsClientListCurrentByDatabaseResponse{RawResponse: resp}
+	result := SensitivityLabelsClientListCurrentByDatabaseResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensitivityLabelListResult); err != nil {
 		return SensitivityLabelsClientListCurrentByDatabaseResponse{}, err
 	}
 	return result, nil
 }
 
-// ListRecommendedByDatabase - Gets the sensitivity labels of a given database
+// NewListRecommendedByDatabasePager - Gets the sensitivity labels of a given database
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // databaseName - The name of the database.
 // options - SensitivityLabelsClientListRecommendedByDatabaseOptions contains the optional parameters for the SensitivityLabelsClient.ListRecommendedByDatabase
 // method.
-func (client *SensitivityLabelsClient) ListRecommendedByDatabase(resourceGroupName string, serverName string, databaseName string, options *SensitivityLabelsClientListRecommendedByDatabaseOptions) *SensitivityLabelsClientListRecommendedByDatabasePager {
-	return &SensitivityLabelsClientListRecommendedByDatabasePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listRecommendedByDatabaseCreateRequest(ctx, resourceGroupName, serverName, databaseName, options)
+func (client *SensitivityLabelsClient) NewListRecommendedByDatabasePager(resourceGroupName string, serverName string, databaseName string, options *SensitivityLabelsClientListRecommendedByDatabaseOptions) *runtime.Pager[SensitivityLabelsClientListRecommendedByDatabaseResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SensitivityLabelsClientListRecommendedByDatabaseResponse]{
+		More: func(page SensitivityLabelsClientListRecommendedByDatabaseResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SensitivityLabelsClientListRecommendedByDatabaseResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SensitivityLabelListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SensitivityLabelsClientListRecommendedByDatabaseResponse) (SensitivityLabelsClientListRecommendedByDatabaseResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listRecommendedByDatabaseCreateRequest(ctx, resourceGroupName, serverName, databaseName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SensitivityLabelsClientListRecommendedByDatabaseResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SensitivityLabelsClientListRecommendedByDatabaseResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SensitivityLabelsClientListRecommendedByDatabaseResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listRecommendedByDatabaseHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listRecommendedByDatabaseCreateRequest creates the ListRecommendedByDatabase request.
@@ -538,13 +582,13 @@ func (client *SensitivityLabelsClient) listRecommendedByDatabaseCreateRequest(ct
 	}
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listRecommendedByDatabaseHandleResponse handles the ListRecommendedByDatabase response.
 func (client *SensitivityLabelsClient) listRecommendedByDatabaseHandleResponse(resp *http.Response) (SensitivityLabelsClientListRecommendedByDatabaseResponse, error) {
-	result := SensitivityLabelsClientListRecommendedByDatabaseResponse{RawResponse: resp}
+	result := SensitivityLabelsClientListRecommendedByDatabaseResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensitivityLabelListResult); err != nil {
 		return SensitivityLabelsClientListRecommendedByDatabaseResponse{}, err
 	}
@@ -553,6 +597,7 @@ func (client *SensitivityLabelsClient) listRecommendedByDatabaseHandleResponse(r
 
 // Update - Update sensitivity labels of a given database using an operations batch.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -571,7 +616,7 @@ func (client *SensitivityLabelsClient) Update(ctx context.Context, resourceGroup
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensitivityLabelsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensitivityLabelsClientUpdateResponse{RawResponse: resp}, nil
+	return SensitivityLabelsClientUpdateResponse{}, nil
 }
 
 // updateCreateRequest creates the Update request.

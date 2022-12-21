@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,24 +32,29 @@ type PoliciesClient struct {
 // NewPoliciesClient creates a new instance of PoliciesClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPoliciesClient(credential azcore.TokenCredential, options *arm.ClientOptions) *PoliciesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPoliciesClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*PoliciesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PoliciesClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // GetByBillingProfile - Lists the policies for a billing profile. This operation is supported only for billing accounts with
 // agreement type Microsoft Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // billingProfileName - The ID that uniquely identifies a billing profile.
 // options - PoliciesClientGetByBillingProfileOptions contains the optional parameters for the PoliciesClient.GetByBillingProfile
@@ -86,13 +92,13 @@ func (client *PoliciesClient) getByBillingProfileCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByBillingProfileHandleResponse handles the GetByBillingProfile response.
 func (client *PoliciesClient) getByBillingProfileHandleResponse(resp *http.Response) (PoliciesClientGetByBillingProfileResponse, error) {
-	result := PoliciesClientGetByBillingProfileResponse{RawResponse: resp}
+	result := PoliciesClientGetByBillingProfileResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Policy); err != nil {
 		return PoliciesClientGetByBillingProfileResponse{}, err
 	}
@@ -102,6 +108,7 @@ func (client *PoliciesClient) getByBillingProfileHandleResponse(resp *http.Respo
 // GetByCustomer - Lists the policies for a customer. This operation is supported only for billing accounts with agreement
 // type Microsoft Partner Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // customerName - The ID that uniquely identifies a customer.
 // options - PoliciesClientGetByCustomerOptions contains the optional parameters for the PoliciesClient.GetByCustomer method.
@@ -138,13 +145,13 @@ func (client *PoliciesClient) getByCustomerCreateRequest(ctx context.Context, bi
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByCustomerHandleResponse handles the GetByCustomer response.
 func (client *PoliciesClient) getByCustomerHandleResponse(resp *http.Response) (PoliciesClientGetByCustomerResponse, error) {
-	result := PoliciesClientGetByCustomerResponse{RawResponse: resp}
+	result := PoliciesClientGetByCustomerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CustomerPolicy); err != nil {
 		return PoliciesClientGetByCustomerResponse{}, err
 	}
@@ -154,6 +161,7 @@ func (client *PoliciesClient) getByCustomerHandleResponse(resp *http.Response) (
 // Update - Updates the policies for a billing profile. This operation is supported only for billing accounts with agreement
 // type Microsoft Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // billingProfileName - The ID that uniquely identifies a billing profile.
 // parameters - Request parameters that are provided to the update policies operation.
@@ -191,13 +199,13 @@ func (client *PoliciesClient) updateCreateRequest(ctx context.Context, billingAc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *PoliciesClient) updateHandleResponse(resp *http.Response) (PoliciesClientUpdateResponse, error) {
-	result := PoliciesClientUpdateResponse{RawResponse: resp}
+	result := PoliciesClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Policy); err != nil {
 		return PoliciesClientUpdateResponse{}, err
 	}
@@ -207,6 +215,7 @@ func (client *PoliciesClient) updateHandleResponse(resp *http.Response) (Policie
 // UpdateCustomer - Updates the policies for a customer. This operation is supported only for billing accounts with agreement
 // type Microsoft Partner Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // customerName - The ID that uniquely identifies a customer.
 // parameters - Request parameters that are provided to the update policies operation.
@@ -244,13 +253,13 @@ func (client *PoliciesClient) updateCustomerCreateRequest(ctx context.Context, b
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateCustomerHandleResponse handles the UpdateCustomer response.
 func (client *PoliciesClient) updateCustomerHandleResponse(resp *http.Response) (PoliciesClientUpdateCustomerResponse, error) {
-	result := PoliciesClientUpdateCustomerResponse{RawResponse: resp}
+	result := PoliciesClientUpdateCustomerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CustomerPolicy); err != nil {
 		return PoliciesClientUpdateCustomerResponse{}, err
 	}

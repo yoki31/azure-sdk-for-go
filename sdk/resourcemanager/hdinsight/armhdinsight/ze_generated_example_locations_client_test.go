@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,112 +17,135 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/hdinsight/armhdinsight"
 )
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetHDInsightCapabilities.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetHDInsightCapabilities.json
 func ExampleLocationsClient_GetCapabilities() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetCapabilities(ctx,
-		"<location>",
+		"West US",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientGetCapabilitiesResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetHDInsightUsages.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetHDInsightUsages.json
 func ExampleLocationsClient_ListUsages() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListUsages(ctx,
-		"<location>",
+		"West US",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientListUsagesResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_ListBillingSpecs.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_ListBillingSpecs.json
 func ExampleLocationsClient_ListBillingSpecs() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListBillingSpecs(ctx,
-		"<location>",
+		"East US 2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientListBillingSpecsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_GetAsyncOperationStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_GetAsyncOperationStatus.json
 func ExampleLocationsClient_GetAzureAsyncOperationStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAzureAsyncOperationStatus(ctx,
-		"<location>",
-		"<operation-id>",
+		"East US 2",
+		"8a0348f4-8a85-4ec2-abe0-03b26104a9a0-0",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientGetAzureAsyncOperationStatusResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_CheckClusterNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_CheckClusterNameAvailability.json
 func ExampleLocationsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<location>",
+		"westus",
 		armhdinsight.NameAvailabilityCheckRequestParameters{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("test123"),
+			Type: to.Ptr("clusters"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_ValidateClusterCreateRequest.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Locations_ValidateClusterCreateRequest.json
 func ExampleLocationsClient_ValidateClusterCreateRequest() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewLocationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewLocationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ValidateClusterCreateRequest(ctx,
-		"<location>",
+		"southcentralus",
 		armhdinsight.ClusterCreateRequestValidationParameters{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("southcentralus"),
 			Properties: &armhdinsight.ClusterCreateProperties{
 				ClusterDefinition: &armhdinsight.ClusterDefinition{
 					ComponentVersion: map[string]*string{
-						"Spark": to.StringPtr("2.4"),
+						"Spark": to.Ptr("2.4"),
 					},
 					Configurations: map[string]interface{}{
 						"gateway": map[string]interface{}{
@@ -131,79 +154,80 @@ func ExampleLocationsClient_ValidateClusterCreateRequest() {
 							"restAuthCredential.username":  "admin",
 						},
 					},
-					Kind: to.StringPtr("<kind>"),
+					Kind: to.Ptr("spark"),
 				},
-				ClusterVersion: to.StringPtr("<cluster-version>"),
+				ClusterVersion: to.Ptr("4.0"),
 				ComputeProfile: &armhdinsight.ComputeProfile{
 					Roles: []*armhdinsight.Role{
 						{
-							Name: to.StringPtr("<name>"),
+							Name: to.Ptr("headnode"),
 							HardwareProfile: &armhdinsight.HardwareProfile{
-								VMSize: to.StringPtr("<vmsize>"),
+								VMSize: to.Ptr("Standard_E8_V3"),
 							},
-							MinInstanceCount: to.Int32Ptr(1),
+							MinInstanceCount: to.Ptr[int32](1),
 							OSProfile: &armhdinsight.OsProfile{
 								LinuxOperatingSystemProfile: &armhdinsight.LinuxOperatingSystemProfile{
-									Password: to.StringPtr("<password>"),
-									Username: to.StringPtr("<username>"),
+									Password: to.Ptr("********"),
+									Username: to.Ptr("sshuser"),
 								},
 							},
 							ScriptActions:       []*armhdinsight.ScriptAction{},
-							TargetInstanceCount: to.Int32Ptr(2),
+							TargetInstanceCount: to.Ptr[int32](2),
 						},
 						{
-							Name: to.StringPtr("<name>"),
+							Name: to.Ptr("workernode"),
 							HardwareProfile: &armhdinsight.HardwareProfile{
-								VMSize: to.StringPtr("<vmsize>"),
+								VMSize: to.Ptr("Standard_E8_V3"),
 							},
 							OSProfile: &armhdinsight.OsProfile{
 								LinuxOperatingSystemProfile: &armhdinsight.LinuxOperatingSystemProfile{
-									Password: to.StringPtr("<password>"),
-									Username: to.StringPtr("<username>"),
+									Password: to.Ptr("********"),
+									Username: to.Ptr("sshuser"),
 								},
 							},
 							ScriptActions:       []*armhdinsight.ScriptAction{},
-							TargetInstanceCount: to.Int32Ptr(4),
+							TargetInstanceCount: to.Ptr[int32](4),
 						},
 						{
-							Name: to.StringPtr("<name>"),
+							Name: to.Ptr("zookeepernode"),
 							HardwareProfile: &armhdinsight.HardwareProfile{
-								VMSize: to.StringPtr("<vmsize>"),
+								VMSize: to.Ptr("Standard_D13_V2"),
 							},
-							MinInstanceCount: to.Int32Ptr(1),
+							MinInstanceCount: to.Ptr[int32](1),
 							OSProfile: &armhdinsight.OsProfile{
 								LinuxOperatingSystemProfile: &armhdinsight.LinuxOperatingSystemProfile{
-									Password: to.StringPtr("<password>"),
-									Username: to.StringPtr("<username>"),
+									Password: to.Ptr("**********"),
+									Username: to.Ptr("sshuser"),
 								},
 							},
 							ScriptActions:       []*armhdinsight.ScriptAction{},
-							TargetInstanceCount: to.Int32Ptr(3),
+							TargetInstanceCount: to.Ptr[int32](3),
 						}},
 				},
-				MinSupportedTLSVersion: to.StringPtr("<min-supported-tlsversion>"),
-				OSType:                 armhdinsight.OSType("Linux").ToPtr(),
+				MinSupportedTLSVersion: to.Ptr("1.2"),
+				OSType:                 to.Ptr(armhdinsight.OSTypeLinux),
 				StorageProfile: &armhdinsight.StorageProfile{
 					Storageaccounts: []*armhdinsight.StorageAccount{
 						{
-							Name:       to.StringPtr("<name>"),
-							Container:  to.StringPtr("<container>"),
-							IsDefault:  to.BoolPtr(true),
-							Key:        to.StringPtr("<key>"),
-							ResourceID: to.StringPtr("<resource-id>"),
+							Name:       to.Ptr("storagename.blob.core.windows.net"),
+							Container:  to.Ptr("contianername"),
+							IsDefault:  to.Ptr(true),
+							Key:        to.Ptr("*******"),
+							ResourceID: to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg1/providers/Microsoft.Storage/storageAccounts/storagename"),
 						}},
 				},
-				Tier: armhdinsight.Tier("Standard").ToPtr(),
+				Tier: to.Ptr(armhdinsight.TierStandard),
 			},
 			Tags:               map[string]*string{},
-			Name:               to.StringPtr("<name>"),
-			Type:               to.StringPtr("<type>"),
-			FetchAaddsResource: to.BoolPtr(false),
-			TenantID:           to.StringPtr("<tenant-id>"),
+			Name:               to.Ptr("testclustername"),
+			Type:               to.Ptr("Microsoft.HDInsight/clusters"),
+			FetchAaddsResource: to.Ptr(false),
+			TenantID:           to.Ptr("00000000-0000-0000-0000-000000000000"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LocationsClientValidateClusterCreateRequestResult)
+	// TODO: use response item
+	_ = res
 }

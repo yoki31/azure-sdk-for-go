@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ServerGroupsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServerGroupsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServerGroupsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServerGroupsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServerGroupsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServerGroupsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Check the availability of name for resource
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // nameAvailabilityRequest - The required parameters for checking if resource name is available.
 // options - ServerGroupsClientCheckNameAvailabilityOptions contains the optional parameters for the ServerGroupsClient.CheckNameAvailability
 // method.
@@ -83,13 +89,13 @@ func (client *ServerGroupsClient) checkNameAvailabilityCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, nameAvailabilityRequest)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *ServerGroupsClient) checkNameAvailabilityHandleResponse(resp *http.Response) (ServerGroupsClientCheckNameAvailabilityResponse, error) {
-	result := ServerGroupsClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := ServerGroupsClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NameAvailability); err != nil {
 		return ServerGroupsClientCheckNameAvailabilityResponse{}, err
 	}
@@ -98,31 +104,27 @@ func (client *ServerGroupsClient) checkNameAvailabilityHandleResponse(resp *http
 
 // BeginCreateOrUpdate - Creates a new server group with servers.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // parameters - The required parameters for creating or updating a server group.
 // options - ServerGroupsClientBeginCreateOrUpdateOptions contains the optional parameters for the ServerGroupsClient.BeginCreateOrUpdate
 // method.
-func (client *ServerGroupsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroup, options *ServerGroupsClientBeginCreateOrUpdateOptions) (ServerGroupsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, serverGroupName, parameters, options)
-	if err != nil {
-		return ServerGroupsClientCreateOrUpdatePollerResponse{}, err
+func (client *ServerGroupsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroup, options *ServerGroupsClientBeginCreateOrUpdateOptions) (*runtime.Poller[ServerGroupsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, serverGroupName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates a new server group with servers.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) createOrUpdate(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroup, options *ServerGroupsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, serverGroupName, parameters, options)
 	if err != nil {
@@ -160,36 +162,32 @@ func (client *ServerGroupsClient) createOrUpdateCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a server group together with servers in it.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // options - ServerGroupsClientBeginDeleteOptions contains the optional parameters for the ServerGroupsClient.BeginDelete
 // method.
-func (client *ServerGroupsClient) BeginDelete(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginDeleteOptions) (ServerGroupsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, serverGroupName, options)
-	if err != nil {
-		return ServerGroupsClientDeletePollerResponse{}, err
+func (client *ServerGroupsClient) BeginDelete(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginDeleteOptions) (*runtime.Poller[ServerGroupsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, serverGroupName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a server group together with servers in it.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) deleteOperation(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, serverGroupName, options)
 	if err != nil {
@@ -227,12 +225,13 @@ func (client *ServerGroupsClient) deleteCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets information about a server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // options - ServerGroupsClientGetOptions contains the optional parameters for the ServerGroupsClient.Get method.
@@ -273,32 +272,49 @@ func (client *ServerGroupsClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServerGroupsClient) getHandleResponse(resp *http.Response) (ServerGroupsClientGetResponse, error) {
-	result := ServerGroupsClientGetResponse{RawResponse: resp}
+	result := ServerGroupsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServerGroup); err != nil {
 		return ServerGroupsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - List all the server groups in a given subscription.
+// NewListPager - List all the server groups in a given subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // options - ServerGroupsClientListOptions contains the optional parameters for the ServerGroupsClient.List method.
-func (client *ServerGroupsClient) List(options *ServerGroupsClientListOptions) *ServerGroupsClientListPager {
-	return &ServerGroupsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *ServerGroupsClient) NewListPager(options *ServerGroupsClientListOptions) *runtime.Pager[ServerGroupsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServerGroupsClientListResponse]{
+		More: func(page ServerGroupsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServerGroupsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ServerGroupListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ServerGroupsClientListResponse) (ServerGroupsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServerGroupsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServerGroupsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServerGroupsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -315,34 +331,51 @@ func (client *ServerGroupsClient) listCreateRequest(ctx context.Context, options
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ServerGroupsClient) listHandleResponse(resp *http.Response) (ServerGroupsClientListResponse, error) {
-	result := ServerGroupsClientListResponse{RawResponse: resp}
+	result := ServerGroupsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServerGroupListResult); err != nil {
 		return ServerGroupsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - List all the server groups in a given resource group.
+// NewListByResourceGroupPager - List all the server groups in a given resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - ServerGroupsClientListByResourceGroupOptions contains the optional parameters for the ServerGroupsClient.ListByResourceGroup
 // method.
-func (client *ServerGroupsClient) ListByResourceGroup(resourceGroupName string, options *ServerGroupsClientListByResourceGroupOptions) *ServerGroupsClientListByResourceGroupPager {
-	return &ServerGroupsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *ServerGroupsClient) NewListByResourceGroupPager(resourceGroupName string, options *ServerGroupsClientListByResourceGroupOptions) *runtime.Pager[ServerGroupsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServerGroupsClientListByResourceGroupResponse]{
+		More: func(page ServerGroupsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServerGroupsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ServerGroupListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ServerGroupsClientListByResourceGroupResponse) (ServerGroupsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServerGroupsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServerGroupsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServerGroupsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -363,13 +396,13 @@ func (client *ServerGroupsClient) listByResourceGroupCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ServerGroupsClient) listByResourceGroupHandleResponse(resp *http.Response) (ServerGroupsClientListByResourceGroupResponse, error) {
-	result := ServerGroupsClientListByResourceGroupResponse{RawResponse: resp}
+	result := ServerGroupsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServerGroupListResult); err != nil {
 		return ServerGroupsClientListByResourceGroupResponse{}, err
 	}
@@ -378,30 +411,26 @@ func (client *ServerGroupsClient) listByResourceGroupHandleResponse(resp *http.R
 
 // BeginRestart - Restarts the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // options - ServerGroupsClientBeginRestartOptions contains the optional parameters for the ServerGroupsClient.BeginRestart
 // method.
-func (client *ServerGroupsClient) BeginRestart(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginRestartOptions) (ServerGroupsClientRestartPollerResponse, error) {
-	resp, err := client.restart(ctx, resourceGroupName, serverGroupName, options)
-	if err != nil {
-		return ServerGroupsClientRestartPollerResponse{}, err
+func (client *ServerGroupsClient) BeginRestart(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginRestartOptions) (*runtime.Poller[ServerGroupsClientRestartResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.restart(ctx, resourceGroupName, serverGroupName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientRestartResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientRestartResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientRestartPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.Restart", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientRestartPollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientRestartPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Restart - Restarts the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) restart(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginRestartOptions) (*http.Response, error) {
 	req, err := client.restartCreateRequest(ctx, resourceGroupName, serverGroupName, options)
 	if err != nil {
@@ -439,35 +468,31 @@ func (client *ServerGroupsClient) restartCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginStart - Starts the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // options - ServerGroupsClientBeginStartOptions contains the optional parameters for the ServerGroupsClient.BeginStart method.
-func (client *ServerGroupsClient) BeginStart(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStartOptions) (ServerGroupsClientStartPollerResponse, error) {
-	resp, err := client.start(ctx, resourceGroupName, serverGroupName, options)
-	if err != nil {
-		return ServerGroupsClientStartPollerResponse{}, err
+func (client *ServerGroupsClient) BeginStart(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStartOptions) (*runtime.Poller[ServerGroupsClientStartResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.start(ctx, resourceGroupName, serverGroupName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientStartResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientStartResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientStartPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.Start", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientStartPollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientStartPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Start - Starts the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) start(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStartOptions) (*http.Response, error) {
 	req, err := client.startCreateRequest(ctx, resourceGroupName, serverGroupName, options)
 	if err != nil {
@@ -505,35 +530,31 @@ func (client *ServerGroupsClient) startCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginStop - Stops the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // options - ServerGroupsClientBeginStopOptions contains the optional parameters for the ServerGroupsClient.BeginStop method.
-func (client *ServerGroupsClient) BeginStop(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStopOptions) (ServerGroupsClientStopPollerResponse, error) {
-	resp, err := client.stop(ctx, resourceGroupName, serverGroupName, options)
-	if err != nil {
-		return ServerGroupsClientStopPollerResponse{}, err
+func (client *ServerGroupsClient) BeginStop(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStopOptions) (*runtime.Poller[ServerGroupsClientStopResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.stop(ctx, resourceGroupName, serverGroupName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientStopResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientStopResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientStopPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.Stop", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientStopPollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientStopPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Stop - Stops the server group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) stop(ctx context.Context, resourceGroupName string, serverGroupName string, options *ServerGroupsClientBeginStopOptions) (*http.Response, error) {
 	req, err := client.stopCreateRequest(ctx, resourceGroupName, serverGroupName, options)
 	if err != nil {
@@ -571,39 +592,35 @@ func (client *ServerGroupsClient) stopCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginUpdate - Updates an existing server group. The request body can contain one to many of the properties present in the
 // normal server group definition.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverGroupName - The name of the server group.
 // parameters - The parameters for updating a server group.
 // options - ServerGroupsClientBeginUpdateOptions contains the optional parameters for the ServerGroupsClient.BeginUpdate
 // method.
-func (client *ServerGroupsClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroupForUpdate, options *ServerGroupsClientBeginUpdateOptions) (ServerGroupsClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, serverGroupName, parameters, options)
-	if err != nil {
-		return ServerGroupsClientUpdatePollerResponse{}, err
+func (client *ServerGroupsClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroupForUpdate, options *ServerGroupsClientBeginUpdateOptions) (*runtime.Poller[ServerGroupsClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, serverGroupName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServerGroupsClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerGroupsClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerGroupsClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerGroupsClient.Update", "", resp, client.pl)
-	if err != nil {
-		return ServerGroupsClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &ServerGroupsClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates an existing server group. The request body can contain one to many of the properties present in the normal
 // server group definition.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-10-05-privatepreview
 func (client *ServerGroupsClient) update(ctx context.Context, resourceGroupName string, serverGroupName string, parameters ServerGroupForUpdate, options *ServerGroupsClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, serverGroupName, parameters, options)
 	if err != nil {
@@ -641,6 +658,6 @@ func (client *ServerGroupsClient) updateCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-10-05-privatepreview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

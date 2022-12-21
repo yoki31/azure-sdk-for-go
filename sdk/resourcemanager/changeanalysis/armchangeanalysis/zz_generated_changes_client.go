@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,40 +35,61 @@ type ChangesClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewChangesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ChangesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewChangesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ChangesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ChangesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
-// ListChangesByResourceGroup - List the changes of a resource group within the specified time range. Customer data will always
-// be masked.
+// NewListChangesByResourceGroupPager - List the changes of a resource group within the specified time range. Customer data
+// will always be masked.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // startTime - Specifies the start time of the changes request.
 // endTime - Specifies the end time of the changes request.
 // options - ChangesClientListChangesByResourceGroupOptions contains the optional parameters for the ChangesClient.ListChangesByResourceGroup
 // method.
-func (client *ChangesClient) ListChangesByResourceGroup(resourceGroupName string, startTime time.Time, endTime time.Time, options *ChangesClientListChangesByResourceGroupOptions) *ChangesClientListChangesByResourceGroupPager {
-	return &ChangesClientListChangesByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listChangesByResourceGroupCreateRequest(ctx, resourceGroupName, startTime, endTime, options)
+func (client *ChangesClient) NewListChangesByResourceGroupPager(resourceGroupName string, startTime time.Time, endTime time.Time, options *ChangesClientListChangesByResourceGroupOptions) *runtime.Pager[ChangesClientListChangesByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ChangesClientListChangesByResourceGroupResponse]{
+		More: func(page ChangesClientListChangesByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ChangesClientListChangesByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ChangeList.NextLink)
+		Fetcher: func(ctx context.Context, page *ChangesClientListChangesByResourceGroupResponse) (ChangesClientListChangesByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listChangesByResourceGroupCreateRequest(ctx, resourceGroupName, startTime, endTime, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ChangesClientListChangesByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ChangesClientListChangesByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ChangesClientListChangesByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listChangesByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listChangesByResourceGroupCreateRequest creates the ListChangesByResourceGroup request.
@@ -93,36 +115,53 @@ func (client *ChangesClient) listChangesByResourceGroupCreateRequest(ctx context
 		reqQP.Set("$skipToken", *options.SkipToken)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listChangesByResourceGroupHandleResponse handles the ListChangesByResourceGroup response.
 func (client *ChangesClient) listChangesByResourceGroupHandleResponse(resp *http.Response) (ChangesClientListChangesByResourceGroupResponse, error) {
-	result := ChangesClientListChangesByResourceGroupResponse{RawResponse: resp}
+	result := ChangesClientListChangesByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ChangeList); err != nil {
 		return ChangesClientListChangesByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListChangesBySubscription - List the changes of a subscription within the specified time range. Customer data will always
-// be masked.
+// NewListChangesBySubscriptionPager - List the changes of a subscription within the specified time range. Customer data will
+// always be masked.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // startTime - Specifies the start time of the changes request.
 // endTime - Specifies the end time of the changes request.
 // options - ChangesClientListChangesBySubscriptionOptions contains the optional parameters for the ChangesClient.ListChangesBySubscription
 // method.
-func (client *ChangesClient) ListChangesBySubscription(startTime time.Time, endTime time.Time, options *ChangesClientListChangesBySubscriptionOptions) *ChangesClientListChangesBySubscriptionPager {
-	return &ChangesClientListChangesBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listChangesBySubscriptionCreateRequest(ctx, startTime, endTime, options)
+func (client *ChangesClient) NewListChangesBySubscriptionPager(startTime time.Time, endTime time.Time, options *ChangesClientListChangesBySubscriptionOptions) *runtime.Pager[ChangesClientListChangesBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ChangesClientListChangesBySubscriptionResponse]{
+		More: func(page ChangesClientListChangesBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ChangesClientListChangesBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ChangeList.NextLink)
+		Fetcher: func(ctx context.Context, page *ChangesClientListChangesBySubscriptionResponse) (ChangesClientListChangesBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listChangesBySubscriptionCreateRequest(ctx, startTime, endTime, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ChangesClientListChangesBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ChangesClientListChangesBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ChangesClientListChangesBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listChangesBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listChangesBySubscriptionCreateRequest creates the ListChangesBySubscription request.
@@ -144,13 +183,13 @@ func (client *ChangesClient) listChangesBySubscriptionCreateRequest(ctx context.
 		reqQP.Set("$skipToken", *options.SkipToken)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listChangesBySubscriptionHandleResponse handles the ListChangesBySubscription response.
 func (client *ChangesClient) listChangesBySubscriptionHandleResponse(resp *http.Response) (ChangesClientListChangesBySubscriptionResponse, error) {
-	result := ChangesClientListChangesBySubscriptionResponse{RawResponse: resp}
+	result := ChangesClientListChangesBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ChangeList); err != nil {
 		return ChangesClientListChangesBySubscriptionResponse{}, err
 	}

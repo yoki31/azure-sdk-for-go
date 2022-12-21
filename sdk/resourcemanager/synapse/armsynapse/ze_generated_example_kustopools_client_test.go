@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,332 +12,384 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsCheckNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsCheckNameAvailability.json
 func ExampleKustoPoolsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<location>",
+		"westus",
 		armsynapse.KustoPoolCheckNameRequest{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("kustoclusterrptest4"),
+			Type: to.Ptr("Microsoft.Synapse/workspaces/kustoPools"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsListByWorkspace.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsListByWorkspace.json
 func ExampleKustoPoolsClient_ListByWorkspace() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListByWorkspace(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
+		"kustorptest",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientListByWorkspaceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsGet.json
 func ExampleKustoPoolsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsCreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsCreateOrUpdate.json
 func ExampleKustoPoolsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<workspace-name>",
-		"<resource-group-name>",
-		"<kusto-pool-name>",
+		"synapseWorkspaceName",
+		"kustorptest",
+		"kustoclusterrptest4",
 		armsynapse.KustoPool{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("westus"),
 			Properties: &armsynapse.KustoPoolProperties{
-				EnablePurge:           to.BoolPtr(true),
-				EnableStreamingIngest: to.BoolPtr(true),
-				WorkspaceUID:          to.StringPtr("<workspace-uid>"),
+				EnablePurge:           to.Ptr(true),
+				EnableStreamingIngest: to.Ptr(true),
+				WorkspaceUID:          to.Ptr("11111111-2222-3333-444444444444"),
 			},
 			SKU: &armsynapse.AzureSKU{
-				Name:     armsynapse.SKUName("Storage optimized").ToPtr(),
-				Capacity: to.Int32Ptr(2),
-				Size:     armsynapse.SKUSize("Medium").ToPtr(),
+				Name:     to.Ptr(armsynapse.SKUNameStorageOptimized),
+				Capacity: to.Ptr[int32](2),
+				Size:     to.Ptr(armsynapse.SKUSizeMedium),
 			},
 		},
 		&armsynapse.KustoPoolsClientBeginCreateOrUpdateOptions{IfMatch: nil,
 			IfNoneMatch: nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsUpdate.json
 func ExampleKustoPoolsClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<workspace-name>",
-		"<resource-group-name>",
-		"<kusto-pool-name>",
+		"synapseWorkspaceName",
+		"kustorptest",
+		"kustoclusterrptest4",
 		armsynapse.KustoPoolUpdate{
 			Properties: &armsynapse.KustoPoolProperties{
-				EnablePurge:           to.BoolPtr(true),
-				EnableStreamingIngest: to.BoolPtr(true),
-				WorkspaceUID:          to.StringPtr("<workspace-uid>"),
+				EnablePurge:           to.Ptr(true),
+				EnableStreamingIngest: to.Ptr(true),
+				WorkspaceUID:          to.Ptr("11111111-2222-3333-444444444444"),
 			},
 			SKU: &armsynapse.AzureSKU{
-				Name:     armsynapse.SKUName("Storage optimized").ToPtr(),
-				Capacity: to.Int32Ptr(2),
-				Size:     armsynapse.SKUSize("Medium").ToPtr(),
+				Name:     to.Ptr(armsynapse.SKUNameStorageOptimized),
+				Capacity: to.Ptr[int32](2),
+				Size:     to.Ptr(armsynapse.SKUSizeMedium),
 			},
 		},
 		&armsynapse.KustoPoolsClientBeginUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsDelete.json
 func ExampleKustoPoolsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<workspace-name>",
-		"<resource-group-name>",
-		"<kusto-pool-name>",
+		"kustorptest",
+		"kustorptest",
+		"kustoclusterrptest4",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsStop.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsStop.json
 func ExampleKustoPoolsClient_BeginStop() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStop(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsStart.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolsStart.json
 func ExampleKustoPoolsClient_BeginStart() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStart(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsList.json
-func ExampleKustoPoolsClient_ListLanguageExtensions() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsList.json
+func ExampleKustoPoolsClient_NewListLanguageExtensionsPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
-	res, err := client.ListLanguageExtensions(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
-		nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientListLanguageExtensionsResult)
+	pager := client.NewListLanguageExtensionsPager("kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsAdd.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsAdd.json
 func ExampleKustoPoolsClient_BeginAddLanguageExtensions() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginAddLanguageExtensions(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
 		armsynapse.LanguageExtensionsList{
 			Value: []*armsynapse.LanguageExtension{
 				{
-					LanguageExtensionName: armsynapse.LanguageExtensionName("PYTHON").ToPtr(),
+					LanguageExtensionName: to.Ptr(armsynapse.LanguageExtensionNamePYTHON),
 				},
 				{
-					LanguageExtensionName: armsynapse.LanguageExtensionName("R").ToPtr(),
+					LanguageExtensionName: to.Ptr(armsynapse.LanguageExtensionNameR),
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsRemove.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolLanguageExtensionsRemove.json
 func ExampleKustoPoolsClient_BeginRemoveLanguageExtensions() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginRemoveLanguageExtensions(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
 		armsynapse.LanguageExtensionsList{
 			Value: []*armsynapse.LanguageExtension{
 				{
-					LanguageExtensionName: armsynapse.LanguageExtensionName("PYTHON").ToPtr(),
+					LanguageExtensionName: to.Ptr(armsynapse.LanguageExtensionNamePYTHON),
 				},
 				{
-					LanguageExtensionName: armsynapse.LanguageExtensionName("R").ToPtr(),
+					LanguageExtensionName: to.Ptr(armsynapse.LanguageExtensionNameR),
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolFollowerDatabasesList.json
-func ExampleKustoPoolsClient_ListFollowerDatabases() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolFollowerDatabasesList.json
+func ExampleKustoPoolsClient_NewListFollowerDatabasesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
-	res, err := client.ListFollowerDatabases(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
-		nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolsClientListFollowerDatabasesResult)
+	pager := client.NewListFollowerDatabasesPager("kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolFollowerDatabasesDetach.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolFollowerDatabasesDetach.json
 func ExampleKustoPoolsClient_BeginDetachFollowerDatabases() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDetachFollowerDatabases(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"kustorptest",
 		armsynapse.FollowerDatabaseDefinition{
-			AttachedDatabaseConfigurationName: to.StringPtr("<attached-database-configuration-name>"),
-			KustoPoolResourceID:               to.StringPtr("<kusto-pool-resource-id>"),
+			AttachedDatabaseConfigurationName: to.Ptr("myAttachedDatabaseConfiguration"),
+			KustoPoolResourceID:               to.Ptr("/subscriptions/12345678-1234-1234-1234-123456789098/resourceGroups/kustorptest/providers/Microsoft.Synapse/workspaces/kustorptest/kustoPools/leader4"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

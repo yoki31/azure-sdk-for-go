@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,50 @@ type InstancePoolsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewInstancePoolsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *InstancePoolsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewInstancePoolsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*InstancePoolsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &InstancePoolsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates an instance pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // instancePoolName - The name of the instance pool to be created or updated.
 // parameters - The requested instance pool resource state.
 // options - InstancePoolsClientBeginCreateOrUpdateOptions contains the optional parameters for the InstancePoolsClient.BeginCreateOrUpdate
 // method.
-func (client *InstancePoolsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePool, options *InstancePoolsClientBeginCreateOrUpdateOptions) (InstancePoolsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, instancePoolName, parameters, options)
-	if err != nil {
-		return InstancePoolsClientCreateOrUpdatePollerResponse{}, err
+func (client *InstancePoolsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePool, options *InstancePoolsClientBeginCreateOrUpdateOptions) (*runtime.Poller[InstancePoolsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, instancePoolName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[InstancePoolsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[InstancePoolsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := InstancePoolsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("InstancePoolsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return InstancePoolsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &InstancePoolsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates an instance pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *InstancePoolsClient) createOrUpdate(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePool, options *InstancePoolsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, instancePoolName, parameters, options)
 	if err != nil {
@@ -114,37 +115,33 @@ func (client *InstancePoolsClient) createOrUpdateCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes an instance pool
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // instancePoolName - The name of the instance pool to be deleted
 // options - InstancePoolsClientBeginDeleteOptions contains the optional parameters for the InstancePoolsClient.BeginDelete
 // method.
-func (client *InstancePoolsClient) BeginDelete(ctx context.Context, resourceGroupName string, instancePoolName string, options *InstancePoolsClientBeginDeleteOptions) (InstancePoolsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, instancePoolName, options)
-	if err != nil {
-		return InstancePoolsClientDeletePollerResponse{}, err
+func (client *InstancePoolsClient) BeginDelete(ctx context.Context, resourceGroupName string, instancePoolName string, options *InstancePoolsClientBeginDeleteOptions) (*runtime.Poller[InstancePoolsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, instancePoolName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[InstancePoolsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[InstancePoolsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := InstancePoolsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("InstancePoolsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return InstancePoolsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &InstancePoolsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes an instance pool
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *InstancePoolsClient) deleteOperation(ctx context.Context, resourceGroupName string, instancePoolName string, options *InstancePoolsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, instancePoolName, options)
 	if err != nil {
@@ -187,6 +184,7 @@ func (client *InstancePoolsClient) deleteCreateRequest(ctx context.Context, reso
 
 // Get - Gets an instance pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // instancePoolName - The name of the instance pool to be retrieved.
@@ -228,32 +226,49 @@ func (client *InstancePoolsClient) getCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *InstancePoolsClient) getHandleResponse(resp *http.Response) (InstancePoolsClientGetResponse, error) {
-	result := InstancePoolsClientGetResponse{RawResponse: resp}
+	result := InstancePoolsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.InstancePool); err != nil {
 		return InstancePoolsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets a list of all instance pools in the subscription.
+// NewListPager - Gets a list of all instance pools in the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // options - InstancePoolsClientListOptions contains the optional parameters for the InstancePoolsClient.List method.
-func (client *InstancePoolsClient) List(options *InstancePoolsClientListOptions) *InstancePoolsClientListPager {
-	return &InstancePoolsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *InstancePoolsClient) NewListPager(options *InstancePoolsClientListOptions) *runtime.Pager[InstancePoolsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[InstancePoolsClientListResponse]{
+		More: func(page InstancePoolsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp InstancePoolsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.InstancePoolListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *InstancePoolsClientListResponse) (InstancePoolsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return InstancePoolsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return InstancePoolsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return InstancePoolsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -270,35 +285,52 @@ func (client *InstancePoolsClient) listCreateRequest(ctx context.Context, option
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *InstancePoolsClient) listHandleResponse(resp *http.Response) (InstancePoolsClientListResponse, error) {
-	result := InstancePoolsClientListResponse{RawResponse: resp}
+	result := InstancePoolsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.InstancePoolListResult); err != nil {
 		return InstancePoolsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets a list of instance pools in the resource group
+// NewListByResourceGroupPager - Gets a list of instance pools in the resource group
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // options - InstancePoolsClientListByResourceGroupOptions contains the optional parameters for the InstancePoolsClient.ListByResourceGroup
 // method.
-func (client *InstancePoolsClient) ListByResourceGroup(resourceGroupName string, options *InstancePoolsClientListByResourceGroupOptions) *InstancePoolsClientListByResourceGroupPager {
-	return &InstancePoolsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *InstancePoolsClient) NewListByResourceGroupPager(resourceGroupName string, options *InstancePoolsClientListByResourceGroupOptions) *runtime.Pager[InstancePoolsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[InstancePoolsClientListByResourceGroupResponse]{
+		More: func(page InstancePoolsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp InstancePoolsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.InstancePoolListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *InstancePoolsClientListByResourceGroupResponse) (InstancePoolsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return InstancePoolsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return InstancePoolsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return InstancePoolsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -319,13 +351,13 @@ func (client *InstancePoolsClient) listByResourceGroupCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *InstancePoolsClient) listByResourceGroupHandleResponse(resp *http.Response) (InstancePoolsClientListByResourceGroupResponse, error) {
-	result := InstancePoolsClientListByResourceGroupResponse{RawResponse: resp}
+	result := InstancePoolsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.InstancePoolListResult); err != nil {
 		return InstancePoolsClientListByResourceGroupResponse{}, err
 	}
@@ -334,32 +366,28 @@ func (client *InstancePoolsClient) listByResourceGroupHandleResponse(resp *http.
 
 // BeginUpdate - Updates an instance pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // instancePoolName - The name of the instance pool to be updated.
 // parameters - The requested instance pool resource state.
 // options - InstancePoolsClientBeginUpdateOptions contains the optional parameters for the InstancePoolsClient.BeginUpdate
 // method.
-func (client *InstancePoolsClient) BeginUpdate(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePoolUpdate, options *InstancePoolsClientBeginUpdateOptions) (InstancePoolsClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, instancePoolName, parameters, options)
-	if err != nil {
-		return InstancePoolsClientUpdatePollerResponse{}, err
+func (client *InstancePoolsClient) BeginUpdate(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePoolUpdate, options *InstancePoolsClientBeginUpdateOptions) (*runtime.Poller[InstancePoolsClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, instancePoolName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[InstancePoolsClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[InstancePoolsClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := InstancePoolsClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("InstancePoolsClient.Update", "", resp, client.pl)
-	if err != nil {
-		return InstancePoolsClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &InstancePoolsClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates an instance pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *InstancePoolsClient) update(ctx context.Context, resourceGroupName string, instancePoolName string, parameters InstancePoolUpdate, options *InstancePoolsClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, instancePoolName, parameters, options)
 	if err != nil {
@@ -397,6 +425,6 @@ func (client *InstancePoolsClient) updateCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

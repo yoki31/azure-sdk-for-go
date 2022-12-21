@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type APIPolicyClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPIPolicyClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *APIPolicyClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPIPolicyClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*APIPolicyClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APIPolicyClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates policy configuration for the API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -106,15 +112,15 @@ func (client *APIPolicyClient) createOrUpdateCreateRequest(ctx context.Context, 
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *APIPolicyClient) createOrUpdateHandleResponse(resp *http.Response) (APIPolicyClientCreateOrUpdateResponse, error) {
-	result := APIPolicyClientCreateOrUpdateResponse{RawResponse: resp}
+	result := APIPolicyClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -126,6 +132,7 @@ func (client *APIPolicyClient) createOrUpdateHandleResponse(resp *http.Response)
 
 // Delete - Deletes the policy configuration at the Api.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -146,7 +153,7 @@ func (client *APIPolicyClient) Delete(ctx context.Context, resourceGroupName str
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return APIPolicyClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return APIPolicyClientDeleteResponse{RawResponse: resp}, nil
+	return APIPolicyClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -179,13 +186,14 @@ func (client *APIPolicyClient) deleteCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get the policy configuration at the API level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -240,13 +248,13 @@ func (client *APIPolicyClient) getCreateRequest(ctx context.Context, resourceGro
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json, application/vnd.ms-azure-apim.policy+xml, application/vnd.ms-azure-apim.policy.raw+xml")
+	req.Raw().Header["Accept"] = []string{"application/json, application/vnd.ms-azure-apim.policy+xml, application/vnd.ms-azure-apim.policy.raw+xml"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *APIPolicyClient) getHandleResponse(resp *http.Response) (APIPolicyClientGetResponse, error) {
-	result := APIPolicyClientGetResponse{RawResponse: resp}
+	result := APIPolicyClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -257,6 +265,7 @@ func (client *APIPolicyClient) getHandleResponse(resp *http.Response) (APIPolicy
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the API policy specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -271,6 +280,9 @@ func (client *APIPolicyClient) GetEntityTag(ctx context.Context, resourceGroupNa
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return APIPolicyClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return APIPolicyClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -305,24 +317,23 @@ func (client *APIPolicyClient) getEntityTagCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *APIPolicyClient) getEntityTagHandleResponse(resp *http.Response) (APIPolicyClientGetEntityTagResponse, error) {
-	result := APIPolicyClientGetEntityTagResponse{RawResponse: resp}
+	result := APIPolicyClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
 // ListByAPI - Get the policy configuration at the API level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -369,13 +380,13 @@ func (client *APIPolicyClient) listByAPICreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByAPIHandleResponse handles the ListByAPI response.
 func (client *APIPolicyClient) listByAPIHandleResponse(resp *http.Response) (APIPolicyClientListByAPIResponse, error) {
-	result := APIPolicyClientListByAPIResponse{RawResponse: resp}
+	result := APIPolicyClientListByAPIResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PolicyCollection); err != nil {
 		return APIPolicyClientListByAPIResponse{}, err
 	}

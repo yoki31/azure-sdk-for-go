@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,188 +12,205 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/devtestlabs/armdevtestlabs"
 )
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_List.json
-func ExampleServiceFabricSchedulesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_List.json
+func ExampleServiceFabricSchedulesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
 		&armdevtestlabs.ServiceFabricSchedulesClientListOptions{Expand: nil,
 			Filter:  nil,
 			Top:     nil,
 			Orderby: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Get.json
 func ExampleServiceFabricSchedulesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
+		"{scheduleName}",
 		&armdevtestlabs.ServiceFabricSchedulesClientGetOptions{Expand: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServiceFabricSchedulesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_CreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_CreateOrUpdate.json
 func ExampleServiceFabricSchedulesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
+		"{scheduleName}",
 		armdevtestlabs.Schedule{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("{location}"),
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 			Properties: &armdevtestlabs.ScheduleProperties{
 				DailyRecurrence: &armdevtestlabs.DayDetails{
-					Time: to.StringPtr("<time>"),
+					Time: to.Ptr("19:00"),
 				},
 				HourlyRecurrence: &armdevtestlabs.HourDetails{
-					Minute: to.Int32Ptr(0),
+					Minute: to.Ptr[int32](0),
 				},
 				NotificationSettings: &armdevtestlabs.NotificationSettings{
-					EmailRecipient:     to.StringPtr("<email-recipient>"),
-					NotificationLocale: to.StringPtr("<notification-locale>"),
-					Status:             armdevtestlabs.EnableStatus("{Enabled|Disabled}").ToPtr(),
-					TimeInMinutes:      to.Int32Ptr(15),
-					WebhookURL:         to.StringPtr("<webhook-url>"),
+					EmailRecipient:     to.Ptr("{email}"),
+					NotificationLocale: to.Ptr("EN"),
+					Status:             to.Ptr(armdevtestlabs.EnableStatus("{Enabled|Disabled}")),
+					TimeInMinutes:      to.Ptr[int32](15),
+					WebhookURL:         to.Ptr("{webhoolUrl}"),
 				},
-				Status:           armdevtestlabs.EnableStatus("{Enabled|Disabled}").ToPtr(),
-				TargetResourceID: to.StringPtr("<target-resource-id>"),
-				TaskType:         to.StringPtr("<task-type>"),
-				TimeZoneID:       to.StringPtr("<time-zone-id>"),
+				Status:           to.Ptr(armdevtestlabs.EnableStatus("{Enabled|Disabled}")),
+				TargetResourceID: to.Ptr("/subscriptions/{subscriptionId}/resourceGroups/resourceGroupName/providers/Microsoft.DevTestLab/labs/{labName}/users/{uniqueIdentifier}/servicefabrics/{serviceFrabicName}"),
+				TaskType:         to.Ptr("{Unknown|LabVmsShutdownTask|LabVmsStartupTask|LabVmReclamationTask|ComputeVmShutdownTask}"),
+				TimeZoneID:       to.Ptr("Pacific Standard Time"),
 				WeeklyRecurrence: &armdevtestlabs.WeekDetails{
-					Time: to.StringPtr("<time>"),
+					Time: to.Ptr("19:00"),
 					Weekdays: []*string{
-						to.StringPtr("Monday"),
-						to.StringPtr("Tuesday"),
-						to.StringPtr("Wednesday"),
-						to.StringPtr("Thursday"),
-						to.StringPtr("Friday"),
-						to.StringPtr("Saturday"),
-						to.StringPtr("Sunday")},
+						to.Ptr("Monday"),
+						to.Ptr("Tuesday"),
+						to.Ptr("Wednesday"),
+						to.Ptr("Thursday"),
+						to.Ptr("Friday"),
+						to.Ptr("Saturday"),
+						to.Ptr("Sunday")},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServiceFabricSchedulesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Delete.json
 func ExampleServiceFabricSchedulesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
+		"{scheduleName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Update.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Update.json
 func ExampleServiceFabricSchedulesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
+		"{scheduleName}",
 		armdevtestlabs.ScheduleFragment{
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServiceFabricSchedulesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Execute.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/ServiceFabricSchedules_Execute.json
 func ExampleServiceFabricSchedulesClient_BeginExecute() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewServiceFabricSchedulesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewServiceFabricSchedulesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginExecute(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<user-name>",
-		"<service-fabric-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"@me",
+		"{serviceFrabicName}",
+		"{scheduleName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,211 +17,242 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/eventhub/armeventhub"
 )
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasCheckNameAvailability.json
-func ExampleDisasterRecoveryConfigsClient_CheckNameAvailability() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleListAll.json
+func ExampleDisasterRecoveryConfigsClient_NewListAuthorizationRulesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	res, err := client.CheckNameAvailability(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		armeventhub.CheckNameAvailabilityParameter{
-			Name: to.StringPtr("<name>"),
-		},
-		nil)
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DisasterRecoveryConfigsClientCheckNameAvailabilityResult)
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasList.json
-func ExampleDisasterRecoveryConfigsClient_List() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<namespace-name>",
+	pager := client.NewListAuthorizationRulesPager("exampleResourceGroup",
+		"sdk-Namespace-9080",
+		"sdk-DisasterRecovery-4047",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasCreate.json
-func ExampleDisasterRecoveryConfigsClient_CreateOrUpdate() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		armeventhub.ArmDisasterRecovery{
-			Properties: &armeventhub.ArmDisasterRecoveryProperties{
-				PartnerNamespace: to.StringPtr("<partner-namespace>"),
-			},
-		},
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DisasterRecoveryConfigsClientCreateOrUpdateResult)
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasDelete.json
-func ExampleDisasterRecoveryConfigsClient_Delete() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasGet.json
-func ExampleDisasterRecoveryConfigsClient_Get() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DisasterRecoveryConfigsClientGetResult)
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasBreakPairing.json
-func ExampleDisasterRecoveryConfigsClient_BreakPairing() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	_, err = client.BreakPairing(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasFailOver.json
-func ExampleDisasterRecoveryConfigsClient_FailOver() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	_, err = client.FailOver(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleListAll.json
-func ExampleDisasterRecoveryConfigsClient_ListAuthorizationRules() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
-	pager := client.ListAuthorizationRules("<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
-}
-
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleGet.json
 func ExampleDisasterRecoveryConfigsClient_GetAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		"<authorization-rule-name>",
+		"exampleResourceGroup",
+		"sdk-Namespace-9080",
+		"sdk-DisasterRecovery-4879",
+		"sdk-Authrules-4879",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DisasterRecoveryConfigsClientGetAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleListKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasAuthorizationRuleListKey.json
 func ExampleDisasterRecoveryConfigsClient_ListKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewDisasterRecoveryConfigsClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<alias>",
-		"<authorization-rule-name>",
+		"exampleResourceGroup",
+		"sdk-Namespace-2702",
+		"sdk-DisasterRecovery-4047",
+		"sdk-Authrules-1746",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DisasterRecoveryConfigsClientListKeysResult)
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasCheckNameAvailability.json
+func ExampleDisasterRecoveryConfigsClient_CheckNameAvailability() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.CheckNameAvailability(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-9080",
+		armeventhub.CheckNameAvailabilityParameter{
+			Name: to.Ptr("sdk-DisasterRecovery-9474"),
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasList.json
+func ExampleDisasterRecoveryConfigsClient_NewListPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("exampleResourceGroup",
+		"sdk-Namespace-8859",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasCreate.json
+func ExampleDisasterRecoveryConfigsClient_CreateOrUpdate() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.CreateOrUpdate(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-8859",
+		"sdk-DisasterRecovery-3814",
+		armeventhub.ArmDisasterRecovery{
+			Properties: &armeventhub.ArmDisasterRecoveryProperties{
+				PartnerNamespace: to.Ptr("sdk-Namespace-37"),
+			},
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasDelete.json
+func ExampleDisasterRecoveryConfigsClient_Delete() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	_, err = client.Delete(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-5849",
+		"sdk-DisasterRecovery-3814",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasGet.json
+func ExampleDisasterRecoveryConfigsClient_Get() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.Get(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-8859",
+		"sdk-DisasterRecovery-3814",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasBreakPairing.json
+func ExampleDisasterRecoveryConfigsClient_BreakPairing() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	_, err = client.BreakPairing(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-8859",
+		"sdk-DisasterRecovery-3814",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/disasterRecoveryConfigs/EHAliasFailOver.json
+func ExampleDisasterRecoveryConfigsClient_FailOver() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armeventhub.NewDisasterRecoveryConfigsClient("exampleSubscriptionId", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	_, err = client.FailOver(ctx,
+		"exampleResourceGroup",
+		"sdk-Namespace-8859",
+		"sdk-DisasterRecovery-3814",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
 }

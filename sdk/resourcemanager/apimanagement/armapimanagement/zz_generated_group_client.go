@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type GroupClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewGroupClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *GroupClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewGroupClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*GroupClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &GroupClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or Updates a group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // groupID - Group identifier. Must be unique in the current API Management service instance.
@@ -100,15 +106,15 @@ func (client *GroupClient) createOrUpdateCreateRequest(ctx context.Context, reso
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *GroupClient) createOrUpdateHandleResponse(resp *http.Response) (GroupClientCreateOrUpdateResponse, error) {
-	result := GroupClientCreateOrUpdateResponse{RawResponse: resp}
+	result := GroupClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -120,6 +126,7 @@ func (client *GroupClient) createOrUpdateHandleResponse(resp *http.Response) (Gr
 
 // Delete - Deletes specific group of the API Management service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // groupID - Group identifier. Must be unique in the current API Management service instance.
@@ -138,7 +145,7 @@ func (client *GroupClient) Delete(ctx context.Context, resourceGroupName string,
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return GroupClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return GroupClientDeleteResponse{RawResponse: resp}, nil
+	return GroupClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -167,13 +174,14 @@ func (client *GroupClient) deleteCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the group specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // groupID - Group identifier. Must be unique in the current API Management service instance.
@@ -219,13 +227,13 @@ func (client *GroupClient) getCreateRequest(ctx context.Context, resourceGroupNa
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *GroupClient) getHandleResponse(resp *http.Response) (GroupClientGetResponse, error) {
-	result := GroupClientGetResponse{RawResponse: resp}
+	result := GroupClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -236,6 +244,7 @@ func (client *GroupClient) getHandleResponse(resp *http.Response) (GroupClientGe
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the group specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // groupID - Group identifier. Must be unique in the current API Management service instance.
@@ -248,6 +257,9 @@ func (client *GroupClient) GetEntityTag(ctx context.Context, resourceGroupName s
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return GroupClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return GroupClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -278,37 +290,52 @@ func (client *GroupClient) getEntityTagCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *GroupClient) getEntityTagHandleResponse(resp *http.Response) (GroupClientGetEntityTagResponse, error) {
-	result := GroupClientGetEntityTagResponse{RawResponse: resp}
+	result := GroupClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of groups defined within a service instance.
+// NewListByServicePager - Lists a collection of groups defined within a service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - GroupClientListByServiceOptions contains the optional parameters for the GroupClient.ListByService method.
-func (client *GroupClient) ListByService(resourceGroupName string, serviceName string, options *GroupClientListByServiceOptions) *GroupClientListByServicePager {
-	return &GroupClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *GroupClient) NewListByServicePager(resourceGroupName string, serviceName string, options *GroupClientListByServiceOptions) *runtime.Pager[GroupClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[GroupClientListByServiceResponse]{
+		More: func(page GroupClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp GroupClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.GroupCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *GroupClientListByServiceResponse) (GroupClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return GroupClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return GroupClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return GroupClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -342,13 +369,13 @@ func (client *GroupClient) listByServiceCreateRequest(ctx context.Context, resou
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *GroupClient) listByServiceHandleResponse(resp *http.Response) (GroupClientListByServiceResponse, error) {
-	result := GroupClientListByServiceResponse{RawResponse: resp}
+	result := GroupClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GroupCollection); err != nil {
 		return GroupClientListByServiceResponse{}, err
 	}
@@ -357,6 +384,7 @@ func (client *GroupClient) listByServiceHandleResponse(resp *http.Response) (Gro
 
 // Update - Updates the details of the group specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // groupID - Group identifier. Must be unique in the current API Management service instance.
@@ -405,14 +433,14 @@ func (client *GroupClient) updateCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *GroupClient) updateHandleResponse(resp *http.Response) (GroupClientUpdateResponse, error) {
-	result := GroupClientUpdateResponse{RawResponse: resp}
+	result := GroupClientUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,71 +17,82 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/recoveryservices/armrecoveryservicesbackup"
 )
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/ClassicCompute_ProtectedItem_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/ClassicCompute_ProtectedItem_Get.json
 func ExampleProtectedItemsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectedItemsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectedItemsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<protected-item-name>",
+		"PySDKBackupTestRsVault",
+		"PythonSDKBackupTestRg",
+		"Azure",
+		"iaasvmcontainer;iaasvmcontainer;iaasvm-rg;iaasvm-1",
+		"vm;iaasvmcontainer;iaasvm-rg;iaasvm-1",
 		&armrecoveryservicesbackup.ProtectedItemsClientGetOptions{Filter: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectedItemsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/ConfigureProtection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/ConfigureProtection.json
 func ExampleProtectedItemsClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectedItemsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectedItemsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<protected-item-name>",
+		"NetSDKTestRsVault",
+		"SwaggerTestRg",
+		"Azure",
+		"IaasVMContainer;iaasvmcontainerv2;netsdktestrg;netvmtestv2vm1",
+		"VM;iaasvmcontainerv2;netsdktestrg;netvmtestv2vm1",
 		armrecoveryservicesbackup.ProtectedItemResource{
 			Properties: &armrecoveryservicesbackup.AzureIaaSComputeVMProtectedItem{
-				PolicyID:          to.StringPtr("<policy-id>"),
-				ProtectedItemType: to.StringPtr("<protected-item-type>"),
-				SourceResourceID:  to.StringPtr("<source-resource-id>"),
+				PolicyID:          to.Ptr("/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/SwaggerTestRg/providers/Microsoft.RecoveryServices/vaults/NetSDKTestRsVault/backupPolicies/DefaultPolicy"),
+				ProtectedItemType: to.Ptr("Microsoft.Compute/virtualMachines"),
+				SourceResourceID:  to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/netsdktestrg/providers/Microsoft.Compute/virtualMachines/netvmtestv2vm1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectedItemsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/Common/ProtectedItem_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/Common/ProtectedItem_Delete.json
 func ExampleProtectedItemsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectedItemsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectedItemsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<protected-item-name>",
+		"PySDKBackupTestRsVault",
+		"PythonSDKBackupTestRg",
+		"Azure",
+		"iaasvmcontainer;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
+		"vm;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

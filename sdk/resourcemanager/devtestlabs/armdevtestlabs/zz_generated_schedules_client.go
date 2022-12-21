@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type SchedulesClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSchedulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SchedulesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSchedulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SchedulesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SchedulesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or replace an existing schedule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
@@ -99,13 +105,13 @@ func (client *SchedulesClient) createOrUpdateCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, schedule)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SchedulesClient) createOrUpdateHandleResponse(resp *http.Response) (SchedulesClientCreateOrUpdateResponse, error) {
-	result := SchedulesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SchedulesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Schedule); err != nil {
 		return SchedulesClientCreateOrUpdateResponse{}, err
 	}
@@ -114,6 +120,7 @@ func (client *SchedulesClient) createOrUpdateHandleResponse(resp *http.Response)
 
 // Delete - Delete schedule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
@@ -130,7 +137,7 @@ func (client *SchedulesClient) Delete(ctx context.Context, resourceGroupName str
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return SchedulesClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SchedulesClientDeleteResponse{RawResponse: resp}, nil
+	return SchedulesClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -159,36 +166,32 @@ func (client *SchedulesClient) deleteCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginExecute - Execute a schedule. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
 // options - SchedulesClientBeginExecuteOptions contains the optional parameters for the SchedulesClient.BeginExecute method.
-func (client *SchedulesClient) BeginExecute(ctx context.Context, resourceGroupName string, labName string, name string, options *SchedulesClientBeginExecuteOptions) (SchedulesClientExecutePollerResponse, error) {
-	resp, err := client.execute(ctx, resourceGroupName, labName, name, options)
-	if err != nil {
-		return SchedulesClientExecutePollerResponse{}, err
+func (client *SchedulesClient) BeginExecute(ctx context.Context, resourceGroupName string, labName string, name string, options *SchedulesClientBeginExecuteOptions) (*runtime.Poller[SchedulesClientExecuteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.execute(ctx, resourceGroupName, labName, name, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[SchedulesClientExecuteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[SchedulesClientExecuteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := SchedulesClientExecutePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("SchedulesClient.Execute", "", resp, client.pl)
-	if err != nil {
-		return SchedulesClientExecutePollerResponse{}, err
-	}
-	result.Poller = &SchedulesClientExecutePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Execute - Execute a schedule. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 func (client *SchedulesClient) execute(ctx context.Context, resourceGroupName string, labName string, name string, options *SchedulesClientBeginExecuteOptions) (*http.Response, error) {
 	req, err := client.executeCreateRequest(ctx, resourceGroupName, labName, name, options)
 	if err != nil {
@@ -230,12 +233,13 @@ func (client *SchedulesClient) executeCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get schedule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
@@ -284,34 +288,51 @@ func (client *SchedulesClient) getCreateRequest(ctx context.Context, resourceGro
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SchedulesClient) getHandleResponse(resp *http.Response) (SchedulesClientGetResponse, error) {
-	result := SchedulesClientGetResponse{RawResponse: resp}
+	result := SchedulesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Schedule); err != nil {
 		return SchedulesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - List schedules in a given lab.
+// NewListPager - List schedules in a given lab.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // options - SchedulesClientListOptions contains the optional parameters for the SchedulesClient.List method.
-func (client *SchedulesClient) List(resourceGroupName string, labName string, options *SchedulesClientListOptions) *SchedulesClientListPager {
-	return &SchedulesClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, labName, options)
+func (client *SchedulesClient) NewListPager(resourceGroupName string, labName string, options *SchedulesClientListOptions) *runtime.Pager[SchedulesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SchedulesClientListResponse]{
+		More: func(page SchedulesClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SchedulesClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ScheduleList.NextLink)
+		Fetcher: func(ctx context.Context, page *SchedulesClientListResponse) (SchedulesClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, labName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SchedulesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SchedulesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SchedulesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -348,36 +369,53 @@ func (client *SchedulesClient) listCreateRequest(ctx context.Context, resourceGr
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *SchedulesClient) listHandleResponse(resp *http.Response) (SchedulesClientListResponse, error) {
-	result := SchedulesClientListResponse{RawResponse: resp}
+	result := SchedulesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScheduleList); err != nil {
 		return SchedulesClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListApplicable - Lists all applicable schedules
+// NewListApplicablePager - Lists all applicable schedules
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
 // options - SchedulesClientListApplicableOptions contains the optional parameters for the SchedulesClient.ListApplicable
 // method.
-func (client *SchedulesClient) ListApplicable(resourceGroupName string, labName string, name string, options *SchedulesClientListApplicableOptions) *SchedulesClientListApplicablePager {
-	return &SchedulesClientListApplicablePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listApplicableCreateRequest(ctx, resourceGroupName, labName, name, options)
+func (client *SchedulesClient) NewListApplicablePager(resourceGroupName string, labName string, name string, options *SchedulesClientListApplicableOptions) *runtime.Pager[SchedulesClientListApplicableResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SchedulesClientListApplicableResponse]{
+		More: func(page SchedulesClientListApplicableResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SchedulesClientListApplicableResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ScheduleList.NextLink)
+		Fetcher: func(ctx context.Context, page *SchedulesClientListApplicableResponse) (SchedulesClientListApplicableResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listApplicableCreateRequest(ctx, resourceGroupName, labName, name, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SchedulesClientListApplicableResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SchedulesClientListApplicableResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SchedulesClientListApplicableResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listApplicableHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listApplicableCreateRequest creates the ListApplicable request.
@@ -406,13 +444,13 @@ func (client *SchedulesClient) listApplicableCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listApplicableHandleResponse handles the ListApplicable response.
 func (client *SchedulesClient) listApplicableHandleResponse(resp *http.Response) (SchedulesClientListApplicableResponse, error) {
-	result := SchedulesClientListApplicableResponse{RawResponse: resp}
+	result := SchedulesClientListApplicableResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScheduleList); err != nil {
 		return SchedulesClientListApplicableResponse{}, err
 	}
@@ -421,6 +459,7 @@ func (client *SchedulesClient) listApplicableHandleResponse(resp *http.Response)
 
 // Update - Allows modifying tags of schedules. All other properties will be ignored.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the schedule.
@@ -467,13 +506,13 @@ func (client *SchedulesClient) updateCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, schedule)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *SchedulesClient) updateHandleResponse(resp *http.Response) (SchedulesClientUpdateResponse, error) {
-	result := SchedulesClientUpdateResponse{RawResponse: resp}
+	result := SchedulesClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Schedule); err != nil {
 		return SchedulesClientUpdateResponse{}, err
 	}

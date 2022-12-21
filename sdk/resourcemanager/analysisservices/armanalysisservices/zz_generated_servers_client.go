@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ServersClient struct {
 // every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServersClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServersClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServersClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Check the name availability in the target location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // location - The region name which the operation will lookup into.
 // serverParameters - Contains the information used to provision the Analysis Services server.
 // options - ServersClientCheckNameAvailabilityOptions contains the optional parameters for the ServersClient.CheckNameAvailability
@@ -89,13 +95,13 @@ func (client *ServersClient) checkNameAvailabilityCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serverParameters)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *ServersClient) checkNameAvailabilityHandleResponse(resp *http.Response) (ServersClientCheckNameAvailabilityResponse, error) {
-	result := ServersClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := ServersClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CheckServerNameAvailabilityResult); err != nil {
 		return ServersClientCheckNameAvailabilityResponse{}, err
 	}
@@ -104,31 +110,27 @@ func (client *ServersClient) checkNameAvailabilityHandleResponse(resp *http.Resp
 
 // BeginCreate - Provisions the specified Analysis Services server based on the configuration specified in the request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be a minimum of 3 characters, and a maximum of 63.
 // serverParameters - Contains the information used to provision the Analysis Services server.
 // options - ServersClientBeginCreateOptions contains the optional parameters for the ServersClient.BeginCreate method.
-func (client *ServersClient) BeginCreate(ctx context.Context, resourceGroupName string, serverName string, serverParameters Server, options *ServersClientBeginCreateOptions) (ServersClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, serverName, serverParameters, options)
-	if err != nil {
-		return ServersClientCreatePollerResponse{}, err
+func (client *ServersClient) BeginCreate(ctx context.Context, resourceGroupName string, serverName string, serverParameters Server, options *ServersClientBeginCreateOptions) (*runtime.Poller[ServersClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, serverName, serverParameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServersClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServersClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServersClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServersClient.Create", "", resp, client.pl)
-	if err != nil {
-		return ServersClientCreatePollerResponse{}, err
-	}
-	result.Poller = &ServersClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Provisions the specified Analysis Services server based on the configuration specified in the request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 func (client *ServersClient) create(ctx context.Context, resourceGroupName string, serverName string, serverParameters Server, options *ServersClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, serverName, serverParameters, options)
 	if err != nil {
@@ -166,36 +168,32 @@ func (client *ServersClient) createCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serverParameters)
 }
 
 // BeginDelete - Deletes the specified Analysis Services server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
 // options - ServersClientBeginDeleteOptions contains the optional parameters for the ServersClient.BeginDelete method.
-func (client *ServersClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginDeleteOptions) (ServersClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, options)
-	if err != nil {
-		return ServersClientDeletePollerResponse{}, err
+func (client *ServersClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginDeleteOptions) (*runtime.Poller[ServersClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServersClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServersClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServersClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServersClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return ServersClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ServersClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the specified Analysis Services server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 func (client *ServersClient) deleteOperation(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, serverName, options)
 	if err != nil {
@@ -233,12 +231,13 @@ func (client *ServersClient) deleteCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // DissociateGateway - Dissociates a Unified Gateway associated with the server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
@@ -256,7 +255,7 @@ func (client *ServersClient) DissociateGateway(ctx context.Context, resourceGrou
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return ServersClientDissociateGatewayResponse{}, runtime.NewResponseError(resp)
 	}
-	return ServersClientDissociateGatewayResponse{RawResponse: resp}, nil
+	return ServersClientDissociateGatewayResponse{}, nil
 }
 
 // dissociateGatewayCreateRequest creates the DissociateGateway request.
@@ -281,12 +280,13 @@ func (client *ServersClient) dissociateGatewayCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // GetDetails - Gets details about the specified Analysis Services server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be a minimum of 3 characters, and a maximum of 63.
@@ -328,35 +328,43 @@ func (client *ServersClient) getDetailsCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getDetailsHandleResponse handles the GetDetails response.
 func (client *ServersClient) getDetailsHandleResponse(resp *http.Response) (ServersClientGetDetailsResponse, error) {
-	result := ServersClientGetDetailsResponse{RawResponse: resp}
+	result := ServersClientGetDetailsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Server); err != nil {
 		return ServersClientGetDetailsResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Lists all the Analysis Services servers for the given subscription.
+// NewListPager - Lists all the Analysis Services servers for the given subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // options - ServersClientListOptions contains the optional parameters for the ServersClient.List method.
-func (client *ServersClient) List(ctx context.Context, options *ServersClientListOptions) (ServersClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, options)
-	if err != nil {
-		return ServersClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ServersClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ServersClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *ServersClient) NewListPager(options *ServersClientListOptions) *runtime.Pager[ServersClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServersClientListResponse]{
+		More: func(page ServersClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *ServersClientListResponse) (ServersClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, options)
+			if err != nil {
+				return ServersClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServersClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServersClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -373,38 +381,46 @@ func (client *ServersClient) listCreateRequest(ctx context.Context, options *Ser
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ServersClient) listHandleResponse(resp *http.Response) (ServersClientListResponse, error) {
-	result := ServersClientListResponse{RawResponse: resp}
+	result := ServersClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Servers); err != nil {
 		return ServersClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets all the Analysis Services servers for the given resource group.
+// NewListByResourceGroupPager - Gets all the Analysis Services servers for the given resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // options - ServersClientListByResourceGroupOptions contains the optional parameters for the ServersClient.ListByResourceGroup
 // method.
-func (client *ServersClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, options *ServersClientListByResourceGroupOptions) (ServersClientListByResourceGroupResponse, error) {
-	req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
-	if err != nil {
-		return ServersClientListByResourceGroupResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ServersClientListByResourceGroupResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ServersClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listByResourceGroupHandleResponse(resp)
+func (client *ServersClient) NewListByResourceGroupPager(resourceGroupName string, options *ServersClientListByResourceGroupOptions) *runtime.Pager[ServersClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServersClientListByResourceGroupResponse]{
+		More: func(page ServersClientListByResourceGroupResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *ServersClientListByResourceGroupResponse) (ServersClientListByResourceGroupResponse, error) {
+			req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			if err != nil {
+				return ServersClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServersClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServersClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
+		},
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -425,13 +441,13 @@ func (client *ServersClient) listByResourceGroupCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ServersClient) listByResourceGroupHandleResponse(resp *http.Response) (ServersClientListByResourceGroupResponse, error) {
-	result := ServersClientListByResourceGroupResponse{RawResponse: resp}
+	result := ServersClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Servers); err != nil {
 		return ServersClientListByResourceGroupResponse{}, err
 	}
@@ -440,6 +456,7 @@ func (client *ServersClient) listByResourceGroupHandleResponse(resp *http.Respon
 
 // ListGatewayStatus - Return the gateway status of the specified Analysis Services server instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server.
@@ -482,13 +499,13 @@ func (client *ServersClient) listGatewayStatusCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listGatewayStatusHandleResponse handles the ListGatewayStatus response.
 func (client *ServersClient) listGatewayStatusHandleResponse(resp *http.Response) (ServersClientListGatewayStatusResponse, error) {
-	result := ServersClientListGatewayStatusResponse{RawResponse: resp}
+	result := ServersClientListGatewayStatusResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayListStatusLive); err != nil {
 		return ServersClientListGatewayStatusResponse{}, err
 	}
@@ -497,6 +514,7 @@ func (client *ServersClient) listGatewayStatusHandleResponse(resp *http.Response
 
 // ListOperationResults - List the result of the specified operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // location - The region name which the operation will lookup into.
 // operationID - The target operation Id.
 // options - ServersClientListOperationResultsOptions contains the optional parameters for the ServersClient.ListOperationResults
@@ -513,7 +531,7 @@ func (client *ServersClient) ListOperationResults(ctx context.Context, location 
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
 		return ServersClientListOperationResultsResponse{}, runtime.NewResponseError(resp)
 	}
-	return ServersClientListOperationResultsResponse{RawResponse: resp}, nil
+	return ServersClientListOperationResultsResponse{}, nil
 }
 
 // listOperationResultsCreateRequest creates the ListOperationResults request.
@@ -538,12 +556,13 @@ func (client *ServersClient) listOperationResultsCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // ListOperationStatuses - List the status of operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // location - The region name which the operation will lookup into.
 // operationID - The target operation Id.
 // options - ServersClientListOperationStatusesOptions contains the optional parameters for the ServersClient.ListOperationStatuses
@@ -585,13 +604,13 @@ func (client *ServersClient) listOperationStatusesCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listOperationStatusesHandleResponse handles the ListOperationStatuses response.
 func (client *ServersClient) listOperationStatusesHandleResponse(resp *http.Response) (ServersClientListOperationStatusesResponse, error) {
-	result := ServersClientListOperationStatusesResponse{RawResponse: resp}
+	result := ServersClientListOperationStatusesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.OperationStatus); err != nil {
 		return ServersClientListOperationStatusesResponse{}, err
 	}
@@ -600,6 +619,7 @@ func (client *ServersClient) listOperationStatusesHandleResponse(resp *http.Resp
 
 // ListSKUsForExisting - Lists eligible SKUs for an Analysis Services resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
@@ -642,13 +662,13 @@ func (client *ServersClient) listSKUsForExistingCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSKUsForExistingHandleResponse handles the ListSKUsForExisting response.
 func (client *ServersClient) listSKUsForExistingHandleResponse(resp *http.Response) (ServersClientListSKUsForExistingResponse, error) {
-	result := ServersClientListSKUsForExistingResponse{RawResponse: resp}
+	result := ServersClientListSKUsForExistingResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SKUEnumerationForExistingResourceResult); err != nil {
 		return ServersClientListSKUsForExistingResponse{}, err
 	}
@@ -657,6 +677,7 @@ func (client *ServersClient) listSKUsForExistingHandleResponse(resp *http.Respon
 
 // ListSKUsForNew - Lists eligible SKUs for Analysis Services resource provider.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // options - ServersClientListSKUsForNewOptions contains the optional parameters for the ServersClient.ListSKUsForNew method.
 func (client *ServersClient) ListSKUsForNew(ctx context.Context, options *ServersClientListSKUsForNewOptions) (ServersClientListSKUsForNewResponse, error) {
 	req, err := client.listSKUsForNewCreateRequest(ctx, options)
@@ -687,13 +708,13 @@ func (client *ServersClient) listSKUsForNewCreateRequest(ctx context.Context, op
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSKUsForNewHandleResponse handles the ListSKUsForNew response.
 func (client *ServersClient) listSKUsForNewHandleResponse(resp *http.Response) (ServersClientListSKUsForNewResponse, error) {
-	result := ServersClientListSKUsForNewResponse{RawResponse: resp}
+	result := ServersClientListSKUsForNewResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SKUEnumerationForNewResourceResult); err != nil {
 		return ServersClientListSKUsForNewResponse{}, err
 	}
@@ -702,30 +723,26 @@ func (client *ServersClient) listSKUsForNewHandleResponse(resp *http.Response) (
 
 // BeginResume - Resumes operation of the specified Analysis Services server instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
 // options - ServersClientBeginResumeOptions contains the optional parameters for the ServersClient.BeginResume method.
-func (client *ServersClient) BeginResume(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginResumeOptions) (ServersClientResumePollerResponse, error) {
-	resp, err := client.resume(ctx, resourceGroupName, serverName, options)
-	if err != nil {
-		return ServersClientResumePollerResponse{}, err
+func (client *ServersClient) BeginResume(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginResumeOptions) (*runtime.Poller[ServersClientResumeResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.resume(ctx, resourceGroupName, serverName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServersClientResumeResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServersClientResumeResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServersClientResumePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServersClient.Resume", "", resp, client.pl)
-	if err != nil {
-		return ServersClientResumePollerResponse{}, err
-	}
-	result.Poller = &ServersClientResumePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Resume - Resumes operation of the specified Analysis Services server instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 func (client *ServersClient) resume(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginResumeOptions) (*http.Response, error) {
 	req, err := client.resumeCreateRequest(ctx, resourceGroupName, serverName, options)
 	if err != nil {
@@ -763,36 +780,32 @@ func (client *ServersClient) resumeCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginSuspend - Suspends operation of the specified Analysis Services server instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
 // options - ServersClientBeginSuspendOptions contains the optional parameters for the ServersClient.BeginSuspend method.
-func (client *ServersClient) BeginSuspend(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginSuspendOptions) (ServersClientSuspendPollerResponse, error) {
-	resp, err := client.suspend(ctx, resourceGroupName, serverName, options)
-	if err != nil {
-		return ServersClientSuspendPollerResponse{}, err
+func (client *ServersClient) BeginSuspend(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginSuspendOptions) (*runtime.Poller[ServersClientSuspendResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.suspend(ctx, resourceGroupName, serverName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServersClientSuspendResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServersClientSuspendResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServersClientSuspendPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServersClient.Suspend", "", resp, client.pl)
-	if err != nil {
-		return ServersClientSuspendPollerResponse{}, err
-	}
-	result.Poller = &ServersClientSuspendPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Suspend - Suspends operation of the specified Analysis Services server instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 func (client *ServersClient) suspend(ctx context.Context, resourceGroupName string, serverName string, options *ServersClientBeginSuspendOptions) (*http.Response, error) {
 	req, err := client.suspendCreateRequest(ctx, resourceGroupName, serverName, options)
 	if err != nil {
@@ -830,37 +843,33 @@ func (client *ServersClient) suspendCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginUpdate - Updates the current state of the specified Analysis Services server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 // resourceGroupName - The name of the Azure Resource group of which a given Analysis Services server is part. This name must
 // be at least 1 character in length, and no more than 90.
 // serverName - The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63.
 // serverUpdateParameters - Request object that contains the updated information for the server.
 // options - ServersClientBeginUpdateOptions contains the optional parameters for the ServersClient.BeginUpdate method.
-func (client *ServersClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverName string, serverUpdateParameters ServerUpdateParameters, options *ServersClientBeginUpdateOptions) (ServersClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, serverName, serverUpdateParameters, options)
-	if err != nil {
-		return ServersClientUpdatePollerResponse{}, err
+func (client *ServersClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverName string, serverUpdateParameters ServerUpdateParameters, options *ServersClientBeginUpdateOptions) (*runtime.Poller[ServersClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, serverName, serverUpdateParameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServersClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServersClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServersClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServersClient.Update", "", resp, client.pl)
-	if err != nil {
-		return ServersClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &ServersClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates the current state of the specified Analysis Services server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2017-08-01
 func (client *ServersClient) update(ctx context.Context, resourceGroupName string, serverName string, serverUpdateParameters ServerUpdateParameters, options *ServersClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, serverName, serverUpdateParameters, options)
 	if err != nil {
@@ -898,6 +907,6 @@ func (client *ServersClient) updateCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2017-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serverUpdateParameters)
 }

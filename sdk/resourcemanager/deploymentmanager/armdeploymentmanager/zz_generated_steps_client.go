@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type StepsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewStepsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *StepsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewStepsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*StepsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &StepsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Synchronously creates a new step or updates an existing step.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // stepName - The name of the deployment step.
 // options - StepsClientCreateOrUpdateOptions contains the optional parameters for the StepsClient.CreateOrUpdate method.
@@ -92,7 +98,7 @@ func (client *StepsClient) createOrUpdateCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.StepInfo != nil {
 		return req, runtime.MarshalAsJSON(req, *options.StepInfo)
 	}
@@ -101,7 +107,7 @@ func (client *StepsClient) createOrUpdateCreateRequest(ctx context.Context, reso
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *StepsClient) createOrUpdateHandleResponse(resp *http.Response) (StepsClientCreateOrUpdateResponse, error) {
-	result := StepsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := StepsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.StepResource); err != nil {
 		return StepsClientCreateOrUpdateResponse{}, err
 	}
@@ -110,6 +116,7 @@ func (client *StepsClient) createOrUpdateHandleResponse(resp *http.Response) (St
 
 // Delete - Deletes the step.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // stepName - The name of the deployment step.
 // options - StepsClientDeleteOptions contains the optional parameters for the StepsClient.Delete method.
@@ -125,7 +132,7 @@ func (client *StepsClient) Delete(ctx context.Context, resourceGroupName string,
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return StepsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return StepsClientDeleteResponse{RawResponse: resp}, nil
+	return StepsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -150,12 +157,13 @@ func (client *StepsClient) deleteCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the step.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // stepName - The name of the deployment step.
 // options - StepsClientGetOptions contains the optional parameters for the StepsClient.Get method.
@@ -196,13 +204,13 @@ func (client *StepsClient) getCreateRequest(ctx context.Context, resourceGroupNa
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *StepsClient) getHandleResponse(resp *http.Response) (StepsClientGetResponse, error) {
-	result := StepsClientGetResponse{RawResponse: resp}
+	result := StepsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.StepResource); err != nil {
 		return StepsClientGetResponse{}, err
 	}
@@ -211,6 +219,7 @@ func (client *StepsClient) getHandleResponse(resp *http.Response) (StepsClientGe
 
 // List - Lists the steps in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - StepsClientListOptions contains the optional parameters for the StepsClient.List method.
 func (client *StepsClient) List(ctx context.Context, resourceGroupName string, options *StepsClientListOptions) (StepsClientListResponse, error) {
@@ -246,13 +255,13 @@ func (client *StepsClient) listCreateRequest(ctx context.Context, resourceGroupN
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *StepsClient) listHandleResponse(resp *http.Response) (StepsClientListResponse, error) {
-	result := StepsClientListResponse{RawResponse: resp}
+	result := StepsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.StepResourceArray); err != nil {
 		return StepsClientListResponse{}, err
 	}

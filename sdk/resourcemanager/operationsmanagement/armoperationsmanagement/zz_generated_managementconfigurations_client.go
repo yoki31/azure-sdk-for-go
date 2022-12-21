@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ManagementConfigurationsClient struct {
 // forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewManagementConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ManagementConfigurationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewManagementConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ManagementConfigurationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ManagementConfigurationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates the ManagementConfiguration.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-11-01-preview
 // resourceGroupName - The name of the resource group to get. The name is case insensitive.
 // managementConfigurationName - User Management Configuration Name.
 // parameters - The parameters required to create OMS Solution.
@@ -94,13 +100,13 @@ func (client *ManagementConfigurationsClient) createOrUpdateCreateRequest(ctx co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ManagementConfigurationsClient) createOrUpdateHandleResponse(resp *http.Response) (ManagementConfigurationsClientCreateOrUpdateResponse, error) {
-	result := ManagementConfigurationsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ManagementConfigurationsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementConfiguration); err != nil {
 		return ManagementConfigurationsClientCreateOrUpdateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *ManagementConfigurationsClient) createOrUpdateHandleResponse(resp 
 
 // Delete - Deletes the ManagementConfiguration in the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-11-01-preview
 // resourceGroupName - The name of the resource group to get. The name is case insensitive.
 // managementConfigurationName - User Management Configuration Name.
 // options - ManagementConfigurationsClientDeleteOptions contains the optional parameters for the ManagementConfigurationsClient.Delete
@@ -125,7 +132,7 @@ func (client *ManagementConfigurationsClient) Delete(ctx context.Context, resour
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return ManagementConfigurationsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ManagementConfigurationsClientDeleteResponse{RawResponse: resp}, nil
+	return ManagementConfigurationsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -150,12 +157,13 @@ func (client *ManagementConfigurationsClient) deleteCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Retrieves the user ManagementConfiguration.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-11-01-preview
 // resourceGroupName - The name of the resource group to get. The name is case insensitive.
 // managementConfigurationName - User Management Configuration Name.
 // options - ManagementConfigurationsClientGetOptions contains the optional parameters for the ManagementConfigurationsClient.Get
@@ -197,13 +205,13 @@ func (client *ManagementConfigurationsClient) getCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ManagementConfigurationsClient) getHandleResponse(resp *http.Response) (ManagementConfigurationsClientGetResponse, error) {
-	result := ManagementConfigurationsClientGetResponse{RawResponse: resp}
+	result := ManagementConfigurationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementConfiguration); err != nil {
 		return ManagementConfigurationsClientGetResponse{}, err
 	}
@@ -212,6 +220,7 @@ func (client *ManagementConfigurationsClient) getHandleResponse(resp *http.Respo
 
 // ListBySubscription - Retrieves the ManagementConfigurations list.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-11-01-preview
 // options - ManagementConfigurationsClientListBySubscriptionOptions contains the optional parameters for the ManagementConfigurationsClient.ListBySubscription
 // method.
 func (client *ManagementConfigurationsClient) ListBySubscription(ctx context.Context, options *ManagementConfigurationsClientListBySubscriptionOptions) (ManagementConfigurationsClientListBySubscriptionResponse, error) {
@@ -243,13 +252,13 @@ func (client *ManagementConfigurationsClient) listBySubscriptionCreateRequest(ct
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *ManagementConfigurationsClient) listBySubscriptionHandleResponse(resp *http.Response) (ManagementConfigurationsClientListBySubscriptionResponse, error) {
-	result := ManagementConfigurationsClientListBySubscriptionResponse{RawResponse: resp}
+	result := ManagementConfigurationsClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementConfigurationPropertiesList); err != nil {
 		return ManagementConfigurationsClientListBySubscriptionResponse{}, err
 	}

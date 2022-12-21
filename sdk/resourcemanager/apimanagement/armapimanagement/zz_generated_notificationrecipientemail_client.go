@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,23 +35,28 @@ type NotificationRecipientEmailClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewNotificationRecipientEmailClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *NotificationRecipientEmailClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewNotificationRecipientEmailClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*NotificationRecipientEmailClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &NotificationRecipientEmailClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckEntityExists - Determine if Notification Recipient Email subscribed to the notification.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // notificationName - Notification Name Identifier.
@@ -66,11 +72,10 @@ func (client *NotificationRecipientEmailClient) CheckEntityExists(ctx context.Co
 	if err != nil {
 		return NotificationRecipientEmailClientCheckEntityExistsResponse{}, err
 	}
-	result := NotificationRecipientEmailClientCheckEntityExistsResponse{RawResponse: resp}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
+	if !runtime.HasStatusCode(resp, http.StatusNoContent, http.StatusNotFound) {
+		return NotificationRecipientEmailClientCheckEntityExistsResponse{}, runtime.NewResponseError(resp)
 	}
-	return result, nil
+	return NotificationRecipientEmailClientCheckEntityExistsResponse{Success: resp.StatusCode >= 200 && resp.StatusCode < 300}, nil
 }
 
 // checkEntityExistsCreateRequest creates the CheckEntityExists request.
@@ -103,12 +108,13 @@ func (client *NotificationRecipientEmailClient) checkEntityExistsCreateRequest(c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // CreateOrUpdate - Adds the Email address to the list of Recipients for the Notification.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // notificationName - Notification Name Identifier.
@@ -160,13 +166,13 @@ func (client *NotificationRecipientEmailClient) createOrUpdateCreateRequest(ctx 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *NotificationRecipientEmailClient) createOrUpdateHandleResponse(resp *http.Response) (NotificationRecipientEmailClientCreateOrUpdateResponse, error) {
-	result := NotificationRecipientEmailClientCreateOrUpdateResponse{RawResponse: resp}
+	result := NotificationRecipientEmailClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecipientEmailContract); err != nil {
 		return NotificationRecipientEmailClientCreateOrUpdateResponse{}, err
 	}
@@ -175,6 +181,7 @@ func (client *NotificationRecipientEmailClient) createOrUpdateHandleResponse(res
 
 // Delete - Removes the email from the list of Notification.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // notificationName - Notification Name Identifier.
@@ -193,7 +200,7 @@ func (client *NotificationRecipientEmailClient) Delete(ctx context.Context, reso
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return NotificationRecipientEmailClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return NotificationRecipientEmailClientDeleteResponse{RawResponse: resp}, nil
+	return NotificationRecipientEmailClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -226,12 +233,13 @@ func (client *NotificationRecipientEmailClient) deleteCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // ListByNotification - Gets the list of the Notification Recipient Emails subscribed to a notification.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // notificationName - Notification Name Identifier.
@@ -278,13 +286,13 @@ func (client *NotificationRecipientEmailClient) listByNotificationCreateRequest(
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByNotificationHandleResponse handles the ListByNotification response.
 func (client *NotificationRecipientEmailClient) listByNotificationHandleResponse(resp *http.Response) (NotificationRecipientEmailClientListByNotificationResponse, error) {
-	result := NotificationRecipientEmailClientListByNotificationResponse{RawResponse: resp}
+	result := NotificationRecipientEmailClientListByNotificationResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecipientEmailCollection); err != nil {
 		return NotificationRecipientEmailClientListByNotificationResponse{}, err
 	}

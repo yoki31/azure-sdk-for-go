@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,51 @@ type PrivateLinkServicesForO365ManagementActivityAPIClient struct {
 // subscriptionID - The subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPrivateLinkServicesForO365ManagementActivityAPIClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *PrivateLinkServicesForO365ManagementActivityAPIClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPrivateLinkServicesForO365ManagementActivityAPIClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*PrivateLinkServicesForO365ManagementActivityAPIClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PrivateLinkServicesForO365ManagementActivityAPIClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create or update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // resourceGroupName - The name of the resource group that contains the service instance.
 // resourceName - The name of the service instance.
 // privateLinkServicesForO365ManagementActivityAPIDescription - The service instance metadata.
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientBeginCreateOrUpdateOptions contains the optional parameters
 // for the PrivateLinkServicesForO365ManagementActivityAPIClient.BeginCreateOrUpdate method.
-func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, privateLinkServicesForO365ManagementActivityAPIDescription PrivateLinkServicesForO365ManagementActivityAPIDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginCreateOrUpdateOptions) (PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, resourceName, privateLinkServicesForO365ManagementActivityAPIDescription, options)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdatePollerResponse{}, err
+func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, privateLinkServicesForO365ManagementActivityAPIDescription PrivateLinkServicesForO365ManagementActivityAPIDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginCreateOrUpdateOptions) (*runtime.Poller[PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, resourceName, privateLinkServicesForO365ManagementActivityAPIDescription, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("PrivateLinkServicesForO365ManagementActivityAPIClient.CreateOrUpdate", "location", resp, client.pl)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &PrivateLinkServicesForO365ManagementActivityAPIClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) createOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, privateLinkServicesForO365ManagementActivityAPIDescription PrivateLinkServicesForO365ManagementActivityAPIDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, resourceName, privateLinkServicesForO365ManagementActivityAPIDescription, options)
 	if err != nil {
@@ -113,36 +116,34 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) createOrUpd
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, privateLinkServicesForO365ManagementActivityAPIDescription)
 }
 
 // BeginDelete - Delete a service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // resourceGroupName - The name of the resource group that contains the service instance.
 // resourceName - The name of the service instance.
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientBeginDeleteOptions contains the optional parameters for
 // the PrivateLinkServicesForO365ManagementActivityAPIClient.BeginDelete method.
-func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginDelete(ctx context.Context, resourceGroupName string, resourceName string, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginDeleteOptions) (PrivateLinkServicesForO365ManagementActivityAPIClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, resourceName, options)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientDeletePollerResponse{}, err
+func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginDelete(ctx context.Context, resourceGroupName string, resourceName string, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginDeleteOptions) (*runtime.Poller[PrivateLinkServicesForO365ManagementActivityAPIClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, resourceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[PrivateLinkServicesForO365ManagementActivityAPIClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[PrivateLinkServicesForO365ManagementActivityAPIClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("PrivateLinkServicesForO365ManagementActivityAPIClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientDeletePollerResponse{}, err
-	}
-	result.Poller = &PrivateLinkServicesForO365ManagementActivityAPIClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) deleteOperation(ctx context.Context, resourceGroupName string, resourceName string, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, resourceName, options)
 	if err != nil {
@@ -180,12 +181,13 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) deleteCreat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get the metadata of a privateLinkServicesForO365ManagementActivityAPI resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // resourceGroupName - The name of the resource group that contains the service instance.
 // resourceName - The name of the service instance.
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientGetOptions contains the optional parameters for the PrivateLinkServicesForO365ManagementActivityAPIClient.Get
@@ -227,33 +229,50 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) getCreateRe
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) getHandleResponse(resp *http.Response) (PrivateLinkServicesForO365ManagementActivityAPIClientGetResponse, error) {
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientGetResponse{RawResponse: resp}
+	result := PrivateLinkServicesForO365ManagementActivityAPIClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkServicesForO365ManagementActivityAPIDescription); err != nil {
 		return PrivateLinkServicesForO365ManagementActivityAPIClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Get all the privateLinkServicesForO365ManagementActivityAPI instances in a subscription.
+// NewListPager - Get all the privateLinkServicesForO365ManagementActivityAPI instances in a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientListOptions contains the optional parameters for the PrivateLinkServicesForO365ManagementActivityAPIClient.List
 // method.
-func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) List(options *PrivateLinkServicesForO365ManagementActivityAPIClientListOptions) *PrivateLinkServicesForO365ManagementActivityAPIClientListPager {
-	return &PrivateLinkServicesForO365ManagementActivityAPIClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) NewListPager(options *PrivateLinkServicesForO365ManagementActivityAPIClientListOptions) *runtime.Pager[PrivateLinkServicesForO365ManagementActivityAPIClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PrivateLinkServicesForO365ManagementActivityAPIClientListResponse]{
+		More: func(page PrivateLinkServicesForO365ManagementActivityAPIClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PrivateLinkServicesForO365ManagementActivityAPIClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PrivateLinkServicesForO365ManagementActivityAPIDescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *PrivateLinkServicesForO365ManagementActivityAPIClientListResponse) (PrivateLinkServicesForO365ManagementActivityAPIClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -270,34 +289,51 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) listCreateR
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) listHandleResponse(resp *http.Response) (PrivateLinkServicesForO365ManagementActivityAPIClientListResponse, error) {
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{RawResponse: resp}
+	result := PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkServicesForO365ManagementActivityAPIDescriptionListResult); err != nil {
 		return PrivateLinkServicesForO365ManagementActivityAPIClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Get all the service instances in a resource group.
+// NewListByResourceGroupPager - Get all the service instances in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // resourceGroupName - The name of the resource group that contains the service instance.
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupOptions contains the optional parameters
 // for the PrivateLinkServicesForO365ManagementActivityAPIClient.ListByResourceGroup method.
-func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) ListByResourceGroup(resourceGroupName string, options *PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupOptions) *PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupPager {
-	return &PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) NewListByResourceGroupPager(resourceGroupName string, options *PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupOptions) *runtime.Pager[PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse]{
+		More: func(page PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PrivateLinkServicesForO365ManagementActivityAPIDescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse) (PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -318,13 +354,13 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) listByResou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) listByResourceGroupHandleResponse(resp *http.Response) (PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse, error) {
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{RawResponse: resp}
+	result := PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkServicesForO365ManagementActivityAPIDescriptionListResult); err != nil {
 		return PrivateLinkServicesForO365ManagementActivityAPIClientListByResourceGroupResponse{}, err
 	}
@@ -333,31 +369,29 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) listByResou
 
 // BeginUpdate - Update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 // resourceGroupName - The name of the resource group that contains the service instance.
 // resourceName - The name of the service instance.
 // servicePatchDescription - The service instance metadata and security metadata.
 // options - PrivateLinkServicesForO365ManagementActivityAPIClientBeginUpdateOptions contains the optional parameters for
 // the PrivateLinkServicesForO365ManagementActivityAPIClient.BeginUpdate method.
-func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginUpdate(ctx context.Context, resourceGroupName string, resourceName string, servicePatchDescription ServicesPatchDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginUpdateOptions) (PrivateLinkServicesForO365ManagementActivityAPIClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, resourceName, servicePatchDescription, options)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientUpdatePollerResponse{}, err
+func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) BeginUpdate(ctx context.Context, resourceGroupName string, resourceName string, servicePatchDescription ServicesPatchDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginUpdateOptions) (*runtime.Poller[PrivateLinkServicesForO365ManagementActivityAPIClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, resourceName, servicePatchDescription, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[PrivateLinkServicesForO365ManagementActivityAPIClientUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[PrivateLinkServicesForO365ManagementActivityAPIClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := PrivateLinkServicesForO365ManagementActivityAPIClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("PrivateLinkServicesForO365ManagementActivityAPIClient.Update", "location", resp, client.pl)
-	if err != nil {
-		return PrivateLinkServicesForO365ManagementActivityAPIClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &PrivateLinkServicesForO365ManagementActivityAPIClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-03-25-preview
 func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) update(ctx context.Context, resourceGroupName string, resourceName string, servicePatchDescription ServicesPatchDescription, options *PrivateLinkServicesForO365ManagementActivityAPIClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, resourceName, servicePatchDescription, options)
 	if err != nil {
@@ -395,6 +429,6 @@ func (client *PrivateLinkServicesForO365ManagementActivityAPIClient) updateCreat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-03-25-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, servicePatchDescription)
 }

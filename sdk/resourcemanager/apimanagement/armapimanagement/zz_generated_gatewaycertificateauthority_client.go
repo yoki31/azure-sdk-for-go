@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type GatewayCertificateAuthorityClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewGatewayCertificateAuthorityClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *GatewayCertificateAuthorityClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewGatewayCertificateAuthorityClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*GatewayCertificateAuthorityClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &GatewayCertificateAuthorityClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Assign Certificate entity to Gateway entity as Certificate Authority.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // gatewayID - Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value
@@ -106,15 +112,15 @@ func (client *GatewayCertificateAuthorityClient) createOrUpdateCreateRequest(ctx
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *GatewayCertificateAuthorityClient) createOrUpdateHandleResponse(resp *http.Response) (GatewayCertificateAuthorityClientCreateOrUpdateResponse, error) {
-	result := GatewayCertificateAuthorityClientCreateOrUpdateResponse{RawResponse: resp}
+	result := GatewayCertificateAuthorityClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -126,6 +132,7 @@ func (client *GatewayCertificateAuthorityClient) createOrUpdateHandleResponse(re
 
 // Delete - Remove relationship between Certificate Authority and Gateway entity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // gatewayID - Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value
@@ -147,7 +154,7 @@ func (client *GatewayCertificateAuthorityClient) Delete(ctx context.Context, res
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return GatewayCertificateAuthorityClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return GatewayCertificateAuthorityClientDeleteResponse{RawResponse: resp}, nil
+	return GatewayCertificateAuthorityClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -180,13 +187,14 @@ func (client *GatewayCertificateAuthorityClient) deleteCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get assigned Gateway Certificate Authority details.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // gatewayID - Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value
@@ -239,13 +247,13 @@ func (client *GatewayCertificateAuthorityClient) getCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *GatewayCertificateAuthorityClient) getHandleResponse(resp *http.Response) (GatewayCertificateAuthorityClientGetResponse, error) {
-	result := GatewayCertificateAuthorityClientGetResponse{RawResponse: resp}
+	result := GatewayCertificateAuthorityClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -256,6 +264,7 @@ func (client *GatewayCertificateAuthorityClient) getHandleResponse(resp *http.Re
 }
 
 // GetEntityTag - Checks if Certificate entity is assigned to Gateway entity as Certificate Authority.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // gatewayID - Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value
@@ -271,6 +280,9 @@ func (client *GatewayCertificateAuthorityClient) GetEntityTag(ctx context.Contex
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return GatewayCertificateAuthorityClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return GatewayCertificateAuthorityClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -305,40 +317,55 @@ func (client *GatewayCertificateAuthorityClient) getEntityTagCreateRequest(ctx c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *GatewayCertificateAuthorityClient) getEntityTagHandleResponse(resp *http.Response) (GatewayCertificateAuthorityClientGetEntityTagResponse, error) {
-	result := GatewayCertificateAuthorityClientGetEntityTagResponse{RawResponse: resp}
+	result := GatewayCertificateAuthorityClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists the collection of Certificate Authorities for the specified Gateway entity.
+// NewListByServicePager - Lists the collection of Certificate Authorities for the specified Gateway entity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // gatewayID - Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value
 // 'managed'
 // options - GatewayCertificateAuthorityClientListByServiceOptions contains the optional parameters for the GatewayCertificateAuthorityClient.ListByService
 // method.
-func (client *GatewayCertificateAuthorityClient) ListByService(resourceGroupName string, serviceName string, gatewayID string, options *GatewayCertificateAuthorityClientListByServiceOptions) *GatewayCertificateAuthorityClientListByServicePager {
-	return &GatewayCertificateAuthorityClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, gatewayID, options)
+func (client *GatewayCertificateAuthorityClient) NewListByServicePager(resourceGroupName string, serviceName string, gatewayID string, options *GatewayCertificateAuthorityClientListByServiceOptions) *runtime.Pager[GatewayCertificateAuthorityClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[GatewayCertificateAuthorityClientListByServiceResponse]{
+		More: func(page GatewayCertificateAuthorityClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp GatewayCertificateAuthorityClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.GatewayCertificateAuthorityCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *GatewayCertificateAuthorityClientListByServiceResponse) (GatewayCertificateAuthorityClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, gatewayID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return GatewayCertificateAuthorityClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return GatewayCertificateAuthorityClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return GatewayCertificateAuthorityClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -376,13 +403,13 @@ func (client *GatewayCertificateAuthorityClient) listByServiceCreateRequest(ctx 
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *GatewayCertificateAuthorityClient) listByServiceHandleResponse(resp *http.Response) (GatewayCertificateAuthorityClientListByServiceResponse, error) {
-	result := GatewayCertificateAuthorityClientListByServiceResponse{RawResponse: resp}
+	result := GatewayCertificateAuthorityClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayCertificateAuthorityCollection); err != nil {
 		return GatewayCertificateAuthorityClientListByServiceResponse{}, err
 	}

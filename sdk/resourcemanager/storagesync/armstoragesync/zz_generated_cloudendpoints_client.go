@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type CloudEndpointsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewCloudEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *CloudEndpointsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewCloudEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*CloudEndpointsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &CloudEndpointsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Create a new CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -58,26 +64,21 @@ func NewCloudEndpointsClient(subscriptionID string, credential azcore.TokenCrede
 // parameters - Body of Cloud Endpoint resource.
 // options - CloudEndpointsClientBeginCreateOptions contains the optional parameters for the CloudEndpointsClient.BeginCreate
 // method.
-func (client *CloudEndpointsClient) BeginCreate(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters CloudEndpointCreateParameters, options *CloudEndpointsClientBeginCreateOptions) (CloudEndpointsClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientCreatePollerResponse{}, err
+func (client *CloudEndpointsClient) BeginCreate(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters CloudEndpointCreateParameters, options *CloudEndpointsClientBeginCreateOptions) (*runtime.Poller[CloudEndpointsClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.Create", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientCreatePollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Create a new CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) create(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters CloudEndpointCreateParameters, options *CloudEndpointsClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -123,38 +124,34 @@ func (client *CloudEndpointsClient) createCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Delete a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
 // cloudEndpointName - Name of Cloud Endpoint object.
 // options - CloudEndpointsClientBeginDeleteOptions contains the optional parameters for the CloudEndpointsClient.BeginDelete
 // method.
-func (client *CloudEndpointsClient) BeginDelete(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, options *CloudEndpointsClientBeginDeleteOptions) (CloudEndpointsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, options)
-	if err != nil {
-		return CloudEndpointsClientDeletePollerResponse{}, err
+func (client *CloudEndpointsClient) BeginDelete(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, options *CloudEndpointsClientBeginDeleteOptions) (*runtime.Poller[CloudEndpointsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) deleteOperation(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, options *CloudEndpointsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, options)
 	if err != nil {
@@ -200,12 +197,13 @@ func (client *CloudEndpointsClient) deleteCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -256,13 +254,13 @@ func (client *CloudEndpointsClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *CloudEndpointsClient) getHandleResponse(resp *http.Response) (CloudEndpointsClientGetResponse, error) {
-	result := CloudEndpointsClientGetResponse{RawResponse: resp}
+	result := CloudEndpointsClientGetResponse{}
 	if val := resp.Header.Get("x-ms-request-id"); val != "" {
 		result.XMSRequestID = &val
 	}
@@ -275,26 +273,34 @@ func (client *CloudEndpointsClient) getHandleResponse(resp *http.Response) (Clou
 	return result, nil
 }
 
-// ListBySyncGroup - Get a CloudEndpoint List.
+// NewListBySyncGroupPager - Get a CloudEndpoint List.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
 // options - CloudEndpointsClientListBySyncGroupOptions contains the optional parameters for the CloudEndpointsClient.ListBySyncGroup
 // method.
-func (client *CloudEndpointsClient) ListBySyncGroup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, options *CloudEndpointsClientListBySyncGroupOptions) (CloudEndpointsClientListBySyncGroupResponse, error) {
-	req, err := client.listBySyncGroupCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, options)
-	if err != nil {
-		return CloudEndpointsClientListBySyncGroupResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return CloudEndpointsClientListBySyncGroupResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return CloudEndpointsClientListBySyncGroupResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listBySyncGroupHandleResponse(resp)
+func (client *CloudEndpointsClient) NewListBySyncGroupPager(resourceGroupName string, storageSyncServiceName string, syncGroupName string, options *CloudEndpointsClientListBySyncGroupOptions) *runtime.Pager[CloudEndpointsClientListBySyncGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[CloudEndpointsClientListBySyncGroupResponse]{
+		More: func(page CloudEndpointsClientListBySyncGroupResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *CloudEndpointsClientListBySyncGroupResponse) (CloudEndpointsClientListBySyncGroupResponse, error) {
+			req, err := client.listBySyncGroupCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, options)
+			if err != nil {
+				return CloudEndpointsClientListBySyncGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return CloudEndpointsClientListBySyncGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return CloudEndpointsClientListBySyncGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySyncGroupHandleResponse(resp)
+		},
+	})
 }
 
 // listBySyncGroupCreateRequest creates the ListBySyncGroup request.
@@ -323,13 +329,13 @@ func (client *CloudEndpointsClient) listBySyncGroupCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySyncGroupHandleResponse handles the ListBySyncGroup response.
 func (client *CloudEndpointsClient) listBySyncGroupHandleResponse(resp *http.Response) (CloudEndpointsClientListBySyncGroupResponse, error) {
-	result := CloudEndpointsClientListBySyncGroupResponse{RawResponse: resp}
+	result := CloudEndpointsClientListBySyncGroupResponse{}
 	if val := resp.Header.Get("x-ms-request-id"); val != "" {
 		result.XMSRequestID = &val
 	}
@@ -344,6 +350,7 @@ func (client *CloudEndpointsClient) listBySyncGroupHandleResponse(resp *http.Res
 
 // BeginPostBackup - Post Backup a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -351,26 +358,21 @@ func (client *CloudEndpointsClient) listBySyncGroupHandleResponse(resp *http.Res
 // parameters - Body of Backup request.
 // options - CloudEndpointsClientBeginPostBackupOptions contains the optional parameters for the CloudEndpointsClient.BeginPostBackup
 // method.
-func (client *CloudEndpointsClient) BeginPostBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPostBackupOptions) (CloudEndpointsClientPostBackupPollerResponse, error) {
-	resp, err := client.postBackup(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientPostBackupPollerResponse{}, err
+func (client *CloudEndpointsClient) BeginPostBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPostBackupOptions) (*runtime.Poller[CloudEndpointsClientPostBackupResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.postBackup(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientPostBackupResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientPostBackupResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientPostBackupPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.PostBackup", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientPostBackupPollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientPostBackupPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PostBackup - Post Backup a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) postBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPostBackupOptions) (*http.Response, error) {
 	req, err := client.postBackupCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -416,12 +418,13 @@ func (client *CloudEndpointsClient) postBackupCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginPostRestore - Post Restore a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -429,26 +432,21 @@ func (client *CloudEndpointsClient) postBackupCreateRequest(ctx context.Context,
 // parameters - Body of Cloud Endpoint object.
 // options - CloudEndpointsClientBeginPostRestoreOptions contains the optional parameters for the CloudEndpointsClient.BeginPostRestore
 // method.
-func (client *CloudEndpointsClient) BeginPostRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PostRestoreRequest, options *CloudEndpointsClientBeginPostRestoreOptions) (CloudEndpointsClientPostRestorePollerResponse, error) {
-	resp, err := client.postRestore(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientPostRestorePollerResponse{}, err
+func (client *CloudEndpointsClient) BeginPostRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PostRestoreRequest, options *CloudEndpointsClientBeginPostRestoreOptions) (*runtime.Poller[CloudEndpointsClientPostRestoreResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.postRestore(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientPostRestoreResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientPostRestoreResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientPostRestorePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.PostRestore", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientPostRestorePollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientPostRestorePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PostRestore - Post Restore a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) postRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PostRestoreRequest, options *CloudEndpointsClientBeginPostRestoreOptions) (*http.Response, error) {
 	req, err := client.postRestoreCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -494,12 +492,13 @@ func (client *CloudEndpointsClient) postRestoreCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginPreBackup - Pre Backup a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -507,26 +506,21 @@ func (client *CloudEndpointsClient) postRestoreCreateRequest(ctx context.Context
 // parameters - Body of Backup request.
 // options - CloudEndpointsClientBeginPreBackupOptions contains the optional parameters for the CloudEndpointsClient.BeginPreBackup
 // method.
-func (client *CloudEndpointsClient) BeginPreBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPreBackupOptions) (CloudEndpointsClientPreBackupPollerResponse, error) {
-	resp, err := client.preBackup(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientPreBackupPollerResponse{}, err
+func (client *CloudEndpointsClient) BeginPreBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPreBackupOptions) (*runtime.Poller[CloudEndpointsClientPreBackupResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.preBackup(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientPreBackupResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientPreBackupResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientPreBackupPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.PreBackup", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientPreBackupPollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientPreBackupPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PreBackup - Pre Backup a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) preBackup(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters BackupRequest, options *CloudEndpointsClientBeginPreBackupOptions) (*http.Response, error) {
 	req, err := client.preBackupCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -572,12 +566,13 @@ func (client *CloudEndpointsClient) preBackupCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginPreRestore - Pre Restore a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -585,26 +580,21 @@ func (client *CloudEndpointsClient) preBackupCreateRequest(ctx context.Context, 
 // parameters - Body of Cloud Endpoint object.
 // options - CloudEndpointsClientBeginPreRestoreOptions contains the optional parameters for the CloudEndpointsClient.BeginPreRestore
 // method.
-func (client *CloudEndpointsClient) BeginPreRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PreRestoreRequest, options *CloudEndpointsClientBeginPreRestoreOptions) (CloudEndpointsClientPreRestorePollerResponse, error) {
-	resp, err := client.preRestore(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientPreRestorePollerResponse{}, err
+func (client *CloudEndpointsClient) BeginPreRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PreRestoreRequest, options *CloudEndpointsClientBeginPreRestoreOptions) (*runtime.Poller[CloudEndpointsClientPreRestoreResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.preRestore(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientPreRestoreResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientPreRestoreResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientPreRestorePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.PreRestore", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientPreRestorePollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientPreRestorePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PreRestore - Pre Restore a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) preRestore(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters PreRestoreRequest, options *CloudEndpointsClientBeginPreRestoreOptions) (*http.Response, error) {
 	req, err := client.preRestoreCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -650,12 +640,13 @@ func (client *CloudEndpointsClient) preRestoreCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Restoreheartbeat - Restore Heartbeat a given CloudEndpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -707,13 +698,13 @@ func (client *CloudEndpointsClient) restoreheartbeatCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // restoreheartbeatHandleResponse handles the Restoreheartbeat response.
 func (client *CloudEndpointsClient) restoreheartbeatHandleResponse(resp *http.Response) (CloudEndpointsClientRestoreheartbeatResponse, error) {
-	result := CloudEndpointsClientRestoreheartbeatResponse{RawResponse: resp}
+	result := CloudEndpointsClientRestoreheartbeatResponse{}
 	if val := resp.Header.Get("x-ms-request-id"); val != "" {
 		result.XMSRequestID = &val
 	}
@@ -726,6 +717,7 @@ func (client *CloudEndpointsClient) restoreheartbeatHandleResponse(resp *http.Re
 // BeginTriggerChangeDetection - Triggers detection of changes performed on Azure File share connected to the specified Azure
 // File Sync Cloud Endpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // storageSyncServiceName - Name of Storage Sync Service resource.
 // syncGroupName - Name of Sync Group resource.
@@ -733,27 +725,22 @@ func (client *CloudEndpointsClient) restoreheartbeatHandleResponse(resp *http.Re
 // parameters - Trigger Change Detection Action parameters.
 // options - CloudEndpointsClientBeginTriggerChangeDetectionOptions contains the optional parameters for the CloudEndpointsClient.BeginTriggerChangeDetection
 // method.
-func (client *CloudEndpointsClient) BeginTriggerChangeDetection(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters TriggerChangeDetectionParameters, options *CloudEndpointsClientBeginTriggerChangeDetectionOptions) (CloudEndpointsClientTriggerChangeDetectionPollerResponse, error) {
-	resp, err := client.triggerChangeDetection(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
-	if err != nil {
-		return CloudEndpointsClientTriggerChangeDetectionPollerResponse{}, err
+func (client *CloudEndpointsClient) BeginTriggerChangeDetection(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters TriggerChangeDetectionParameters, options *CloudEndpointsClientBeginTriggerChangeDetectionOptions) (*runtime.Poller[CloudEndpointsClientTriggerChangeDetectionResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.triggerChangeDetection(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CloudEndpointsClientTriggerChangeDetectionResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CloudEndpointsClientTriggerChangeDetectionResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CloudEndpointsClientTriggerChangeDetectionPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CloudEndpointsClient.TriggerChangeDetection", "", resp, client.pl)
-	if err != nil {
-		return CloudEndpointsClientTriggerChangeDetectionPollerResponse{}, err
-	}
-	result.Poller = &CloudEndpointsClientTriggerChangeDetectionPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // TriggerChangeDetection - Triggers detection of changes performed on Azure File share connected to the specified Azure File
 // Sync Cloud Endpoint.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *CloudEndpointsClient) triggerChangeDetection(ctx context.Context, resourceGroupName string, storageSyncServiceName string, syncGroupName string, cloudEndpointName string, parameters TriggerChangeDetectionParameters, options *CloudEndpointsClientBeginTriggerChangeDetectionOptions) (*http.Response, error) {
 	req, err := client.triggerChangeDetectionCreateRequest(ctx, resourceGroupName, storageSyncServiceName, syncGroupName, cloudEndpointName, parameters, options)
 	if err != nil {
@@ -799,6 +786,6 @@ func (client *CloudEndpointsClient) triggerChangeDetectionCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

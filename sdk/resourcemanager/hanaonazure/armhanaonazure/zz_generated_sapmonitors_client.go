@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,48 +35,48 @@ type SapMonitorsClient struct {
 // the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSapMonitorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SapMonitorsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSapMonitorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SapMonitorsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SapMonitorsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Creates a SAP monitor for the specified subscription, resource group, and resource name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 // resourceGroupName - Name of the resource group.
 // sapMonitorName - Name of the SAP monitor resource.
 // sapMonitorParameter - Request body representing a SAP Monitor
 // options - SapMonitorsClientBeginCreateOptions contains the optional parameters for the SapMonitorsClient.BeginCreate method.
-func (client *SapMonitorsClient) BeginCreate(ctx context.Context, resourceGroupName string, sapMonitorName string, sapMonitorParameter SapMonitor, options *SapMonitorsClientBeginCreateOptions) (SapMonitorsClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, sapMonitorName, sapMonitorParameter, options)
-	if err != nil {
-		return SapMonitorsClientCreatePollerResponse{}, err
+func (client *SapMonitorsClient) BeginCreate(ctx context.Context, resourceGroupName string, sapMonitorName string, sapMonitorParameter SapMonitor, options *SapMonitorsClientBeginCreateOptions) (*runtime.Poller[SapMonitorsClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, sapMonitorName, sapMonitorParameter, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[SapMonitorsClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[SapMonitorsClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := SapMonitorsClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("SapMonitorsClient.Create", "", resp, client.pl)
-	if err != nil {
-		return SapMonitorsClientCreatePollerResponse{}, err
-	}
-	result.Poller = &SapMonitorsClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Creates a SAP monitor for the specified subscription, resource group, and resource name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 func (client *SapMonitorsClient) create(ctx context.Context, resourceGroupName string, sapMonitorName string, sapMonitorParameter SapMonitor, options *SapMonitorsClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, sapMonitorName, sapMonitorParameter, options)
 	if err != nil {
@@ -113,35 +114,31 @@ func (client *SapMonitorsClient) createCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-02-07-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, sapMonitorParameter)
 }
 
 // BeginDelete - Deletes a SAP monitor with the specified subscription, resource group, and monitor name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 // resourceGroupName - Name of the resource group.
 // sapMonitorName - Name of the SAP monitor resource.
 // options - SapMonitorsClientBeginDeleteOptions contains the optional parameters for the SapMonitorsClient.BeginDelete method.
-func (client *SapMonitorsClient) BeginDelete(ctx context.Context, resourceGroupName string, sapMonitorName string, options *SapMonitorsClientBeginDeleteOptions) (SapMonitorsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, sapMonitorName, options)
-	if err != nil {
-		return SapMonitorsClientDeletePollerResponse{}, err
+func (client *SapMonitorsClient) BeginDelete(ctx context.Context, resourceGroupName string, sapMonitorName string, options *SapMonitorsClientBeginDeleteOptions) (*runtime.Poller[SapMonitorsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, sapMonitorName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[SapMonitorsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[SapMonitorsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := SapMonitorsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("SapMonitorsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return SapMonitorsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &SapMonitorsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a SAP monitor with the specified subscription, resource group, and monitor name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 func (client *SapMonitorsClient) deleteOperation(ctx context.Context, resourceGroupName string, sapMonitorName string, options *SapMonitorsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, sapMonitorName, options)
 	if err != nil {
@@ -179,12 +176,13 @@ func (client *SapMonitorsClient) deleteCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-02-07-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets properties of a SAP monitor for the specified subscription, resource group, and resource name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 // resourceGroupName - Name of the resource group.
 // sapMonitorName - Name of the SAP monitor resource.
 // options - SapMonitorsClientGetOptions contains the optional parameters for the SapMonitorsClient.Get method.
@@ -225,33 +223,50 @@ func (client *SapMonitorsClient) getCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-02-07-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SapMonitorsClient) getHandleResponse(resp *http.Response) (SapMonitorsClientGetResponse, error) {
-	result := SapMonitorsClientGetResponse{RawResponse: resp}
+	result := SapMonitorsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SapMonitor); err != nil {
 		return SapMonitorsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets a list of SAP monitors in the specified subscription. The operations returns various properties of each SAP
-// monitor.
+// NewListPager - Gets a list of SAP monitors in the specified subscription. The operations returns various properties of
+// each SAP monitor.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 // options - SapMonitorsClientListOptions contains the optional parameters for the SapMonitorsClient.List method.
-func (client *SapMonitorsClient) List(options *SapMonitorsClientListOptions) *SapMonitorsClientListPager {
-	return &SapMonitorsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *SapMonitorsClient) NewListPager(options *SapMonitorsClientListOptions) *runtime.Pager[SapMonitorsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SapMonitorsClientListResponse]{
+		More: func(page SapMonitorsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SapMonitorsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SapMonitorListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SapMonitorsClientListResponse) (SapMonitorsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SapMonitorsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SapMonitorsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SapMonitorsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -268,13 +283,13 @@ func (client *SapMonitorsClient) listCreateRequest(ctx context.Context, options 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-02-07-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *SapMonitorsClient) listHandleResponse(resp *http.Response) (SapMonitorsClientListResponse, error) {
-	result := SapMonitorsClientListResponse{RawResponse: resp}
+	result := SapMonitorsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SapMonitorListResult); err != nil {
 		return SapMonitorsClientListResponse{}, err
 	}
@@ -283,6 +298,7 @@ func (client *SapMonitorsClient) listHandleResponse(resp *http.Response) (SapMon
 
 // Update - Patches the Tags field of a SAP monitor for the specified subscription, resource group, and monitor name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-02-07-preview
 // resourceGroupName - Name of the resource group.
 // sapMonitorName - Name of the SAP monitor resource.
 // tagsParameter - Request body that only contains the new Tags field
@@ -324,13 +340,13 @@ func (client *SapMonitorsClient) updateCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-02-07-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, tagsParameter)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *SapMonitorsClient) updateHandleResponse(resp *http.Response) (SapMonitorsClientUpdateResponse, error) {
-	result := SapMonitorsClientUpdateResponse{RawResponse: resp}
+	result := SapMonitorsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SapMonitor); err != nil {
 		return SapMonitorsClientUpdateResponse{}, err
 	}

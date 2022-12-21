@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,51 @@ type JitRequestsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewJitRequestsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *JitRequestsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewJitRequestsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*JitRequestsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &JitRequestsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates the JIT request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // jitRequestName - The name of the JIT request.
 // parameters - Parameters supplied to the update JIT request.
 // options - JitRequestsClientBeginCreateOrUpdateOptions contains the optional parameters for the JitRequestsClient.BeginCreateOrUpdate
 // method.
-func (client *JitRequestsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, jitRequestName string, parameters JitRequestDefinition, options *JitRequestsClientBeginCreateOrUpdateOptions) (JitRequestsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, jitRequestName, parameters, options)
-	if err != nil {
-		return JitRequestsClientCreateOrUpdatePollerResponse{}, err
+func (client *JitRequestsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, jitRequestName string, parameters JitRequestDefinition, options *JitRequestsClientBeginCreateOrUpdateOptions) (*runtime.Poller[JitRequestsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, jitRequestName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[JitRequestsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[JitRequestsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := JitRequestsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("JitRequestsClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return JitRequestsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &JitRequestsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates the JIT request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *JitRequestsClient) createOrUpdate(ctx context.Context, resourceGroupName string, jitRequestName string, parameters JitRequestDefinition, options *JitRequestsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, jitRequestName, parameters, options)
 	if err != nil {
@@ -113,12 +116,13 @@ func (client *JitRequestsClient) createOrUpdateCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Delete - Deletes the JIT request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // jitRequestName - The name of the JIT request.
 // options - JitRequestsClientDeleteOptions contains the optional parameters for the JitRequestsClient.Delete method.
@@ -134,7 +138,7 @@ func (client *JitRequestsClient) Delete(ctx context.Context, resourceGroupName s
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return JitRequestsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return JitRequestsClientDeleteResponse{RawResponse: resp}, nil
+	return JitRequestsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -159,12 +163,13 @@ func (client *JitRequestsClient) deleteCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the JIT request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // jitRequestName - The name of the JIT request.
 // options - JitRequestsClientGetOptions contains the optional parameters for the JitRequestsClient.Get method.
@@ -205,13 +210,13 @@ func (client *JitRequestsClient) getCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *JitRequestsClient) getHandleResponse(resp *http.Response) (JitRequestsClientGetResponse, error) {
-	result := JitRequestsClientGetResponse{RawResponse: resp}
+	result := JitRequestsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JitRequestDefinition); err != nil {
 		return JitRequestsClientGetResponse{}, err
 	}
@@ -220,6 +225,7 @@ func (client *JitRequestsClient) getHandleResponse(resp *http.Response) (JitRequ
 
 // ListByResourceGroup - Retrieves all JIT requests within the resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - JitRequestsClientListByResourceGroupOptions contains the optional parameters for the JitRequestsClient.ListByResourceGroup
 // method.
@@ -256,13 +262,13 @@ func (client *JitRequestsClient) listByResourceGroupCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *JitRequestsClient) listByResourceGroupHandleResponse(resp *http.Response) (JitRequestsClientListByResourceGroupResponse, error) {
-	result := JitRequestsClientListByResourceGroupResponse{RawResponse: resp}
+	result := JitRequestsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JitRequestDefinitionListResult); err != nil {
 		return JitRequestsClientListByResourceGroupResponse{}, err
 	}
@@ -271,6 +277,7 @@ func (client *JitRequestsClient) listByResourceGroupHandleResponse(resp *http.Re
 
 // ListBySubscription - Retrieves all JIT requests within the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // options - JitRequestsClientListBySubscriptionOptions contains the optional parameters for the JitRequestsClient.ListBySubscription
 // method.
 func (client *JitRequestsClient) ListBySubscription(ctx context.Context, options *JitRequestsClientListBySubscriptionOptions) (JitRequestsClientListBySubscriptionResponse, error) {
@@ -302,13 +309,13 @@ func (client *JitRequestsClient) listBySubscriptionCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *JitRequestsClient) listBySubscriptionHandleResponse(resp *http.Response) (JitRequestsClientListBySubscriptionResponse, error) {
-	result := JitRequestsClientListBySubscriptionResponse{RawResponse: resp}
+	result := JitRequestsClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JitRequestDefinitionListResult); err != nil {
 		return JitRequestsClientListBySubscriptionResponse{}, err
 	}
@@ -317,6 +324,7 @@ func (client *JitRequestsClient) listBySubscriptionHandleResponse(resp *http.Res
 
 // Update - Updates the JIT request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // jitRequestName - The name of the JIT request.
 // parameters - Parameters supplied to the update JIT request.
@@ -358,13 +366,13 @@ func (client *JitRequestsClient) updateCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *JitRequestsClient) updateHandleResponse(resp *http.Response) (JitRequestsClientUpdateResponse, error) {
-	result := JitRequestsClientUpdateResponse{RawResponse: resp}
+	result := JitRequestsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JitRequestDefinition); err != nil {
 		return JitRequestsClientUpdateResponse{}, err
 	}

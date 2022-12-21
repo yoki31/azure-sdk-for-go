@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armvideoanalyzer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -26,46 +26,59 @@ import (
 // PipelineJobsClient contains the methods for the PipelineJobs group.
 // Don't use this type directly, use NewPipelineJobsClient() instead.
 type PipelineJobsClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewPipelineJobsClient creates a new instance of PipelineJobsClient with the specified values.
-func NewPipelineJobsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *PipelineJobsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The ID of the target subscription.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewPipelineJobsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*PipelineJobsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &PipelineJobsClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &PipelineJobsClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
 // BeginCancel - Cancels a pipeline job with the given name.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) BeginCancel(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsBeginCancelOptions) (PipelineJobsCancelPollerResponse, error) {
-	resp, err := client.cancel(ctx, resourceGroupName, accountName, pipelineJobName, options)
-	if err != nil {
-		return PipelineJobsCancelPollerResponse{}, err
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// options - PipelineJobsClientBeginCancelOptions contains the optional parameters for the PipelineJobsClient.BeginCancel
+// method.
+func (client *PipelineJobsClient) BeginCancel(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientBeginCancelOptions) (*runtime.Poller[PipelineJobsClientCancelResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.cancel(ctx, resourceGroupName, accountName, pipelineJobName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[PipelineJobsClientCancelResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[PipelineJobsClientCancelResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := PipelineJobsCancelPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("PipelineJobsClient.Cancel", "", resp, client.pl, client.cancelHandleError)
-	if err != nil {
-		return PipelineJobsCancelPollerResponse{}, err
-	}
-	result.Poller = &PipelineJobsCancelPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Cancel - Cancels a pipeline job with the given name.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) cancel(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsBeginCancelOptions) (*http.Response, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+func (client *PipelineJobsClient) cancel(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientBeginCancelOptions) (*http.Response, error) {
 	req, err := client.cancelCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, options)
 	if err != nil {
 		return nil, err
@@ -75,13 +88,13 @@ func (client *PipelineJobsClient) cancel(ctx context.Context, resourceGroupName 
 		return nil, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
-		return nil, client.cancelHandleError(resp)
+		return nil, runtime.NewResponseError(resp)
 	}
 	return resp, nil
 }
 
 // cancelCreateRequest creates the Cancel request.
-func (client *PipelineJobsClient) cancelCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsBeginCancelOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) cancelCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientBeginCancelOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}/cancel"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -99,49 +112,43 @@ func (client *PipelineJobsClient) cancelCreateRequest(ctx context.Context, resou
 		return nil, errors.New("parameter pipelineJobName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{pipelineJobName}", url.PathEscape(pipelineJobName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// cancelHandleError handles the Cancel error response.
-func (client *PipelineJobsClient) cancelHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // CreateOrUpdate - Creates a new pipeline job or updates an existing one, with the given name.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJob, options *PipelineJobsCreateOrUpdateOptions) (PipelineJobsCreateOrUpdateResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// parameters - The request parameters
+// options - PipelineJobsClientCreateOrUpdateOptions contains the optional parameters for the PipelineJobsClient.CreateOrUpdate
+// method.
+func (client *PipelineJobsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJob, options *PipelineJobsClientCreateOrUpdateOptions) (PipelineJobsClientCreateOrUpdateResponse, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, parameters, options)
 	if err != nil {
-		return PipelineJobsCreateOrUpdateResponse{}, err
+		return PipelineJobsClientCreateOrUpdateResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return PipelineJobsCreateOrUpdateResponse{}, err
+		return PipelineJobsClientCreateOrUpdateResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusCreated) {
-		return PipelineJobsCreateOrUpdateResponse{}, client.createOrUpdateHandleError(resp)
+		return PipelineJobsClientCreateOrUpdateResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.createOrUpdateHandleResponse(resp)
 }
 
 // createOrUpdateCreateRequest creates the CreateOrUpdate request.
-func (client *PipelineJobsClient) createOrUpdateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJob, options *PipelineJobsCreateOrUpdateOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) createOrUpdateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJob, options *PipelineJobsClientCreateOrUpdateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -159,58 +166,50 @@ func (client *PipelineJobsClient) createOrUpdateCreateRequest(ctx context.Contex
 		return nil, errors.New("parameter pipelineJobName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{pipelineJobName}", url.PathEscape(pipelineJobName))
-	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
-func (client *PipelineJobsClient) createOrUpdateHandleResponse(resp *http.Response) (PipelineJobsCreateOrUpdateResponse, error) {
-	result := PipelineJobsCreateOrUpdateResponse{RawResponse: resp}
+func (client *PipelineJobsClient) createOrUpdateHandleResponse(resp *http.Response) (PipelineJobsClientCreateOrUpdateResponse, error) {
+	result := PipelineJobsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PipelineJob); err != nil {
-		return PipelineJobsCreateOrUpdateResponse{}, runtime.NewResponseError(err, resp)
+		return PipelineJobsClientCreateOrUpdateResponse{}, err
 	}
 	return result, nil
 }
 
-// createOrUpdateHandleError handles the CreateOrUpdate error response.
-func (client *PipelineJobsClient) createOrUpdateHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Delete - Deletes a pipeline job with the given name.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) Delete(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsDeleteOptions) (PipelineJobsDeleteResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// options - PipelineJobsClientDeleteOptions contains the optional parameters for the PipelineJobsClient.Delete method.
+func (client *PipelineJobsClient) Delete(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientDeleteOptions) (PipelineJobsClientDeleteResponse, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, options)
 	if err != nil {
-		return PipelineJobsDeleteResponse{}, err
+		return PipelineJobsClientDeleteResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return PipelineJobsDeleteResponse{}, err
+		return PipelineJobsClientDeleteResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
-		return PipelineJobsDeleteResponse{}, client.deleteHandleError(resp)
+		return PipelineJobsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return PipelineJobsDeleteResponse{RawResponse: resp}, nil
+	return PipelineJobsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
-func (client *PipelineJobsClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsDeleteOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientDeleteOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -228,50 +227,42 @@ func (client *PipelineJobsClient) deleteCreateRequest(ctx context.Context, resou
 		return nil, errors.New("parameter pipelineJobName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{pipelineJobName}", url.PathEscape(pipelineJobName))
-	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// deleteHandleError handles the Delete error response.
-func (client *PipelineJobsClient) deleteHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// Get - Retrieves a specific pipeline job by name. If a pipeline job with that name has been previously created, the call will return the JSON representation
-// of that instance.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) Get(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsGetOptions) (PipelineJobsGetResponse, error) {
+// Get - Retrieves a specific pipeline job by name. If a pipeline job with that name has been previously created, the call
+// will return the JSON representation of that instance.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// options - PipelineJobsClientGetOptions contains the optional parameters for the PipelineJobsClient.Get method.
+func (client *PipelineJobsClient) Get(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientGetOptions) (PipelineJobsClientGetResponse, error) {
 	req, err := client.getCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, options)
 	if err != nil {
-		return PipelineJobsGetResponse{}, err
+		return PipelineJobsClientGetResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return PipelineJobsGetResponse{}, err
+		return PipelineJobsClientGetResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return PipelineJobsGetResponse{}, client.getHandleError(resp)
+		return PipelineJobsClientGetResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getHandleResponse(resp)
 }
 
 // getCreateRequest creates the Get request.
-func (client *PipelineJobsClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsGetOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, options *PipelineJobsClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -289,55 +280,62 @@ func (client *PipelineJobsClient) getCreateRequest(ctx context.Context, resource
 		return nil, errors.New("parameter pipelineJobName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{pipelineJobName}", url.PathEscape(pipelineJobName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *PipelineJobsClient) getHandleResponse(resp *http.Response) (PipelineJobsGetResponse, error) {
-	result := PipelineJobsGetResponse{RawResponse: resp}
+func (client *PipelineJobsClient) getHandleResponse(resp *http.Response) (PipelineJobsClientGetResponse, error) {
+	result := PipelineJobsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PipelineJob); err != nil {
-		return PipelineJobsGetResponse{}, runtime.NewResponseError(err, resp)
+		return PipelineJobsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// getHandleError handles the Get error response.
-func (client *PipelineJobsClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// List - Retrieves a list of all live pipelines that have been created, along with their JSON representations.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) List(resourceGroupName string, accountName string, options *PipelineJobsListOptions) *PipelineJobsListPager {
-	return &PipelineJobsListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, accountName, options)
+// NewListPager - Retrieves a list of all live pipelines that have been created, along with their JSON representations.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// options - PipelineJobsClientListOptions contains the optional parameters for the PipelineJobsClient.List method.
+func (client *PipelineJobsClient) NewListPager(resourceGroupName string, accountName string, options *PipelineJobsClientListOptions) *runtime.Pager[PipelineJobsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PipelineJobsClientListResponse]{
+		More: func(page PipelineJobsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PipelineJobsListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PipelineJobCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *PipelineJobsClientListResponse) (PipelineJobsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, accountName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PipelineJobsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PipelineJobsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PipelineJobsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
-func (client *PipelineJobsClient) listCreateRequest(ctx context.Context, resourceGroupName string, accountName string, options *PipelineJobsListOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) listCreateRequest(ctx context.Context, resourceGroupName string, accountName string, options *PipelineJobsClientListOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -351,7 +349,7 @@ func (client *PipelineJobsClient) listCreateRequest(ctx context.Context, resourc
 		return nil, errors.New("parameter accountName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{accountName}", url.PathEscape(accountName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
@@ -364,51 +362,44 @@ func (client *PipelineJobsClient) listCreateRequest(ctx context.Context, resourc
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
-func (client *PipelineJobsClient) listHandleResponse(resp *http.Response) (PipelineJobsListResponse, error) {
-	result := PipelineJobsListResponse{RawResponse: resp}
+func (client *PipelineJobsClient) listHandleResponse(resp *http.Response) (PipelineJobsClientListResponse, error) {
+	result := PipelineJobsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PipelineJobCollection); err != nil {
-		return PipelineJobsListResponse{}, runtime.NewResponseError(err, resp)
+		return PipelineJobsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// listHandleError handles the List error response.
-func (client *PipelineJobsClient) listHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Update - Updates an existing pipeline job with the given name. Properties that can be updated include: description.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobsClient) Update(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJobUpdate, options *PipelineJobsUpdateOptions) (PipelineJobsUpdateResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// parameters - The request parameters
+// options - PipelineJobsClientUpdateOptions contains the optional parameters for the PipelineJobsClient.Update method.
+func (client *PipelineJobsClient) Update(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJobUpdate, options *PipelineJobsClientUpdateOptions) (PipelineJobsClientUpdateResponse, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, parameters, options)
 	if err != nil {
-		return PipelineJobsUpdateResponse{}, err
+		return PipelineJobsClientUpdateResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return PipelineJobsUpdateResponse{}, err
+		return PipelineJobsClientUpdateResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return PipelineJobsUpdateResponse{}, client.updateHandleError(resp)
+		return PipelineJobsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.updateHandleResponse(resp)
 }
 
 // updateCreateRequest creates the Update request.
-func (client *PipelineJobsClient) updateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJobUpdate, options *PipelineJobsUpdateOptions) (*policy.Request, error) {
+func (client *PipelineJobsClient) updateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, parameters PipelineJobUpdate, options *PipelineJobsClientUpdateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -426,35 +417,22 @@ func (client *PipelineJobsClient) updateCreateRequest(ctx context.Context, resou
 		return nil, errors.New("parameter pipelineJobName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{pipelineJobName}", url.PathEscape(pipelineJobName))
-	req, err := runtime.NewRequest(ctx, http.MethodPatch, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPatch, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
-func (client *PipelineJobsClient) updateHandleResponse(resp *http.Response) (PipelineJobsUpdateResponse, error) {
-	result := PipelineJobsUpdateResponse{RawResponse: resp}
+func (client *PipelineJobsClient) updateHandleResponse(resp *http.Response) (PipelineJobsClientUpdateResponse, error) {
+	result := PipelineJobsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PipelineJob); err != nil {
-		return PipelineJobsUpdateResponse{}, runtime.NewResponseError(err, resp)
+		return PipelineJobsClientUpdateResponse{}, err
 	}
 	return result, nil
-}
-
-// updateHandleError handles the Update error response.
-func (client *PipelineJobsClient) updateHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

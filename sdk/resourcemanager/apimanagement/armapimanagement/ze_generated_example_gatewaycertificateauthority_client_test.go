@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,115 +17,130 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/apimanagement/armapimanagement"
 )
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListGatewayCertificateAuthorities.json
-func ExampleGatewayCertificateAuthorityClient_ListByService() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListGatewayCertificateAuthorities.json
+func ExampleGatewayCertificateAuthorityClient_NewListByServicePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewGatewayCertificateAuthorityClient("<subscription-id>", cred, nil)
-	pager := client.ListByService("<resource-group-name>",
-		"<service-name>",
-		"<gateway-id>",
+	client, err := armapimanagement.NewGatewayCertificateAuthorityClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServicePager("rg1",
+		"apimService1",
+		"gw1",
 		&armapimanagement.GatewayCertificateAuthorityClientListByServiceOptions{Filter: nil,
 			Top:  nil,
 			Skip: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadGatewayCertificateAuthority.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadGatewayCertificateAuthority.json
 func ExampleGatewayCertificateAuthorityClient_GetEntityTag() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewGatewayCertificateAuthorityClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewGatewayCertificateAuthorityClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.GetEntityTag(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<gateway-id>",
-		"<certificate-id>",
+		"rg1",
+		"apimService1",
+		"gw1",
+		"cert1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetGatewayCertificateAuthority.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetGatewayCertificateAuthority.json
 func ExampleGatewayCertificateAuthorityClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewGatewayCertificateAuthorityClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewGatewayCertificateAuthorityClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<gateway-id>",
-		"<certificate-id>",
+		"rg1",
+		"apimService1",
+		"gw1",
+		"cert1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.GatewayCertificateAuthorityClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateGatewayCertificateAuthority.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateGatewayCertificateAuthority.json
 func ExampleGatewayCertificateAuthorityClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewGatewayCertificateAuthorityClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewGatewayCertificateAuthorityClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<gateway-id>",
-		"<certificate-id>",
+		"rg1",
+		"apimService1",
+		"gw1",
+		"cert1",
 		armapimanagement.GatewayCertificateAuthorityContract{
 			Properties: &armapimanagement.GatewayCertificateAuthorityContractProperties{
-				IsTrusted: to.BoolPtr(false),
+				IsTrusted: to.Ptr(false),
 			},
 		},
 		&armapimanagement.GatewayCertificateAuthorityClientCreateOrUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.GatewayCertificateAuthorityClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteGatewayCertificateAuthority.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteGatewayCertificateAuthority.json
 func ExampleGatewayCertificateAuthorityClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewGatewayCertificateAuthorityClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewGatewayCertificateAuthorityClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<gateway-id>",
-		"<certificate-id>",
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"gw1",
+		"default",
+		"*",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

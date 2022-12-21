@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,150 +12,164 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/hdinsight/armhdinsight"
 )
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetAllApplications.json
-func ExampleApplicationsClient_ListByCluster() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetAllApplications.json
+func ExampleApplicationsClient_NewListByClusterPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewApplicationsClient("<subscription-id>", cred, nil)
-	pager := client.ListByCluster("<resource-group-name>",
-		"<cluster-name>",
+	client, err := armhdinsight.NewApplicationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByClusterPager("rg1",
+		"cluster1",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetApplicationInProgress.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetApplicationInProgress.json
 func ExampleApplicationsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewApplicationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewApplicationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		"<application-name>",
+		"rg1",
+		"cluster1",
+		"app",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ApplicationsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/CreateApplication.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/CreateApplication.json
 func ExampleApplicationsClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewApplicationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewApplicationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		"<application-name>",
+		"rg1",
+		"cluster1",
+		"hue",
 		armhdinsight.Application{
 			Properties: &armhdinsight.ApplicationProperties{
-				ApplicationType: to.StringPtr("<application-type>"),
+				ApplicationType: to.Ptr("CustomApplication"),
 				ComputeProfile: &armhdinsight.ComputeProfile{
 					Roles: []*armhdinsight.Role{
 						{
-							Name: to.StringPtr("<name>"),
+							Name: to.Ptr("edgenode"),
 							HardwareProfile: &armhdinsight.HardwareProfile{
-								VMSize: to.StringPtr("<vmsize>"),
+								VMSize: to.Ptr("Standard_D12_v2"),
 							},
-							TargetInstanceCount: to.Int32Ptr(1),
+							TargetInstanceCount: to.Ptr[int32](1),
 						}},
 				},
 				Errors: []*armhdinsight.Errors{},
 				HTTPSEndpoints: []*armhdinsight.ApplicationGetHTTPSEndpoint{
 					{
 						AccessModes: []*string{
-							to.StringPtr("WebPage")},
-						DestinationPort: to.Int32Ptr(20000),
-						SubDomainSuffix: to.StringPtr("<sub-domain-suffix>"),
+							to.Ptr("WebPage")},
+						DestinationPort: to.Ptr[int32](20000),
+						SubDomainSuffix: to.Ptr("dss"),
 					}},
 				InstallScriptActions: []*armhdinsight.RuntimeScriptAction{
 					{
-						Name:       to.StringPtr("<name>"),
-						Parameters: to.StringPtr("<parameters>"),
+						Name:       to.Ptr("app-install-app1"),
+						Parameters: to.Ptr("-version latest -port 20000"),
 						Roles: []*string{
-							to.StringPtr("edgenode")},
-						URI: to.StringPtr("<uri>"),
+							to.Ptr("edgenode")},
+						URI: to.Ptr("https://.../install.sh"),
 					}},
 				UninstallScriptActions: []*armhdinsight.RuntimeScriptAction{},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ApplicationsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DeleteApplication.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DeleteApplication.json
 func ExampleApplicationsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewApplicationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewApplicationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		"<application-name>",
+		"rg1",
+		"cluster1",
+		"hue",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetApplicationCreationAsyncOperationStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetApplicationCreationAsyncOperationStatus.json
 func ExampleApplicationsClient_GetAzureAsyncOperationStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewApplicationsClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewApplicationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAzureAsyncOperationStatus(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		"<application-name>",
-		"<operation-id>",
+		"rg1",
+		"cluster1",
+		"app",
+		"CF938302-6B4D-44A0-A6D2-C0D67E847AEC",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ApplicationsClientGetAzureAsyncOperationStatusResult)
+	// TODO: use response item
+	_ = res
 }

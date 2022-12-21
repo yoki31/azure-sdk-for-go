@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,384 +12,418 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupCopy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupCopy.json
 func ExampleLongTermRetentionBackupsClient_BeginCopy() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCopy(ctx,
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		armsql.CopyLongTermRetentionBackupParameters{
 			Properties: &armsql.CopyLongTermRetentionBackupParametersProperties{
-				TargetBackupStorageRedundancy: armsql.BackupStorageRedundancy("Geo").ToPtr(),
-				TargetDatabaseName:            to.StringPtr("<target-database-name>"),
-				TargetServerResourceID:        to.StringPtr("<target-server-resource-id>"),
+				TargetBackupStorageRedundancy: to.Ptr(armsql.BackupStorageRedundancyGeo),
+				TargetDatabaseName:            to.Ptr("testDatabase2"),
+				TargetServerResourceID:        to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Sql/resourceGroups/resourceGroup/servers/testserver2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientCopyResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupUpdate.json
 func ExampleLongTermRetentionBackupsClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		armsql.UpdateLongTermRetentionBackupParameters{
 			Properties: &armsql.UpdateLongTermRetentionBackupParametersProperties{
-				RequestedBackupStorageRedundancy: armsql.BackupStorageRedundancy("Geo").ToPtr(),
+				RequestedBackupStorageRedundancy: to.Ptr(armsql.BackupStorageRedundancyGeo),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupGet.json
 func ExampleLongTermRetentionBackupsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupDelete.json
 func ExampleLongTermRetentionBackupsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByDatabase.json
-func ExampleLongTermRetentionBackupsClient_ListByDatabase() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByDatabase.json
+func ExampleLongTermRetentionBackupsClient_NewListByDatabasePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByDatabase("<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByDatabasePager("japaneast",
+		"testserver",
+		"testDatabase",
 		&armsql.LongTermRetentionBackupsClientListByDatabaseOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByLocation.json
-func ExampleLongTermRetentionBackupsClient_ListByLocation() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByLocation.json
+func ExampleLongTermRetentionBackupsClient_NewListByLocationPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByLocation("<location-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByLocationPager("japaneast",
 		&armsql.LongTermRetentionBackupsClientListByLocationOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByServer.json
-func ExampleLongTermRetentionBackupsClient_ListByServer() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/LongTermRetentionBackupListByServer.json
+func ExampleLongTermRetentionBackupsClient_NewListByServerPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByServer("<location-name>",
-		"<long-term-retention-server-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServerPager("japaneast",
+		"testserver",
 		&armsql.LongTermRetentionBackupsClientListByServerOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupCopy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupCopy.json
 func ExampleLongTermRetentionBackupsClient_BeginCopyByResourceGroup() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCopyByResourceGroup(ctx,
-		"<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"testResourceGroup",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		armsql.CopyLongTermRetentionBackupParameters{
 			Properties: &armsql.CopyLongTermRetentionBackupParametersProperties{
-				TargetBackupStorageRedundancy: armsql.BackupStorageRedundancy("Geo").ToPtr(),
-				TargetDatabaseName:            to.StringPtr("<target-database-name>"),
-				TargetServerResourceID:        to.StringPtr("<target-server-resource-id>"),
+				TargetBackupStorageRedundancy: to.Ptr(armsql.BackupStorageRedundancyGeo),
+				TargetDatabaseName:            to.Ptr("testDatabase2"),
+				TargetServerResourceID:        to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Sql/resourceGroups/resourceGroup/servers/testserver2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientCopyByResourceGroupResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupUpdate.json
 func ExampleLongTermRetentionBackupsClient_BeginUpdateByResourceGroup() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdateByResourceGroup(ctx,
-		"<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"testResourceGroup",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		armsql.UpdateLongTermRetentionBackupParameters{
 			Properties: &armsql.UpdateLongTermRetentionBackupParametersProperties{
-				RequestedBackupStorageRedundancy: armsql.BackupStorageRedundancy("Geo").ToPtr(),
+				RequestedBackupStorageRedundancy: to.Ptr(armsql.BackupStorageRedundancyGeo),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientUpdateByResourceGroupResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupGet.json
 func ExampleLongTermRetentionBackupsClient_GetByResourceGroup() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetByResourceGroup(ctx,
-		"<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"testResourceGroup",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LongTermRetentionBackupsClientGetByResourceGroupResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupDelete.json
 func ExampleLongTermRetentionBackupsClient_BeginDeleteByResourceGroup() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDeleteByResourceGroup(ctx,
-		"<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
-		"<backup-name>",
+		"testResourceGroup",
+		"japaneast",
+		"testserver",
+		"testDatabase",
+		"55555555-6666-7777-8888-999999999999;131637960820000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByDatabase.json
-func ExampleLongTermRetentionBackupsClient_ListByResourceGroupDatabase() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByDatabase.json
+func ExampleLongTermRetentionBackupsClient_NewListByResourceGroupDatabasePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroupDatabase("<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
-		"<long-term-retention-database-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupDatabasePager("testResourceGroup",
+		"japaneast",
+		"testserver",
+		"testDatabase",
 		&armsql.LongTermRetentionBackupsClientListByResourceGroupDatabaseOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByLocation.json
-func ExampleLongTermRetentionBackupsClient_ListByResourceGroupLocation() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByLocation.json
+func ExampleLongTermRetentionBackupsClient_NewListByResourceGroupLocationPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroupLocation("<resource-group-name>",
-		"<location-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupLocationPager("testResourceGroup",
+		"japaneast",
 		&armsql.LongTermRetentionBackupsClientListByResourceGroupLocationOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByServer.json
-func ExampleLongTermRetentionBackupsClient_ListByResourceGroupServer() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResourceGroupBasedLongTermRetentionBackupListByServer.json
+func ExampleLongTermRetentionBackupsClient_NewListByResourceGroupServerPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewLongTermRetentionBackupsClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroupServer("<resource-group-name>",
-		"<location-name>",
-		"<long-term-retention-server-name>",
+	client, err := armsql.NewLongTermRetentionBackupsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupServerPager("testResourceGroup",
+		"japaneast",
+		"testserver",
 		&armsql.LongTermRetentionBackupsClientListByResourceGroupServerOptions{OnlyLatestPerDatabase: nil,
 			DatabaseState: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

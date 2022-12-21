@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armvideoanalyzer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -26,47 +26,66 @@ import (
 // EdgeModulesClient contains the methods for the EdgeModules group.
 // Don't use this type directly, use NewEdgeModulesClient() instead.
 type EdgeModulesClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewEdgeModulesClient creates a new instance of EdgeModulesClient with the specified values.
-func NewEdgeModulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *EdgeModulesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The ID of the target subscription.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewEdgeModulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*EdgeModulesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &EdgeModulesClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &EdgeModulesClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
-// CreateOrUpdate - Creates a new edge module or updates an existing one. An edge module resource enables a single instance of an Azure Video Analyzer IoT
-// edge module to interact with the Video Analyzer Account. This is
-// used for authorization and also to make sure that the particular edge module instance only has access to the data it requires from the Azure Video Analyzer
-// service. A new edge module resource should
-// be created for every new instance of an Azure Video Analyzer edge module deployed to you Azure IoT edge environment. Edge module resources can be deleted
-// if the specific module is not in use anymore.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *EdgeModulesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters EdgeModuleEntity, options *EdgeModulesCreateOrUpdateOptions) (EdgeModulesCreateOrUpdateResponse, error) {
+// CreateOrUpdate - Creates a new edge module or updates an existing one. An edge module resource enables a single instance
+// of an Azure Video Analyzer IoT edge module to interact with the Video Analyzer Account. This is
+// used for authorization and also to make sure that the particular edge module instance only has access to the data it requires
+// from the Azure Video Analyzer service. A new edge module resource should
+// be created for every new instance of an Azure Video Analyzer edge module deployed to you Azure IoT edge environment. Edge
+// module resources can be deleted if the specific module is not in use anymore.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// edgeModuleName - The Edge Module name.
+// parameters - The request parameters
+// options - EdgeModulesClientCreateOrUpdateOptions contains the optional parameters for the EdgeModulesClient.CreateOrUpdate
+// method.
+func (client *EdgeModulesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters EdgeModuleEntity, options *EdgeModulesClientCreateOrUpdateOptions) (EdgeModulesClientCreateOrUpdateResponse, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, accountName, edgeModuleName, parameters, options)
 	if err != nil {
-		return EdgeModulesCreateOrUpdateResponse{}, err
+		return EdgeModulesClientCreateOrUpdateResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return EdgeModulesCreateOrUpdateResponse{}, err
+		return EdgeModulesClientCreateOrUpdateResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusCreated) {
-		return EdgeModulesCreateOrUpdateResponse{}, client.createOrUpdateHandleError(resp)
+		return EdgeModulesClientCreateOrUpdateResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.createOrUpdateHandleResponse(resp)
 }
 
 // createOrUpdateCreateRequest creates the CreateOrUpdate request.
-func (client *EdgeModulesClient) createOrUpdateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters EdgeModuleEntity, options *EdgeModulesCreateOrUpdateOptions) (*policy.Request, error) {
+func (client *EdgeModulesClient) createOrUpdateCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters EdgeModuleEntity, options *EdgeModulesClientCreateOrUpdateOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/edgeModules/{edgeModuleName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -84,60 +103,52 @@ func (client *EdgeModulesClient) createOrUpdateCreateRequest(ctx context.Context
 		return nil, errors.New("parameter edgeModuleName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{edgeModuleName}", url.PathEscape(edgeModuleName))
-	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPut, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
-func (client *EdgeModulesClient) createOrUpdateHandleResponse(resp *http.Response) (EdgeModulesCreateOrUpdateResponse, error) {
-	result := EdgeModulesCreateOrUpdateResponse{RawResponse: resp}
+func (client *EdgeModulesClient) createOrUpdateHandleResponse(resp *http.Response) (EdgeModulesClientCreateOrUpdateResponse, error) {
+	result := EdgeModulesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EdgeModuleEntity); err != nil {
-		return EdgeModulesCreateOrUpdateResponse{}, runtime.NewResponseError(err, resp)
+		return EdgeModulesClientCreateOrUpdateResponse{}, err
 	}
 	return result, nil
 }
 
-// createOrUpdateHandleError handles the CreateOrUpdate error response.
-func (client *EdgeModulesClient) createOrUpdateHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// Delete - Deletes an existing edge module resource. Deleting the edge module resource will prevent an Azure Video Analyzer IoT edge module which was previously
-// initiated with the module provisioning token from
+// Delete - Deletes an existing edge module resource. Deleting the edge module resource will prevent an Azure Video Analyzer
+// IoT edge module which was previously initiated with the module provisioning token from
 // communicating with the cloud.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *EdgeModulesClient) Delete(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesDeleteOptions) (EdgeModulesDeleteResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// edgeModuleName - The Edge Module name.
+// options - EdgeModulesClientDeleteOptions contains the optional parameters for the EdgeModulesClient.Delete method.
+func (client *EdgeModulesClient) Delete(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesClientDeleteOptions) (EdgeModulesClientDeleteResponse, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, accountName, edgeModuleName, options)
 	if err != nil {
-		return EdgeModulesDeleteResponse{}, err
+		return EdgeModulesClientDeleteResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return EdgeModulesDeleteResponse{}, err
+		return EdgeModulesClientDeleteResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
-		return EdgeModulesDeleteResponse{}, client.deleteHandleError(resp)
+		return EdgeModulesClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return EdgeModulesDeleteResponse{RawResponse: resp}, nil
+	return EdgeModulesClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
-func (client *EdgeModulesClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesDeleteOptions) (*policy.Request, error) {
+func (client *EdgeModulesClient) deleteCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesClientDeleteOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/edgeModules/{edgeModuleName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -155,49 +166,41 @@ func (client *EdgeModulesClient) deleteCreateRequest(ctx context.Context, resour
 		return nil, errors.New("parameter edgeModuleName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{edgeModuleName}", url.PathEscape(edgeModuleName))
-	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodDelete, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// deleteHandleError handles the Delete error response.
-func (client *EdgeModulesClient) deleteHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
 // Get - Retrieves an existing edge module resource with the given name.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *EdgeModulesClient) Get(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesGetOptions) (EdgeModulesGetResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// edgeModuleName - The Edge Module name.
+// options - EdgeModulesClientGetOptions contains the optional parameters for the EdgeModulesClient.Get method.
+func (client *EdgeModulesClient) Get(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesClientGetOptions) (EdgeModulesClientGetResponse, error) {
 	req, err := client.getCreateRequest(ctx, resourceGroupName, accountName, edgeModuleName, options)
 	if err != nil {
-		return EdgeModulesGetResponse{}, err
+		return EdgeModulesClientGetResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return EdgeModulesGetResponse{}, err
+		return EdgeModulesClientGetResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return EdgeModulesGetResponse{}, client.getHandleError(resp)
+		return EdgeModulesClientGetResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getHandleResponse(resp)
 }
 
 // getCreateRequest creates the Get request.
-func (client *EdgeModulesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesGetOptions) (*policy.Request, error) {
+func (client *EdgeModulesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, options *EdgeModulesClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/edgeModules/{edgeModuleName}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -215,55 +218,62 @@ func (client *EdgeModulesClient) getCreateRequest(ctx context.Context, resourceG
 		return nil, errors.New("parameter edgeModuleName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{edgeModuleName}", url.PathEscape(edgeModuleName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *EdgeModulesClient) getHandleResponse(resp *http.Response) (EdgeModulesGetResponse, error) {
-	result := EdgeModulesGetResponse{RawResponse: resp}
+func (client *EdgeModulesClient) getHandleResponse(resp *http.Response) (EdgeModulesClientGetResponse, error) {
+	result := EdgeModulesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EdgeModuleEntity); err != nil {
-		return EdgeModulesGetResponse{}, runtime.NewResponseError(err, resp)
+		return EdgeModulesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// getHandleError handles the Get error response.
-func (client *EdgeModulesClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// List - List all existing edge module resources, along with their JSON representations.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *EdgeModulesClient) List(resourceGroupName string, accountName string, options *EdgeModulesListOptions) *EdgeModulesListPager {
-	return &EdgeModulesListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, accountName, options)
+// NewListPager - List all existing edge module resources, along with their JSON representations.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// options - EdgeModulesClientListOptions contains the optional parameters for the EdgeModulesClient.List method.
+func (client *EdgeModulesClient) NewListPager(resourceGroupName string, accountName string, options *EdgeModulesClientListOptions) *runtime.Pager[EdgeModulesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[EdgeModulesClientListResponse]{
+		More: func(page EdgeModulesClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp EdgeModulesListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.EdgeModuleEntityCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *EdgeModulesClientListResponse) (EdgeModulesClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, accountName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return EdgeModulesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return EdgeModulesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return EdgeModulesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
-func (client *EdgeModulesClient) listCreateRequest(ctx context.Context, resourceGroupName string, accountName string, options *EdgeModulesListOptions) (*policy.Request, error) {
+func (client *EdgeModulesClient) listCreateRequest(ctx context.Context, resourceGroupName string, accountName string, options *EdgeModulesClientListOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/edgeModules"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -277,7 +287,7 @@ func (client *EdgeModulesClient) listCreateRequest(ctx context.Context, resource
 		return nil, errors.New("parameter accountName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{accountName}", url.PathEscape(accountName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
@@ -287,57 +297,51 @@ func (client *EdgeModulesClient) listCreateRequest(ctx context.Context, resource
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
-func (client *EdgeModulesClient) listHandleResponse(resp *http.Response) (EdgeModulesListResponse, error) {
-	result := EdgeModulesListResponse{RawResponse: resp}
+func (client *EdgeModulesClient) listHandleResponse(resp *http.Response) (EdgeModulesClientListResponse, error) {
+	result := EdgeModulesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EdgeModuleEntityCollection); err != nil {
-		return EdgeModulesListResponse{}, runtime.NewResponseError(err, resp)
+		return EdgeModulesClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// listHandleError handles the List error response.
-func (client *EdgeModulesClient) listHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
-}
-
-// ListProvisioningToken - Creates a new provisioning token. A provisioning token allows for a single instance of Azure Video analyzer IoT edge module to
-// be initialized and authorized to the cloud account. The provisioning
-// token itself is short lived and it is only used for the initial handshake between IoT edge module and the cloud. After the initial handshake, the IoT
-// edge module will agree on a set of authentication
-// keys which will be auto-rotated as long as the module is able to periodically connect to the cloud. A new provisioning token can be generated for the
-// same IoT edge module in case the module state lost
+// ListProvisioningToken - Creates a new provisioning token. A provisioning token allows for a single instance of Azure Video
+// analyzer IoT edge module to be initialized and authorized to the cloud account. The provisioning
+// token itself is short lived and it is only used for the initial handshake between IoT edge module and the cloud. After
+// the initial handshake, the IoT edge module will agree on a set of authentication
+// keys which will be auto-rotated as long as the module is able to periodically connect to the cloud. A new provisioning
+// token can be generated for the same IoT edge module in case the module state lost
 // or reset.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *EdgeModulesClient) ListProvisioningToken(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters ListProvisioningTokenInput, options *EdgeModulesListProvisioningTokenOptions) (EdgeModulesListProvisioningTokenResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// edgeModuleName - The Edge Module name.
+// parameters - The request parameters
+// options - EdgeModulesClientListProvisioningTokenOptions contains the optional parameters for the EdgeModulesClient.ListProvisioningToken
+// method.
+func (client *EdgeModulesClient) ListProvisioningToken(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters ListProvisioningTokenInput, options *EdgeModulesClientListProvisioningTokenOptions) (EdgeModulesClientListProvisioningTokenResponse, error) {
 	req, err := client.listProvisioningTokenCreateRequest(ctx, resourceGroupName, accountName, edgeModuleName, parameters, options)
 	if err != nil {
-		return EdgeModulesListProvisioningTokenResponse{}, err
+		return EdgeModulesClientListProvisioningTokenResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return EdgeModulesListProvisioningTokenResponse{}, err
+		return EdgeModulesClientListProvisioningTokenResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return EdgeModulesListProvisioningTokenResponse{}, client.listProvisioningTokenHandleError(resp)
+		return EdgeModulesClientListProvisioningTokenResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.listProvisioningTokenHandleResponse(resp)
 }
 
 // listProvisioningTokenCreateRequest creates the ListProvisioningToken request.
-func (client *EdgeModulesClient) listProvisioningTokenCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters ListProvisioningTokenInput, options *EdgeModulesListProvisioningTokenOptions) (*policy.Request, error) {
+func (client *EdgeModulesClient) listProvisioningTokenCreateRequest(ctx context.Context, resourceGroupName string, accountName string, edgeModuleName string, parameters ListProvisioningTokenInput, options *EdgeModulesClientListProvisioningTokenOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/edgeModules/{edgeModuleName}/listProvisioningToken"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -355,35 +359,22 @@ func (client *EdgeModulesClient) listProvisioningTokenCreateRequest(ctx context.
 		return nil, errors.New("parameter edgeModuleName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{edgeModuleName}", url.PathEscape(edgeModuleName))
-	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // listProvisioningTokenHandleResponse handles the ListProvisioningToken response.
-func (client *EdgeModulesClient) listProvisioningTokenHandleResponse(resp *http.Response) (EdgeModulesListProvisioningTokenResponse, error) {
-	result := EdgeModulesListProvisioningTokenResponse{RawResponse: resp}
+func (client *EdgeModulesClient) listProvisioningTokenHandleResponse(resp *http.Response) (EdgeModulesClientListProvisioningTokenResponse, error) {
+	result := EdgeModulesClientListProvisioningTokenResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EdgeModuleProvisioningToken); err != nil {
-		return EdgeModulesListProvisioningTokenResponse{}, runtime.NewResponseError(err, resp)
+		return EdgeModulesClientListProvisioningTokenResponse{}, err
 	}
 	return result, nil
-}
-
-// listProvisioningTokenHandleError handles the ListProvisioningToken error response.
-func (client *EdgeModulesClient) listProvisioningTokenHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,302 +12,411 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/relay/armrelay"
 )
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceCheckNameAvailability.json
-func ExampleNamespacesClient_CheckNameAvailability() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleListAll.json
+func ExampleNamespacesClient_NewListAuthorizationRulesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	res, err := client.CheckNameAvailability(ctx,
-		armrelay.CheckNameAvailability{
-			Name: to.StringPtr("<name>"),
-		},
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListAuthorizationRulesPager("resourcegroup",
+		"example-RelayNamespace-01",
 		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCheckNameAvailabilityResult)
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceListBySubscription.json
-func ExampleNamespacesClient_List() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.List(nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceListByResourceGroup.json
-func ExampleNamespacesClient_ListByResourceGroup() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroup("<resource-group-name>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceCreate.json
-func ExampleNamespacesClient_BeginCreateOrUpdate() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		armrelay.Namespace{
-			Location: to.StringPtr("<location>"),
-			Tags: map[string]*string{
-				"tag1": to.StringPtr("value1"),
-				"tag2": to.StringPtr("value2"),
-			},
-			SKU: &armrelay.SKU{
-				Name: to.StringPtr("<name>"),
-				Tier: to.StringPtr("<tier>"),
-			},
-		},
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCreateOrUpdateResult)
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceDelete.json
-func ExampleNamespacesClient_BeginDelete() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceGet.json
-func ExampleNamespacesClient_Get() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientGetResult)
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceUpdate.json
-func ExampleNamespacesClient_Update() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		armrelay.UpdateParameters{
-			Tags: map[string]*string{
-				"tag3": to.StringPtr("value3"),
-				"tag4": to.StringPtr("value4"),
-				"tag5": to.StringPtr("value5"),
-				"tag6": to.StringPtr("value6"),
-			},
-		},
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientUpdateResult)
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAutorizationRuleListAll.json
-func ExampleNamespacesClient_ListAuthorizationRules() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.ListAuthorizationRules("<resource-group-name>",
-		"<namespace-name>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
-}
-
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleCreate.json
 func ExampleNamespacesClient_CreateOrUpdateAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdateAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"resourcegroup",
+		"example-RelayNamespace-01",
+		"example-RelayAuthRules-01",
 		armrelay.AuthorizationRule{
 			Properties: &armrelay.AuthorizationRuleProperties{
 				Rights: []*armrelay.AccessRights{
-					armrelay.AccessRightsListen.ToPtr(),
-					armrelay.AccessRightsSend.ToPtr()},
+					to.Ptr(armrelay.AccessRightsListen),
+					to.Ptr(armrelay.AccessRightsSend)},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCreateOrUpdateAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAutorizationRuleDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleDelete.json
 func ExampleNamespacesClient_DeleteAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.DeleteAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"resourcegroup",
+		"example-RelayNamespace-01",
+		"example-RelayAuthRules-01",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAutorizationRuleGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleGet.json
 func ExampleNamespacesClient_GetAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"resourcegroup",
+		"example-RelayNamespace-01",
+		"example-RelayAuthRules-01",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientGetAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleListKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleListKey.json
 func ExampleNamespacesClient_ListKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"resourcegroup",
+		"example-RelayNamespace-01",
+		"example-RelayAuthRules-01",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientListKeysResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/relay/resource-manager/Microsoft.Relay/stable/2017-04-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleRegenrateKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceAuthorizationRuleRegenerateKey.json
 func ExampleNamespacesClient_RegenerateKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrelay.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.RegenerateKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"resourcegroup",
+		"example-RelayNamespace-01",
+		"example-RelayAuthRules-01",
 		armrelay.RegenerateAccessKeyParameters{
-			KeyType: armrelay.KeyTypePrimaryKey.ToPtr(),
+			KeyType: to.Ptr(armrelay.KeyTypePrimaryKey),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientRegenerateKeysResult)
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceCheckNameAvailability.json
+func ExampleNamespacesClient_CheckNameAvailability() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.CheckNameAvailability(ctx,
+		armrelay.CheckNameAvailability{
+			Name: to.Ptr("example-RelayNamespace1321"),
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceListBySubscription.json
+func ExampleNamespacesClient_NewListPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceListByResourceGroup.json
+func ExampleNamespacesClient_NewListByResourceGroupPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupPager("resourcegroup",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceCreate.json
+func ExampleNamespacesClient_BeginCreateOrUpdate() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginCreateOrUpdate(ctx,
+		"resourcegroup",
+		"example-RelayNamespace-5849",
+		armrelay.Namespace{
+			Location: to.Ptr("South Central US"),
+			Tags: map[string]*string{
+				"tag1": to.Ptr("value1"),
+				"tag2": to.Ptr("value2"),
+			},
+			SKU: &armrelay.SKU{
+				Name: to.Ptr(armrelay.SKUNameStandard),
+				Tier: to.Ptr(armrelay.SKUTierStandard),
+			},
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	res, err := poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceDelete.json
+func ExampleNamespacesClient_BeginDelete() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginDelete(ctx,
+		"SouthCentralUS",
+		"example-RelayNamespace-5849",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	_, err = poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceGet.json
+func ExampleNamespacesClient_Get() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.Get(ctx,
+		"RG-eg",
+		"example-RelayRelayNamespace-01",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/NameSpaces/RelayNameSpaceUpdate.json
+func ExampleNamespacesClient_Update() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("ffffffff-ffff-ffff-ffff-ffffffffffff", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.Update(ctx,
+		"RG-eg",
+		"example-RelayRelayNamespace-01",
+		armrelay.UpdateParameters{
+			Tags: map[string]*string{
+				"tag3": to.Ptr("value3"),
+				"tag4": to.Ptr("value4"),
+				"tag5": to.Ptr("value5"),
+				"tag6": to.Ptr("value6"),
+			},
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/VirtualNetworkRules/RelayNetworkRuleSetCreate.json
+func ExampleNamespacesClient_CreateOrUpdateNetworkRuleSet() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("Subscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.CreateOrUpdateNetworkRuleSet(ctx,
+		"ResourceGroup",
+		"example-RelayNamespace-6019",
+		armrelay.NetworkRuleSet{
+			Properties: &armrelay.NetworkRuleSetProperties{
+				DefaultAction: to.Ptr(armrelay.DefaultActionDeny),
+				IPRules: []*armrelay.NWRuleSetIPRules{
+					{
+						Action: to.Ptr(armrelay.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.1"),
+					},
+					{
+						Action: to.Ptr(armrelay.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.2"),
+					},
+					{
+						Action: to.Ptr(armrelay.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.3"),
+					},
+					{
+						Action: to.Ptr(armrelay.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.4"),
+					},
+					{
+						Action: to.Ptr(armrelay.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.5"),
+					}},
+			},
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/relay/resource-manager/Microsoft.Relay/stable/2021-11-01/examples/VirtualNetworkRules/RelayNetworkRuleSetGet.json
+func ExampleNamespacesClient_GetNetworkRuleSet() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armrelay.NewNamespacesClient("Subscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	res, err := client.GetNetworkRuleSet(ctx,
+		"ResourceGroup",
+		"example-RelayNamespace-6019",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type EnrollmentAccountsClient struct {
 // NewEnrollmentAccountsClient creates a new instance of EnrollmentAccountsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewEnrollmentAccountsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *EnrollmentAccountsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewEnrollmentAccountsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*EnrollmentAccountsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &EnrollmentAccountsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets a enrollment account by name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-03-01-preview
 // name - Enrollment Account name.
 // options - EnrollmentAccountsClientGetOptions contains the optional parameters for the EnrollmentAccountsClient.Get method.
 func (client *EnrollmentAccountsClient) Get(ctx context.Context, name string, options *EnrollmentAccountsClientGetOptions) (EnrollmentAccountsClientGetResponse, error) {
@@ -79,32 +85,49 @@ func (client *EnrollmentAccountsClient) getCreateRequest(ctx context.Context, na
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-03-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *EnrollmentAccountsClient) getHandleResponse(resp *http.Response) (EnrollmentAccountsClientGetResponse, error) {
-	result := EnrollmentAccountsClientGetResponse{RawResponse: resp}
+	result := EnrollmentAccountsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EnrollmentAccountSummary); err != nil {
 		return EnrollmentAccountsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Lists the enrollment accounts the caller has access to.
+// NewListPager - Lists the enrollment accounts the caller has access to.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-03-01-preview
 // options - EnrollmentAccountsClientListOptions contains the optional parameters for the EnrollmentAccountsClient.List method.
-func (client *EnrollmentAccountsClient) List(options *EnrollmentAccountsClientListOptions) *EnrollmentAccountsClientListPager {
-	return &EnrollmentAccountsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *EnrollmentAccountsClient) NewListPager(options *EnrollmentAccountsClientListOptions) *runtime.Pager[EnrollmentAccountsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[EnrollmentAccountsClientListResponse]{
+		More: func(page EnrollmentAccountsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp EnrollmentAccountsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.EnrollmentAccountListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *EnrollmentAccountsClientListResponse) (EnrollmentAccountsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return EnrollmentAccountsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return EnrollmentAccountsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return EnrollmentAccountsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -117,13 +140,13 @@ func (client *EnrollmentAccountsClient) listCreateRequest(ctx context.Context, o
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-03-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *EnrollmentAccountsClient) listHandleResponse(resp *http.Response) (EnrollmentAccountsClientListResponse, error) {
-	result := EnrollmentAccountsClientListResponse{RawResponse: resp}
+	result := EnrollmentAccountsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EnrollmentAccountListResult); err != nil {
 		return EnrollmentAccountsClientListResponse{}, err
 	}

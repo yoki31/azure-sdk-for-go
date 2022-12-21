@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type PrivateLinkHubsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPrivateLinkHubsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *PrivateLinkHubsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPrivateLinkHubsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*PrivateLinkHubsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PrivateLinkHubsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates a privateLinkHub
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // privateLinkHubName - Name of the privateLinkHub
 // privateLinkHubInfo - PrivateLinkHub create or update request properties
@@ -93,13 +99,13 @@ func (client *PrivateLinkHubsClient) createOrUpdateCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, privateLinkHubInfo)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *PrivateLinkHubsClient) createOrUpdateHandleResponse(resp *http.Response) (PrivateLinkHubsClientCreateOrUpdateResponse, error) {
-	result := PrivateLinkHubsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := PrivateLinkHubsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkHub); err != nil {
 		return PrivateLinkHubsClientCreateOrUpdateResponse{}, err
 	}
@@ -108,30 +114,26 @@ func (client *PrivateLinkHubsClient) createOrUpdateHandleResponse(resp *http.Res
 
 // BeginDelete - Deletes a privateLinkHub
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // privateLinkHubName - Name of the privateLinkHub
 // options - PrivateLinkHubsClientBeginDeleteOptions contains the optional parameters for the PrivateLinkHubsClient.BeginDelete
 // method.
-func (client *PrivateLinkHubsClient) BeginDelete(ctx context.Context, resourceGroupName string, privateLinkHubName string, options *PrivateLinkHubsClientBeginDeleteOptions) (PrivateLinkHubsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, privateLinkHubName, options)
-	if err != nil {
-		return PrivateLinkHubsClientDeletePollerResponse{}, err
+func (client *PrivateLinkHubsClient) BeginDelete(ctx context.Context, resourceGroupName string, privateLinkHubName string, options *PrivateLinkHubsClientBeginDeleteOptions) (*runtime.Poller[PrivateLinkHubsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, privateLinkHubName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[PrivateLinkHubsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[PrivateLinkHubsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := PrivateLinkHubsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("PrivateLinkHubsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return PrivateLinkHubsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &PrivateLinkHubsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a privateLinkHub
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *PrivateLinkHubsClient) deleteOperation(ctx context.Context, resourceGroupName string, privateLinkHubName string, options *PrivateLinkHubsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, privateLinkHubName, options)
 	if err != nil {
@@ -169,12 +171,13 @@ func (client *PrivateLinkHubsClient) deleteCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a privateLinkHub
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // privateLinkHubName - Name of the privateLinkHub
 // options - PrivateLinkHubsClientGetOptions contains the optional parameters for the PrivateLinkHubsClient.Get method.
@@ -215,32 +218,49 @@ func (client *PrivateLinkHubsClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *PrivateLinkHubsClient) getHandleResponse(resp *http.Response) (PrivateLinkHubsClientGetResponse, error) {
-	result := PrivateLinkHubsClientGetResponse{RawResponse: resp}
+	result := PrivateLinkHubsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkHub); err != nil {
 		return PrivateLinkHubsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Returns a list of privateLinkHubs in a subscription
+// NewListPager - Returns a list of privateLinkHubs in a subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // options - PrivateLinkHubsClientListOptions contains the optional parameters for the PrivateLinkHubsClient.List method.
-func (client *PrivateLinkHubsClient) List(options *PrivateLinkHubsClientListOptions) *PrivateLinkHubsClientListPager {
-	return &PrivateLinkHubsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *PrivateLinkHubsClient) NewListPager(options *PrivateLinkHubsClientListOptions) *runtime.Pager[PrivateLinkHubsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PrivateLinkHubsClientListResponse]{
+		More: func(page PrivateLinkHubsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PrivateLinkHubsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PrivateLinkHubInfoListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *PrivateLinkHubsClientListResponse) (PrivateLinkHubsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PrivateLinkHubsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PrivateLinkHubsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PrivateLinkHubsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -257,34 +277,51 @@ func (client *PrivateLinkHubsClient) listCreateRequest(ctx context.Context, opti
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *PrivateLinkHubsClient) listHandleResponse(resp *http.Response) (PrivateLinkHubsClientListResponse, error) {
-	result := PrivateLinkHubsClientListResponse{RawResponse: resp}
+	result := PrivateLinkHubsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkHubInfoListResult); err != nil {
 		return PrivateLinkHubsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Returns a list of privateLinkHubs in a resource group
+// NewListByResourceGroupPager - Returns a list of privateLinkHubs in a resource group
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - PrivateLinkHubsClientListByResourceGroupOptions contains the optional parameters for the PrivateLinkHubsClient.ListByResourceGroup
 // method.
-func (client *PrivateLinkHubsClient) ListByResourceGroup(resourceGroupName string, options *PrivateLinkHubsClientListByResourceGroupOptions) *PrivateLinkHubsClientListByResourceGroupPager {
-	return &PrivateLinkHubsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *PrivateLinkHubsClient) NewListByResourceGroupPager(resourceGroupName string, options *PrivateLinkHubsClientListByResourceGroupOptions) *runtime.Pager[PrivateLinkHubsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PrivateLinkHubsClientListByResourceGroupResponse]{
+		More: func(page PrivateLinkHubsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PrivateLinkHubsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PrivateLinkHubInfoListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *PrivateLinkHubsClientListByResourceGroupResponse) (PrivateLinkHubsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PrivateLinkHubsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PrivateLinkHubsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PrivateLinkHubsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -305,13 +342,13 @@ func (client *PrivateLinkHubsClient) listByResourceGroupCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *PrivateLinkHubsClient) listByResourceGroupHandleResponse(resp *http.Response) (PrivateLinkHubsClientListByResourceGroupResponse, error) {
-	result := PrivateLinkHubsClientListByResourceGroupResponse{RawResponse: resp}
+	result := PrivateLinkHubsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkHubInfoListResult); err != nil {
 		return PrivateLinkHubsClientListByResourceGroupResponse{}, err
 	}
@@ -320,6 +357,7 @@ func (client *PrivateLinkHubsClient) listByResourceGroupHandleResponse(resp *htt
 
 // Update - Updates a privateLinkHub
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // privateLinkHubName - Name of the privateLinkHub
 // privateLinkHubPatchInfo - PrivateLinkHub patch request properties
@@ -361,13 +399,13 @@ func (client *PrivateLinkHubsClient) updateCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, privateLinkHubPatchInfo)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *PrivateLinkHubsClient) updateHandleResponse(resp *http.Response) (PrivateLinkHubsClientUpdateResponse, error) {
-	result := PrivateLinkHubsClientUpdateResponse{RawResponse: resp}
+	result := PrivateLinkHubsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateLinkHub); err != nil {
 		return PrivateLinkHubsClientUpdateResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type DeploymentOperationsClient struct {
 // subscriptionID - The Microsoft Azure subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDeploymentOperationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DeploymentOperationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDeploymentOperationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DeploymentOperationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DeploymentOperationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets a deployments operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // deploymentName - The name of the deployment.
 // operationID - The ID of the operation to get.
@@ -98,13 +104,13 @@ func (client *DeploymentOperationsClient) getCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DeploymentOperationsClient) getHandleResponse(resp *http.Response) (DeploymentOperationsClientGetResponse, error) {
-	result := DeploymentOperationsClientGetResponse{RawResponse: resp}
+	result := DeploymentOperationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperation); err != nil {
 		return DeploymentOperationsClientGetResponse{}, err
 	}
@@ -113,6 +119,7 @@ func (client *DeploymentOperationsClient) getHandleResponse(resp *http.Response)
 
 // GetAtManagementGroupScope - Gets a deployments operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // groupID - The management group ID.
 // deploymentName - The name of the deployment.
 // operationID - The ID of the operation to get.
@@ -155,13 +162,13 @@ func (client *DeploymentOperationsClient) getAtManagementGroupScopeCreateRequest
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtManagementGroupScopeHandleResponse handles the GetAtManagementGroupScope response.
 func (client *DeploymentOperationsClient) getAtManagementGroupScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientGetAtManagementGroupScopeResponse, error) {
-	result := DeploymentOperationsClientGetAtManagementGroupScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientGetAtManagementGroupScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperation); err != nil {
 		return DeploymentOperationsClientGetAtManagementGroupScopeResponse{}, err
 	}
@@ -170,6 +177,7 @@ func (client *DeploymentOperationsClient) getAtManagementGroupScopeHandleRespons
 
 // GetAtScope - Gets a deployments operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // deploymentName - The name of the deployment.
 // operationID - The ID of the operation to get.
@@ -209,13 +217,13 @@ func (client *DeploymentOperationsClient) getAtScopeCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtScopeHandleResponse handles the GetAtScope response.
 func (client *DeploymentOperationsClient) getAtScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientGetAtScopeResponse, error) {
-	result := DeploymentOperationsClientGetAtScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientGetAtScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperation); err != nil {
 		return DeploymentOperationsClientGetAtScopeResponse{}, err
 	}
@@ -224,6 +232,7 @@ func (client *DeploymentOperationsClient) getAtScopeHandleResponse(resp *http.Re
 
 // GetAtSubscriptionScope - Gets a deployments operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // deploymentName - The name of the deployment.
 // operationID - The ID of the operation to get.
 // options - DeploymentOperationsClientGetAtSubscriptionScopeOptions contains the optional parameters for the DeploymentOperationsClient.GetAtSubscriptionScope
@@ -265,13 +274,13 @@ func (client *DeploymentOperationsClient) getAtSubscriptionScopeCreateRequest(ct
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtSubscriptionScopeHandleResponse handles the GetAtSubscriptionScope response.
 func (client *DeploymentOperationsClient) getAtSubscriptionScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientGetAtSubscriptionScopeResponse, error) {
-	result := DeploymentOperationsClientGetAtSubscriptionScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientGetAtSubscriptionScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperation); err != nil {
 		return DeploymentOperationsClientGetAtSubscriptionScopeResponse{}, err
 	}
@@ -280,6 +289,7 @@ func (client *DeploymentOperationsClient) getAtSubscriptionScopeHandleResponse(r
 
 // GetAtTenantScope - Gets a deployments operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // deploymentName - The name of the deployment.
 // operationID - The ID of the operation to get.
 // options - DeploymentOperationsClientGetAtTenantScopeOptions contains the optional parameters for the DeploymentOperationsClient.GetAtTenantScope
@@ -317,35 +327,52 @@ func (client *DeploymentOperationsClient) getAtTenantScopeCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtTenantScopeHandleResponse handles the GetAtTenantScope response.
 func (client *DeploymentOperationsClient) getAtTenantScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientGetAtTenantScopeResponse, error) {
-	result := DeploymentOperationsClientGetAtTenantScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientGetAtTenantScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperation); err != nil {
 		return DeploymentOperationsClientGetAtTenantScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets all deployments operations for a deployment.
+// NewListPager - Gets all deployments operations for a deployment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // deploymentName - The name of the deployment.
 // options - DeploymentOperationsClientListOptions contains the optional parameters for the DeploymentOperationsClient.List
 // method.
-func (client *DeploymentOperationsClient) List(resourceGroupName string, deploymentName string, options *DeploymentOperationsClientListOptions) *DeploymentOperationsClientListPager {
-	return &DeploymentOperationsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, deploymentName, options)
+func (client *DeploymentOperationsClient) NewListPager(resourceGroupName string, deploymentName string, options *DeploymentOperationsClientListOptions) *runtime.Pager[DeploymentOperationsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DeploymentOperationsClientListResponse]{
+		More: func(page DeploymentOperationsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DeploymentOperationsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DeploymentOperationsClientListResponse) (DeploymentOperationsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, deploymentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DeploymentOperationsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DeploymentOperationsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DeploymentOperationsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -373,35 +400,52 @@ func (client *DeploymentOperationsClient) listCreateRequest(ctx context.Context,
 	}
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *DeploymentOperationsClient) listHandleResponse(resp *http.Response) (DeploymentOperationsClientListResponse, error) {
-	result := DeploymentOperationsClientListResponse{RawResponse: resp}
+	result := DeploymentOperationsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperationsListResult); err != nil {
 		return DeploymentOperationsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtManagementGroupScope - Gets all deployments operations for a deployment.
+// NewListAtManagementGroupScopePager - Gets all deployments operations for a deployment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // groupID - The management group ID.
 // deploymentName - The name of the deployment.
 // options - DeploymentOperationsClientListAtManagementGroupScopeOptions contains the optional parameters for the DeploymentOperationsClient.ListAtManagementGroupScope
 // method.
-func (client *DeploymentOperationsClient) ListAtManagementGroupScope(groupID string, deploymentName string, options *DeploymentOperationsClientListAtManagementGroupScopeOptions) *DeploymentOperationsClientListAtManagementGroupScopePager {
-	return &DeploymentOperationsClientListAtManagementGroupScopePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtManagementGroupScopeCreateRequest(ctx, groupID, deploymentName, options)
+func (client *DeploymentOperationsClient) NewListAtManagementGroupScopePager(groupID string, deploymentName string, options *DeploymentOperationsClientListAtManagementGroupScopeOptions) *runtime.Pager[DeploymentOperationsClientListAtManagementGroupScopeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DeploymentOperationsClientListAtManagementGroupScopeResponse]{
+		More: func(page DeploymentOperationsClientListAtManagementGroupScopeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DeploymentOperationsClientListAtManagementGroupScopeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DeploymentOperationsClientListAtManagementGroupScopeResponse) (DeploymentOperationsClientListAtManagementGroupScopeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtManagementGroupScopeCreateRequest(ctx, groupID, deploymentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DeploymentOperationsClientListAtManagementGroupScopeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DeploymentOperationsClientListAtManagementGroupScopeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DeploymentOperationsClientListAtManagementGroupScopeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtManagementGroupScopeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtManagementGroupScopeCreateRequest creates the ListAtManagementGroupScope request.
@@ -425,35 +469,52 @@ func (client *DeploymentOperationsClient) listAtManagementGroupScopeCreateReques
 	}
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtManagementGroupScopeHandleResponse handles the ListAtManagementGroupScope response.
 func (client *DeploymentOperationsClient) listAtManagementGroupScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientListAtManagementGroupScopeResponse, error) {
-	result := DeploymentOperationsClientListAtManagementGroupScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientListAtManagementGroupScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperationsListResult); err != nil {
 		return DeploymentOperationsClientListAtManagementGroupScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtScope - Gets all deployments operations for a deployment.
+// NewListAtScopePager - Gets all deployments operations for a deployment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // deploymentName - The name of the deployment.
 // options - DeploymentOperationsClientListAtScopeOptions contains the optional parameters for the DeploymentOperationsClient.ListAtScope
 // method.
-func (client *DeploymentOperationsClient) ListAtScope(scope string, deploymentName string, options *DeploymentOperationsClientListAtScopeOptions) *DeploymentOperationsClientListAtScopePager {
-	return &DeploymentOperationsClientListAtScopePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtScopeCreateRequest(ctx, scope, deploymentName, options)
+func (client *DeploymentOperationsClient) NewListAtScopePager(scope string, deploymentName string, options *DeploymentOperationsClientListAtScopeOptions) *runtime.Pager[DeploymentOperationsClientListAtScopeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DeploymentOperationsClientListAtScopeResponse]{
+		More: func(page DeploymentOperationsClientListAtScopeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DeploymentOperationsClientListAtScopeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DeploymentOperationsClientListAtScopeResponse) (DeploymentOperationsClientListAtScopeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtScopeCreateRequest(ctx, scope, deploymentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DeploymentOperationsClientListAtScopeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DeploymentOperationsClientListAtScopeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DeploymentOperationsClientListAtScopeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtScopeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtScopeCreateRequest creates the ListAtScope request.
@@ -474,34 +535,51 @@ func (client *DeploymentOperationsClient) listAtScopeCreateRequest(ctx context.C
 	}
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtScopeHandleResponse handles the ListAtScope response.
 func (client *DeploymentOperationsClient) listAtScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientListAtScopeResponse, error) {
-	result := DeploymentOperationsClientListAtScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientListAtScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperationsListResult); err != nil {
 		return DeploymentOperationsClientListAtScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtSubscriptionScope - Gets all deployments operations for a deployment.
+// NewListAtSubscriptionScopePager - Gets all deployments operations for a deployment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // deploymentName - The name of the deployment.
 // options - DeploymentOperationsClientListAtSubscriptionScopeOptions contains the optional parameters for the DeploymentOperationsClient.ListAtSubscriptionScope
 // method.
-func (client *DeploymentOperationsClient) ListAtSubscriptionScope(deploymentName string, options *DeploymentOperationsClientListAtSubscriptionScopeOptions) *DeploymentOperationsClientListAtSubscriptionScopePager {
-	return &DeploymentOperationsClientListAtSubscriptionScopePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtSubscriptionScopeCreateRequest(ctx, deploymentName, options)
+func (client *DeploymentOperationsClient) NewListAtSubscriptionScopePager(deploymentName string, options *DeploymentOperationsClientListAtSubscriptionScopeOptions) *runtime.Pager[DeploymentOperationsClientListAtSubscriptionScopeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DeploymentOperationsClientListAtSubscriptionScopeResponse]{
+		More: func(page DeploymentOperationsClientListAtSubscriptionScopeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DeploymentOperationsClientListAtSubscriptionScopeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DeploymentOperationsClientListAtSubscriptionScopeResponse) (DeploymentOperationsClientListAtSubscriptionScopeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtSubscriptionScopeCreateRequest(ctx, deploymentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DeploymentOperationsClientListAtSubscriptionScopeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DeploymentOperationsClientListAtSubscriptionScopeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DeploymentOperationsClientListAtSubscriptionScopeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtSubscriptionScopeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtSubscriptionScopeCreateRequest creates the ListAtSubscriptionScope request.
@@ -525,34 +603,51 @@ func (client *DeploymentOperationsClient) listAtSubscriptionScopeCreateRequest(c
 	}
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtSubscriptionScopeHandleResponse handles the ListAtSubscriptionScope response.
 func (client *DeploymentOperationsClient) listAtSubscriptionScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientListAtSubscriptionScopeResponse, error) {
-	result := DeploymentOperationsClientListAtSubscriptionScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientListAtSubscriptionScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperationsListResult); err != nil {
 		return DeploymentOperationsClientListAtSubscriptionScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtTenantScope - Gets all deployments operations for a deployment.
+// NewListAtTenantScopePager - Gets all deployments operations for a deployment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // deploymentName - The name of the deployment.
 // options - DeploymentOperationsClientListAtTenantScopeOptions contains the optional parameters for the DeploymentOperationsClient.ListAtTenantScope
 // method.
-func (client *DeploymentOperationsClient) ListAtTenantScope(deploymentName string, options *DeploymentOperationsClientListAtTenantScopeOptions) *DeploymentOperationsClientListAtTenantScopePager {
-	return &DeploymentOperationsClientListAtTenantScopePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtTenantScopeCreateRequest(ctx, deploymentName, options)
+func (client *DeploymentOperationsClient) NewListAtTenantScopePager(deploymentName string, options *DeploymentOperationsClientListAtTenantScopeOptions) *runtime.Pager[DeploymentOperationsClientListAtTenantScopeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DeploymentOperationsClientListAtTenantScopeResponse]{
+		More: func(page DeploymentOperationsClientListAtTenantScopeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DeploymentOperationsClientListAtTenantScopeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeploymentOperationsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DeploymentOperationsClientListAtTenantScopeResponse) (DeploymentOperationsClientListAtTenantScopeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtTenantScopeCreateRequest(ctx, deploymentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DeploymentOperationsClientListAtTenantScopeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DeploymentOperationsClientListAtTenantScopeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DeploymentOperationsClientListAtTenantScopeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtTenantScopeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtTenantScopeCreateRequest creates the ListAtTenantScope request.
@@ -572,13 +667,13 @@ func (client *DeploymentOperationsClient) listAtTenantScopeCreateRequest(ctx con
 	}
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtTenantScopeHandleResponse handles the ListAtTenantScope response.
 func (client *DeploymentOperationsClient) listAtTenantScopeHandleResponse(resp *http.Response) (DeploymentOperationsClientListAtTenantScopeResponse, error) {
-	result := DeploymentOperationsClientListAtTenantScopeResponse{RawResponse: resp}
+	result := DeploymentOperationsClientListAtTenantScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeploymentOperationsListResult); err != nil {
 		return DeploymentOperationsClientListAtTenantScopeResponse{}, err
 	}

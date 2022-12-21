@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type SignInSettingsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSignInSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SignInSettingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSignInSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SignInSettingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SignInSettingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or Update Sign-In settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // parameters - Create or update parameters.
@@ -95,15 +101,15 @@ func (client *SignInSettingsClient) createOrUpdateCreateRequest(ctx context.Cont
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SignInSettingsClient) createOrUpdateHandleResponse(resp *http.Response) (SignInSettingsClientCreateOrUpdateResponse, error) {
-	result := SignInSettingsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SignInSettingsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PortalSigninSettings); err != nil {
 		return SignInSettingsClientCreateOrUpdateResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *SignInSettingsClient) createOrUpdateHandleResponse(resp *http.Resp
 
 // Get - Get Sign In Settings for the Portal
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - SignInSettingsClientGetOptions contains the optional parameters for the SignInSettingsClient.Get method.
@@ -152,13 +159,13 @@ func (client *SignInSettingsClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SignInSettingsClient) getHandleResponse(resp *http.Response) (SignInSettingsClientGetResponse, error) {
-	result := SignInSettingsClientGetResponse{RawResponse: resp}
+	result := SignInSettingsClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -169,6 +176,7 @@ func (client *SignInSettingsClient) getHandleResponse(resp *http.Response) (Sign
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the SignInSettings.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - SignInSettingsClientGetEntityTagOptions contains the optional parameters for the SignInSettingsClient.GetEntityTag
@@ -181,6 +189,9 @@ func (client *SignInSettingsClient) GetEntityTag(ctx context.Context, resourceGr
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return SignInSettingsClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return SignInSettingsClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -207,24 +218,23 @@ func (client *SignInSettingsClient) getEntityTagCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *SignInSettingsClient) getEntityTagHandleResponse(resp *http.Response) (SignInSettingsClientGetEntityTagResponse, error) {
-	result := SignInSettingsClientGetEntityTagResponse{RawResponse: resp}
+	result := SignInSettingsClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
 // Update - Update Sign-In settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // ifMatch - ETag of the Entity. ETag should match the current entity state from the header response of the GET request or
@@ -243,7 +253,7 @@ func (client *SignInSettingsClient) Update(ctx context.Context, resourceGroupNam
 	if !runtime.HasStatusCode(resp, http.StatusNoContent) {
 		return SignInSettingsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return SignInSettingsClientUpdateResponse{RawResponse: resp}, nil
+	return SignInSettingsClientUpdateResponse{}, nil
 }
 
 // updateCreateRequest creates the Update request.
@@ -268,7 +278,7 @@ func (client *SignInSettingsClient) updateCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

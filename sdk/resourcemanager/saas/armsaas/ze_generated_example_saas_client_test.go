@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,110 +12,123 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/saas/armsaas"
 )
 
-// x-ms-original-file: specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasDelete.json
 func ExampleClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsaas.NewClient(cred, nil)
+	client, err := armsaas.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-id>",
+		"115c3523-1fae-757f-af86-7b27cfd29805",
 		armsaas.DeleteOptions{
-			ReasonCode:      to.Float32Ptr(0),
-			UnsubscribeOnly: to.BoolPtr(true),
+			ReasonCode:      to.Ptr[float32](0),
+			UnsubscribeOnly: to.Ptr(true),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasGet.json
 func ExampleClient_GetResource() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsaas.NewClient(cred, nil)
+	client, err := armsaas.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetResource(ctx,
-		"<resource-id>",
+		"115c3523-1fae-757f-af86-7b27cfd29805",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientGetResourceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasPatch.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasPatch.json
 func ExampleClient_BeginUpdateResource() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsaas.NewClient(cred, nil)
+	client, err := armsaas.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdateResource(ctx,
-		"<resource-id>",
+		"115c3523-1fae-757f-af86-7b27cfd29805",
 		armsaas.ResourceCreation{
 			Properties: &armsaas.CreationProperties{
-				SKUID: to.StringPtr("<skuid>"),
+				SKUID: to.Ptr("premium"),
 			},
 			Tags: map[string]*string{},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientUpdateResourceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasPut.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/saas/resource-manager/Microsoft.SaaS/preview/2018-03-01-beta/examples/saasV2/SaasPut.json
 func ExampleClient_BeginCreateResource() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsaas.NewClient(cred, nil)
+	client, err := armsaas.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateResource(ctx,
 		armsaas.ResourceCreation{
 			Properties: &armsaas.CreationProperties{
-				OfferID: to.StringPtr("<offer-id>"),
+				OfferID: to.Ptr("microsofthealthcarebot"),
 				PaymentChannelMetadata: map[string]*string{
-					"AzureSubscriptionId": to.StringPtr("155af98a-3205-47e7-883b-a2ab9db9f88d"),
+					"AzureSubscriptionId": to.Ptr("155af98a-3205-47e7-883b-a2ab9db9f88d"),
 				},
-				PaymentChannelType: armsaas.PaymentChannelType("SubscriptionDelegated").ToPtr(),
-				PublisherID:        to.StringPtr("<publisher-id>"),
-				SaasResourceName:   to.StringPtr("<saas-resource-name>"),
-				SKUID:              to.StringPtr("<skuid>"),
-				TermID:             to.StringPtr("<term-id>"),
+				PaymentChannelType: to.Ptr(armsaas.PaymentChannelTypeSubscriptionDelegated),
+				PublisherID:        to.Ptr("microsoft-hcb"),
+				SaasResourceName:   to.Ptr("testRunnerFromArm"),
+				SKUID:              to.Ptr("free"),
+				TermID:             to.Ptr("hjdtn7tfnxcy"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientCreateResourceResult)
+	// TODO: use response item
+	_ = res
 }

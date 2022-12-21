@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -50,42 +50,4 @@ func unmarshalResourceSettingsClassification(rawMsg json.RawMessage) (ResourceSe
 		b = &ResourceSettings{}
 	}
 	return b, json.Unmarshal(rawMsg, b)
-}
-
-func unmarshalResourceSettingsClassificationArray(rawMsg json.RawMessage) ([]ResourceSettingsClassification, error) {
-	if rawMsg == nil {
-		return nil, nil
-	}
-	var rawMessages []json.RawMessage
-	if err := json.Unmarshal(rawMsg, &rawMessages); err != nil {
-		return nil, err
-	}
-	fArray := make([]ResourceSettingsClassification, len(rawMessages))
-	for index, rawMessage := range rawMessages {
-		f, err := unmarshalResourceSettingsClassification(rawMessage)
-		if err != nil {
-			return nil, err
-		}
-		fArray[index] = f
-	}
-	return fArray, nil
-}
-
-func unmarshalResourceSettingsClassificationMap(rawMsg json.RawMessage) (map[string]ResourceSettingsClassification, error) {
-	if rawMsg == nil {
-		return nil, nil
-	}
-	var rawMessages map[string]json.RawMessage
-	if err := json.Unmarshal(rawMsg, &rawMessages); err != nil {
-		return nil, err
-	}
-	fMap := make(map[string]ResourceSettingsClassification, len(rawMessages))
-	for key, rawMessage := range rawMessages {
-		f, err := unmarshalResourceSettingsClassification(rawMessage)
-		if err != nil {
-			return nil, err
-		}
-		fMap[key] = f
-	}
-	return fMap, nil
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type SensorsClient struct {
 // NewSensorsClient creates a new instance of SensorsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSensorsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *SensorsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSensorsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*SensorsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SensorsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or update IoT sensor
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // sensorModel - The IoT sensor model
@@ -82,13 +88,13 @@ func (client *SensorsClient) createOrUpdateCreateRequest(ctx context.Context, sc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, sensorModel)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SensorsClient) createOrUpdateHandleResponse(resp *http.Response) (SensorsClientCreateOrUpdateResponse, error) {
-	result := SensorsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SensorsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensorModel); err != nil {
 		return SensorsClientCreateOrUpdateResponse{}, err
 	}
@@ -97,6 +103,7 @@ func (client *SensorsClient) createOrUpdateHandleResponse(resp *http.Response) (
 
 // Delete - Delete IoT sensor
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // options - SensorsClientDeleteOptions contains the optional parameters for the SensorsClient.Delete method.
@@ -112,7 +119,7 @@ func (client *SensorsClient) Delete(ctx context.Context, scope string, sensorNam
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return SensorsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensorsClientDeleteResponse{RawResponse: resp}, nil
+	return SensorsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -130,12 +137,13 @@ func (client *SensorsClient) deleteCreateRequest(ctx context.Context, scope stri
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // DownloadActivation - Download sensor activation file
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // options - SensorsClientDownloadActivationOptions contains the optional parameters for the SensorsClient.DownloadActivation
@@ -152,7 +160,7 @@ func (client *SensorsClient) DownloadActivation(ctx context.Context, scope strin
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensorsClientDownloadActivationResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensorsClientDownloadActivationResponse{RawResponse: resp}, nil
+	return SensorsClientDownloadActivationResponse{Body: resp.Body}, nil
 }
 
 // downloadActivationCreateRequest creates the DownloadActivation request.
@@ -171,12 +179,13 @@ func (client *SensorsClient) downloadActivationCreateRequest(ctx context.Context
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	runtime.SkipBodyDownload(req)
-	req.Raw().Header.Set("Accept", "application/zip")
+	req.Raw().Header["Accept"] = []string{"application/zip"}
 	return req, nil
 }
 
 // DownloadResetPassword - Download file for reset password of the sensor
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // body - The reset password input.
@@ -194,7 +203,7 @@ func (client *SensorsClient) DownloadResetPassword(ctx context.Context, scope st
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensorsClientDownloadResetPasswordResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensorsClientDownloadResetPasswordResponse{RawResponse: resp}, nil
+	return SensorsClientDownloadResetPasswordResponse{Body: resp.Body}, nil
 }
 
 // downloadResetPasswordCreateRequest creates the DownloadResetPassword request.
@@ -213,12 +222,13 @@ func (client *SensorsClient) downloadResetPasswordCreateRequest(ctx context.Cont
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	runtime.SkipBodyDownload(req)
-	req.Raw().Header.Set("Accept", "application/zip")
+	req.Raw().Header["Accept"] = []string{"application/zip"}
 	return req, runtime.MarshalAsJSON(req, body)
 }
 
 // Get - Get IoT sensor
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // options - SensorsClientGetOptions contains the optional parameters for the SensorsClient.Get method.
@@ -252,13 +262,13 @@ func (client *SensorsClient) getCreateRequest(ctx context.Context, scope string,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SensorsClient) getHandleResponse(resp *http.Response) (SensorsClientGetResponse, error) {
-	result := SensorsClientGetResponse{RawResponse: resp}
+	result := SensorsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensorModel); err != nil {
 		return SensorsClientGetResponse{}, err
 	}
@@ -267,6 +277,7 @@ func (client *SensorsClient) getHandleResponse(resp *http.Response) (SensorsClie
 
 // List - List IoT sensors
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // options - SensorsClientListOptions contains the optional parameters for the SensorsClient.List method.
 func (client *SensorsClient) List(ctx context.Context, scope string, options *SensorsClientListOptions) (SensorsClientListResponse, error) {
@@ -295,13 +306,13 @@ func (client *SensorsClient) listCreateRequest(ctx context.Context, scope string
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *SensorsClient) listHandleResponse(resp *http.Response) (SensorsClientListResponse, error) {
-	result := SensorsClientListResponse{RawResponse: resp}
+	result := SensorsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SensorsList); err != nil {
 		return SensorsClientListResponse{}, err
 	}
@@ -310,6 +321,7 @@ func (client *SensorsClient) listHandleResponse(resp *http.Response) (SensorsCli
 
 // TriggerTiPackageUpdate - Trigger threat intelligence package update
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-02-01-preview
 // scope - Scope of the query (IoT Hub, /providers/Microsoft.Devices/iotHubs/myHub)
 // sensorName - Name of the IoT sensor
 // options - SensorsClientTriggerTiPackageUpdateOptions contains the optional parameters for the SensorsClient.TriggerTiPackageUpdate
@@ -326,7 +338,7 @@ func (client *SensorsClient) TriggerTiPackageUpdate(ctx context.Context, scope s
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return SensorsClientTriggerTiPackageUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return SensorsClientTriggerTiPackageUpdateResponse{RawResponse: resp}, nil
+	return SensorsClientTriggerTiPackageUpdateResponse{}, nil
 }
 
 // triggerTiPackageUpdateCreateRequest creates the TriggerTiPackageUpdate request.
@@ -344,6 +356,6 @@ func (client *SensorsClient) triggerTiPackageUpdateCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-02-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }

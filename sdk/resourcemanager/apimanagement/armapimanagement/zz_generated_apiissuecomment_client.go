@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type APIIssueCommentClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPIIssueCommentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *APIIssueCommentClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPIIssueCommentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*APIIssueCommentClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APIIssueCommentClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates a new Comment for the Issue in an API or updates an existing one.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -111,15 +117,15 @@ func (client *APIIssueCommentClient) createOrUpdateCreateRequest(ctx context.Con
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *APIIssueCommentClient) createOrUpdateHandleResponse(resp *http.Response) (APIIssueCommentClientCreateOrUpdateResponse, error) {
-	result := APIIssueCommentClientCreateOrUpdateResponse{RawResponse: resp}
+	result := APIIssueCommentClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -131,6 +137,7 @@ func (client *APIIssueCommentClient) createOrUpdateHandleResponse(resp *http.Res
 
 // Delete - Deletes the specified comment from an Issue.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -151,7 +158,7 @@ func (client *APIIssueCommentClient) Delete(ctx context.Context, resourceGroupNa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return APIIssueCommentClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return APIIssueCommentClientDeleteResponse{RawResponse: resp}, nil
+	return APIIssueCommentClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -188,13 +195,14 @@ func (client *APIIssueCommentClient) deleteCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the issue Comment for an API specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -250,13 +258,13 @@ func (client *APIIssueCommentClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *APIIssueCommentClient) getHandleResponse(resp *http.Response) (APIIssueCommentClientGetResponse, error) {
-	result := APIIssueCommentClientGetResponse{RawResponse: resp}
+	result := APIIssueCommentClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -267,6 +275,7 @@ func (client *APIIssueCommentClient) getHandleResponse(resp *http.Response) (API
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the issue Comment for an API specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -282,6 +291,9 @@ func (client *APIIssueCommentClient) GetEntityTag(ctx context.Context, resourceG
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return APIIssueCommentClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return APIIssueCommentClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -320,40 +332,55 @@ func (client *APIIssueCommentClient) getEntityTagCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *APIIssueCommentClient) getEntityTagHandleResponse(resp *http.Response) (APIIssueCommentClientGetEntityTagResponse, error) {
-	result := APIIssueCommentClientGetEntityTagResponse{RawResponse: resp}
+	result := APIIssueCommentClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists all comments for the Issue associated with the specified API.
+// NewListByServicePager - Lists all comments for the Issue associated with the specified API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
 // issueID - Issue identifier. Must be unique in the current API Management service instance.
 // options - APIIssueCommentClientListByServiceOptions contains the optional parameters for the APIIssueCommentClient.ListByService
 // method.
-func (client *APIIssueCommentClient) ListByService(resourceGroupName string, serviceName string, apiID string, issueID string, options *APIIssueCommentClientListByServiceOptions) *APIIssueCommentClientListByServicePager {
-	return &APIIssueCommentClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, issueID, options)
+func (client *APIIssueCommentClient) NewListByServicePager(resourceGroupName string, serviceName string, apiID string, issueID string, options *APIIssueCommentClientListByServiceOptions) *runtime.Pager[APIIssueCommentClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[APIIssueCommentClientListByServiceResponse]{
+		More: func(page APIIssueCommentClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp APIIssueCommentClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.IssueCommentCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *APIIssueCommentClientListByServiceResponse) (APIIssueCommentClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, issueID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return APIIssueCommentClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return APIIssueCommentClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return APIIssueCommentClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -395,13 +422,13 @@ func (client *APIIssueCommentClient) listByServiceCreateRequest(ctx context.Cont
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *APIIssueCommentClient) listByServiceHandleResponse(resp *http.Response) (APIIssueCommentClientListByServiceResponse, error) {
-	result := APIIssueCommentClientListByServiceResponse{RawResponse: resp}
+	result := APIIssueCommentClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IssueCommentCollection); err != nil {
 		return APIIssueCommentClientListByServiceResponse{}, err
 	}

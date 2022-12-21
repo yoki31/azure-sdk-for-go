@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ConfigurationAssignmentsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewConfigurationAssignmentsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ConfigurationAssignmentsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewConfigurationAssignmentsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ConfigurationAssignmentsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ConfigurationAssignmentsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Register configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
@@ -109,13 +115,13 @@ func (client *ConfigurationAssignmentsClient) createOrUpdateCreateRequest(ctx co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, configurationAssignment)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ConfigurationAssignmentsClient) createOrUpdateHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientCreateOrUpdateResponse, error) {
-	result := ConfigurationAssignmentsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientCreateOrUpdateResponse{}, err
 	}
@@ -124,6 +130,7 @@ func (client *ConfigurationAssignmentsClient) createOrUpdateHandleResponse(resp 
 
 // CreateOrUpdateParent - Register configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceParentType - Resource parent type
@@ -191,13 +198,13 @@ func (client *ConfigurationAssignmentsClient) createOrUpdateParentCreateRequest(
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, configurationAssignment)
 }
 
 // createOrUpdateParentHandleResponse handles the CreateOrUpdateParent response.
 func (client *ConfigurationAssignmentsClient) createOrUpdateParentHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientCreateOrUpdateParentResponse, error) {
-	result := ConfigurationAssignmentsClientCreateOrUpdateParentResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientCreateOrUpdateParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientCreateOrUpdateParentResponse{}, err
 	}
@@ -206,6 +213,7 @@ func (client *ConfigurationAssignmentsClient) createOrUpdateParentHandleResponse
 
 // Delete - Unregister configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
@@ -262,13 +270,13 @@ func (client *ConfigurationAssignmentsClient) deleteCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // deleteHandleResponse handles the Delete response.
 func (client *ConfigurationAssignmentsClient) deleteHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientDeleteResponse, error) {
-	result := ConfigurationAssignmentsClientDeleteResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientDeleteResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientDeleteResponse{}, err
 	}
@@ -277,6 +285,7 @@ func (client *ConfigurationAssignmentsClient) deleteHandleResponse(resp *http.Re
 
 // DeleteParent - Unregister configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceParentType - Resource parent type
@@ -343,13 +352,13 @@ func (client *ConfigurationAssignmentsClient) deleteParentCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // deleteParentHandleResponse handles the DeleteParent response.
 func (client *ConfigurationAssignmentsClient) deleteParentHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientDeleteParentResponse, error) {
-	result := ConfigurationAssignmentsClientDeleteParentResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientDeleteParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientDeleteParentResponse{}, err
 	}
@@ -358,6 +367,7 @@ func (client *ConfigurationAssignmentsClient) deleteParentHandleResponse(resp *h
 
 // Get - Get configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
@@ -414,13 +424,13 @@ func (client *ConfigurationAssignmentsClient) getCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ConfigurationAssignmentsClient) getHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientGetResponse, error) {
-	result := ConfigurationAssignmentsClientGetResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientGetResponse{}, err
 	}
@@ -429,6 +439,7 @@ func (client *ConfigurationAssignmentsClient) getHandleResponse(resp *http.Respo
 
 // GetParent - Get configuration for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceParentType - Resource parent type
@@ -495,40 +506,48 @@ func (client *ConfigurationAssignmentsClient) getParentCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getParentHandleResponse handles the GetParent response.
 func (client *ConfigurationAssignmentsClient) getParentHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientGetParentResponse, error) {
-	result := ConfigurationAssignmentsClientGetParentResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientGetParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConfigurationAssignment); err != nil {
 		return ConfigurationAssignmentsClientGetParentResponse{}, err
 	}
 	return result, nil
 }
 
-// List - List configurationAssignments for resource.
+// NewListPager - List configurationAssignments for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
 // resourceName - Resource identifier
 // options - ConfigurationAssignmentsClientListOptions contains the optional parameters for the ConfigurationAssignmentsClient.List
 // method.
-func (client *ConfigurationAssignmentsClient) List(ctx context.Context, resourceGroupName string, providerName string, resourceType string, resourceName string, options *ConfigurationAssignmentsClientListOptions) (ConfigurationAssignmentsClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, resourceGroupName, providerName, resourceType, resourceName, options)
-	if err != nil {
-		return ConfigurationAssignmentsClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ConfigurationAssignmentsClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ConfigurationAssignmentsClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *ConfigurationAssignmentsClient) NewListPager(resourceGroupName string, providerName string, resourceType string, resourceName string, options *ConfigurationAssignmentsClientListOptions) *runtime.Pager[ConfigurationAssignmentsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ConfigurationAssignmentsClientListResponse]{
+		More: func(page ConfigurationAssignmentsClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *ConfigurationAssignmentsClientListResponse) (ConfigurationAssignmentsClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, resourceGroupName, providerName, resourceType, resourceName, options)
+			if err != nil {
+				return ConfigurationAssignmentsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ConfigurationAssignmentsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ConfigurationAssignmentsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -561,21 +580,22 @@ func (client *ConfigurationAssignmentsClient) listCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ConfigurationAssignmentsClient) listHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientListResponse, error) {
-	result := ConfigurationAssignmentsClientListResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListConfigurationAssignmentsResult); err != nil {
 		return ConfigurationAssignmentsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListParent - List configurationAssignments for resource.
+// NewListParentPager - List configurationAssignments for resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceParentType - Resource parent type
@@ -584,19 +604,26 @@ func (client *ConfigurationAssignmentsClient) listHandleResponse(resp *http.Resp
 // resourceName - Resource identifier
 // options - ConfigurationAssignmentsClientListParentOptions contains the optional parameters for the ConfigurationAssignmentsClient.ListParent
 // method.
-func (client *ConfigurationAssignmentsClient) ListParent(ctx context.Context, resourceGroupName string, providerName string, resourceParentType string, resourceParentName string, resourceType string, resourceName string, options *ConfigurationAssignmentsClientListParentOptions) (ConfigurationAssignmentsClientListParentResponse, error) {
-	req, err := client.listParentCreateRequest(ctx, resourceGroupName, providerName, resourceParentType, resourceParentName, resourceType, resourceName, options)
-	if err != nil {
-		return ConfigurationAssignmentsClientListParentResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ConfigurationAssignmentsClientListParentResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ConfigurationAssignmentsClientListParentResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listParentHandleResponse(resp)
+func (client *ConfigurationAssignmentsClient) NewListParentPager(resourceGroupName string, providerName string, resourceParentType string, resourceParentName string, resourceType string, resourceName string, options *ConfigurationAssignmentsClientListParentOptions) *runtime.Pager[ConfigurationAssignmentsClientListParentResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ConfigurationAssignmentsClientListParentResponse]{
+		More: func(page ConfigurationAssignmentsClientListParentResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *ConfigurationAssignmentsClientListParentResponse) (ConfigurationAssignmentsClientListParentResponse, error) {
+			req, err := client.listParentCreateRequest(ctx, resourceGroupName, providerName, resourceParentType, resourceParentName, resourceType, resourceName, options)
+			if err != nil {
+				return ConfigurationAssignmentsClientListParentResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ConfigurationAssignmentsClientListParentResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ConfigurationAssignmentsClientListParentResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listParentHandleResponse(resp)
+		},
+	})
 }
 
 // listParentCreateRequest creates the ListParent request.
@@ -637,13 +664,13 @@ func (client *ConfigurationAssignmentsClient) listParentCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listParentHandleResponse handles the ListParent response.
 func (client *ConfigurationAssignmentsClient) listParentHandleResponse(resp *http.Response) (ConfigurationAssignmentsClientListParentResponse, error) {
-	result := ConfigurationAssignmentsClientListParentResponse{RawResponse: resp}
+	result := ConfigurationAssignmentsClientListParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListConfigurationAssignmentsResult); err != nil {
 		return ConfigurationAssignmentsClientListParentResponse{}, err
 	}

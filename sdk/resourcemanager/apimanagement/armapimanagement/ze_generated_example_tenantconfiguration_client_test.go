@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,112 +12,126 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/apimanagement/armapimanagement"
 )
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationDeploy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationDeploy.json
 func ExampleTenantConfigurationClient_BeginDeploy() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewTenantConfigurationClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewTenantConfigurationClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDeploy(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		armapimanagement.ConfigurationIDName("configuration"),
+		"rg1",
+		"apimService1",
+		armapimanagement.ConfigurationIDNameConfiguration,
 		armapimanagement.DeployConfigurationParameters{
 			Properties: &armapimanagement.DeployConfigurationParameterProperties{
-				Branch: to.StringPtr("<branch>"),
+				Branch: to.Ptr("master"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TenantConfigurationClientDeployResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationSave.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationSave.json
 func ExampleTenantConfigurationClient_BeginSave() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewTenantConfigurationClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewTenantConfigurationClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginSave(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		armapimanagement.ConfigurationIDName("configuration"),
+		"rg1",
+		"apimService1",
+		armapimanagement.ConfigurationIDNameConfiguration,
 		armapimanagement.SaveConfigurationParameter{
 			Properties: &armapimanagement.SaveConfigurationParameterProperties{
-				Branch: to.StringPtr("<branch>"),
+				Branch: to.Ptr("master"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TenantConfigurationClientSaveResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationValidate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantConfigurationValidate.json
 func ExampleTenantConfigurationClient_BeginValidate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewTenantConfigurationClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewTenantConfigurationClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginValidate(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		armapimanagement.ConfigurationIDName("configuration"),
+		"rg1",
+		"apimService1",
+		armapimanagement.ConfigurationIDNameConfiguration,
 		armapimanagement.DeployConfigurationParameters{
 			Properties: &armapimanagement.DeployConfigurationParameterProperties{
-				Branch: to.StringPtr("<branch>"),
+				Branch: to.Ptr("master"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TenantConfigurationClientValidateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantAccessSyncState.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementTenantAccessSyncState.json
 func ExampleTenantConfigurationClient_GetSyncState() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewTenantConfigurationClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewTenantConfigurationClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetSyncState(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		armapimanagement.ConfigurationIDName("configuration"),
+		"rg1",
+		"apimService1",
+		armapimanagement.ConfigurationIDNameConfiguration,
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TenantConfigurationClientGetSyncStateResult)
+	// TODO: use response item
+	_ = res
 }

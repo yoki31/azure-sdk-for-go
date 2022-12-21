@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,25 +35,30 @@ type RecommendationsClient struct {
 // subscriptionID - The Azure subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewRecommendationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *RecommendationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewRecommendationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*RecommendationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &RecommendationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Generate - Initiates the recommendation generation or computation process for a subscription. This operation is asynchronous.
 // The generated recommendations are stored in a cache in the Advisor service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-01-01
 // options - RecommendationsClientGenerateOptions contains the optional parameters for the RecommendationsClient.Generate
 // method.
 func (client *RecommendationsClient) Generate(ctx context.Context, options *RecommendationsClientGenerateOptions) (RecommendationsClientGenerateResponse, error) {
@@ -84,13 +90,13 @@ func (client *RecommendationsClient) generateCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // generateHandleResponse handles the Generate response.
 func (client *RecommendationsClient) generateHandleResponse(resp *http.Response) (RecommendationsClientGenerateResponse, error) {
-	result := RecommendationsClientGenerateResponse{RawResponse: resp}
+	result := RecommendationsClientGenerateResponse{}
 	if val := resp.Header.Get("Location"); val != "" {
 		result.Location = &val
 	}
@@ -102,6 +108,7 @@ func (client *RecommendationsClient) generateHandleResponse(resp *http.Response)
 
 // Get - Obtains details of a cached recommendation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-01-01
 // resourceURI - The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies.
 // recommendationID - The recommendation ID.
 // options - RecommendationsClientGetOptions contains the optional parameters for the RecommendationsClient.Get method.
@@ -138,13 +145,13 @@ func (client *RecommendationsClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *RecommendationsClient) getHandleResponse(resp *http.Response) (RecommendationsClientGetResponse, error) {
-	result := RecommendationsClientGetResponse{RawResponse: resp}
+	result := RecommendationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ResourceRecommendationBase); err != nil {
 		return RecommendationsClientGetResponse{}, err
 	}
@@ -155,6 +162,7 @@ func (client *RecommendationsClient) getHandleResponse(resp *http.Response) (Rec
 // calling the generation recommendation. The URI of this API is returned in the Location field of the
 // response header.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-01-01
 // operationID - The operation ID, which can be found from the Location field in the generate recommendation response header.
 // options - RecommendationsClientGetGenerateStatusOptions contains the optional parameters for the RecommendationsClient.GetGenerateStatus
 // method.
@@ -170,7 +178,7 @@ func (client *RecommendationsClient) GetGenerateStatus(ctx context.Context, oper
 	if !runtime.HasStatusCode(resp, http.StatusAccepted, http.StatusNoContent) {
 		return RecommendationsClientGetGenerateStatusResponse{}, runtime.NewResponseError(resp)
 	}
-	return RecommendationsClientGetGenerateStatusResponse{RawResponse: resp}, nil
+	return RecommendationsClientGetGenerateStatusResponse{}, nil
 }
 
 // getGenerateStatusCreateRequest creates the GetGenerateStatus request.
@@ -188,23 +196,41 @@ func (client *RecommendationsClient) getGenerateStatusCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
-// List - Obtains cached recommendations for a subscription. The recommendations are generated or computed by invoking generateRecommendations.
+// NewListPager - Obtains cached recommendations for a subscription. The recommendations are generated or computed by invoking
+// generateRecommendations.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-01-01
 // options - RecommendationsClientListOptions contains the optional parameters for the RecommendationsClient.List method.
-func (client *RecommendationsClient) List(options *RecommendationsClientListOptions) *RecommendationsClientListPager {
-	return &RecommendationsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *RecommendationsClient) NewListPager(options *RecommendationsClientListOptions) *runtime.Pager[RecommendationsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[RecommendationsClientListResponse]{
+		More: func(page RecommendationsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp RecommendationsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ResourceRecommendationBaseListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *RecommendationsClientListResponse) (RecommendationsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return RecommendationsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return RecommendationsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return RecommendationsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -230,13 +256,13 @@ func (client *RecommendationsClient) listCreateRequest(ctx context.Context, opti
 		reqQP.Set("$skipToken", *options.SkipToken)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *RecommendationsClient) listHandleResponse(resp *http.Response) (RecommendationsClientListResponse, error) {
-	result := RecommendationsClientListResponse{RawResponse: resp}
+	result := RecommendationsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ResourceRecommendationBaseListResult); err != nil {
 		return RecommendationsClientListResponse{}, err
 	}

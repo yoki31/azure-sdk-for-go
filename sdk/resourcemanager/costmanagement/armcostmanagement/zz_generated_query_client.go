@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type QueryClient struct {
 // NewQueryClient creates a new instance of QueryClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewQueryClient(credential azcore.TokenCredential, options *arm.ClientOptions) *QueryClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewQueryClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*QueryClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &QueryClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // Usage - Query the usage data for scope defined.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with query and export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -86,13 +92,13 @@ func (client *QueryClient) usageCreateRequest(ctx context.Context, scope string,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // usageHandleResponse handles the Usage response.
 func (client *QueryClient) usageHandleResponse(resp *http.Response) (QueryClientUsageResponse, error) {
-	result := QueryClientUsageResponse{RawResponse: resp}
+	result := QueryClientUsageResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.QueryResult); err != nil {
 		return QueryClientUsageResponse{}, err
 	}
@@ -101,6 +107,7 @@ func (client *QueryClient) usageHandleResponse(resp *http.Response) (QueryClient
 
 // UsageByExternalCloudProviderType - Query the usage data for external cloud provider type defined.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // externalCloudProviderType - The external cloud provider type associated with dimension/query operations. This includes
 // 'externalSubscriptions' for linked account and 'externalBillingAccounts' for consolidated account.
 // externalCloudProviderID - This can be '{externalSubscriptionId}' for linked account or '{externalBillingAccountId}' for
@@ -141,13 +148,13 @@ func (client *QueryClient) usageByExternalCloudProviderTypeCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // usageByExternalCloudProviderTypeHandleResponse handles the UsageByExternalCloudProviderType response.
 func (client *QueryClient) usageByExternalCloudProviderTypeHandleResponse(resp *http.Response) (QueryClientUsageByExternalCloudProviderTypeResponse, error) {
-	result := QueryClientUsageByExternalCloudProviderTypeResponse{RawResponse: resp}
+	result := QueryClientUsageByExternalCloudProviderTypeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.QueryResult); err != nil {
 		return QueryClientUsageByExternalCloudProviderTypeResponse{}, err
 	}

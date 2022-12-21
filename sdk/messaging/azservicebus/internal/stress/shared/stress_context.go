@@ -12,6 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	azlog "github.com/Azure/azure-sdk-for-go/sdk/azcore/log"
+	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 
@@ -31,6 +33,8 @@ type StressContext struct {
 
 	// ConnectionString represents the value of the environment variable SERVICEBUS_CONNECTION_STRING.
 	ConnectionString string
+
+	logMessages chan string
 
 	cancel context.CancelFunc
 }
@@ -61,14 +65,38 @@ func MustCreateStressContext(testName string) *StressContext {
 
 	ctx, cancel := NewCtrlCContext()
 
+	azlog.SetEvents(azservicebus.EventSender, azservicebus.EventReceiver, azservicebus.EventConn)
+
+	logMessages := make(chan string, 10000)
+
+	go func() {
+	PrintLoop:
+		for {
+			select {
+			case <-ctx.Done():
+				break PrintLoop
+			case msg := <-logMessages:
+				fmt.Println(msg)
+			}
+		}
+	}()
+
+	azlog.SetListener(func(e azlog.Event, msg string) {
+		logMessages <- fmt.Sprintf("%s %10s %s", time.Now().Format(time.RFC3339), e, msg)
+	})
+
 	return &StressContext{
 		TestRunID:        testRunID,
 		Nano:             testRunID, // the same for now
 		ConnectionString: cs,
 		TelemetryClient:  telemetryClient,
-		statsPrinter:     newStatsPrinter(ctx, testName, 5*time.Second, telemetryClient),
-		Context:          ctx,
-		cancel:           cancel,
+		// you could always change the interval here. A minute feels like often enough
+		// to know things are running, while not so often that you end up flooding logging
+		// with duplicate information.
+		statsPrinter: newStatsPrinter(ctx, testName, time.Minute, telemetryClient),
+		logMessages:  logMessages,
+		Context:      ctx,
+		cancel:       cancel,
 	}
 }
 
@@ -83,18 +111,34 @@ func (sc *StressContext) Start(entityName string, attributes map[string]string) 
 	}
 
 	log.Printf("Start: %#v", startEvent.Properties)
-
 	sc.Track(startEvent)
 }
 
 func (sc *StressContext) End() {
 	log.Printf("Stopping and flushing telemetry")
 
+	sc.cancel()
+
 	sc.TrackEvent("End")
+
 	sc.Channel().Flush()
 	<-sc.Channel().Close()
 
 	time.Sleep(5 * time.Second)
+
+	// dump out any remaining log messages
+PrintLoop:
+	for {
+		select {
+		case msg := <-sc.logMessages:
+			fmt.Println(msg)
+		default:
+			break PrintLoop
+		}
+	}
+
+	// dump out the last stats.
+	sc.PrintStats()
 
 	log.Printf("Done")
 }
@@ -105,6 +149,51 @@ func (tracker *StressContext) PanicOnError(message string, err error) {
 
 	if err != nil {
 		panic(err)
+	}
+}
+
+func (tracker *StressContext) Failf(format string, args ...any) {
+	err := fmt.Errorf(format, args...)
+	tracker.LogIfFailed(err.Error(), err, nil)
+	panic(err)
+}
+
+func (tracker *StressContext) NoError(err error) {
+	if err == nil {
+		return
+	}
+
+	tracker.LogIfFailed(err.Error(), err, nil)
+	panic(err)
+}
+
+func (tracker *StressContext) NoErrorf(err error, format string, args ...any) {
+	if err == nil {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	tracker.LogIfFailed(fmt.Sprintf("%s: %s", msg, err.Error()), err, nil)
+	panic(err)
+}
+
+func (tracker *StressContext) Assert(condition bool, message string) {
+	tracker.LogIfFailed(message, nil, nil)
+
+	if !condition {
+		panic(message)
+	}
+}
+
+func (tracker *StressContext) Equal(val1 any, val2 any) {
+	if val1 != val2 {
+		panic(fmt.Errorf("Expected %v, got %v", val1, val2))
+	}
+}
+
+func (tracker *StressContext) Nil(val1 any) {
+	if val1 == nil {
+		panic("value was not nil")
 	}
 }
 

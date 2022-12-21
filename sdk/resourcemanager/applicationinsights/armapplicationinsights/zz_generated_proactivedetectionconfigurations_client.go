@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ProactiveDetectionConfigurationsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewProactiveDetectionConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ProactiveDetectionConfigurationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewProactiveDetectionConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ProactiveDetectionConfigurationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ProactiveDetectionConfigurationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Get the ProactiveDetection configuration for this configuration id.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // configurationID - The ProactiveDetection configuration ID. This is unique within a Application Insights component.
@@ -97,13 +103,13 @@ func (client *ProactiveDetectionConfigurationsClient) getCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ProactiveDetectionConfigurationsClient) getHandleResponse(resp *http.Response) (ProactiveDetectionConfigurationsClientGetResponse, error) {
-	result := ProactiveDetectionConfigurationsClientGetResponse{RawResponse: resp}
+	result := ProactiveDetectionConfigurationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ComponentProactiveDetectionConfiguration); err != nil {
 		return ProactiveDetectionConfigurationsClientGetResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *ProactiveDetectionConfigurationsClient) getHandleResponse(resp *ht
 
 // List - Gets a list of ProactiveDetection configurations of an Application Insights component.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // options - ProactiveDetectionConfigurationsClientListOptions contains the optional parameters for the ProactiveDetectionConfigurationsClient.List
@@ -153,13 +160,13 @@ func (client *ProactiveDetectionConfigurationsClient) listCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ProactiveDetectionConfigurationsClient) listHandleResponse(resp *http.Response) (ProactiveDetectionConfigurationsClientListResponse, error) {
-	result := ProactiveDetectionConfigurationsClientListResponse{RawResponse: resp}
+	result := ProactiveDetectionConfigurationsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ComponentProactiveDetectionConfigurationArray); err != nil {
 		return ProactiveDetectionConfigurationsClientListResponse{}, err
 	}
@@ -168,6 +175,7 @@ func (client *ProactiveDetectionConfigurationsClient) listHandleResponse(resp *h
 
 // Update - Update the ProactiveDetection configuration for this configuration id.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // configurationID - The ProactiveDetection configuration ID. This is unique within a Application Insights component.
@@ -215,13 +223,13 @@ func (client *ProactiveDetectionConfigurationsClient) updateCreateRequest(ctx co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, proactiveDetectionProperties)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ProactiveDetectionConfigurationsClient) updateHandleResponse(resp *http.Response) (ProactiveDetectionConfigurationsClientUpdateResponse, error) {
-	result := ProactiveDetectionConfigurationsClientUpdateResponse{RawResponse: resp}
+	result := ProactiveDetectionConfigurationsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ComponentProactiveDetectionConfiguration); err != nil {
 		return ProactiveDetectionConfigurationsClientUpdateResponse{}, err
 	}

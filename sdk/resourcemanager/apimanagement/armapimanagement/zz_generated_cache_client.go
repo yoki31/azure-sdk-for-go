@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type CacheClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewCacheClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *CacheClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewCacheClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*CacheClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &CacheClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates an External Cache to be used in Api Management instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // cacheID - Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier).
@@ -100,15 +106,15 @@ func (client *CacheClient) createOrUpdateCreateRequest(ctx context.Context, reso
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *CacheClient) createOrUpdateHandleResponse(resp *http.Response) (CacheClientCreateOrUpdateResponse, error) {
-	result := CacheClientCreateOrUpdateResponse{RawResponse: resp}
+	result := CacheClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -120,6 +126,7 @@ func (client *CacheClient) createOrUpdateHandleResponse(resp *http.Response) (Ca
 
 // Delete - Deletes specific Cache.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // cacheID - Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier).
@@ -138,7 +145,7 @@ func (client *CacheClient) Delete(ctx context.Context, resourceGroupName string,
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return CacheClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return CacheClientDeleteResponse{RawResponse: resp}, nil
+	return CacheClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -167,13 +174,14 @@ func (client *CacheClient) deleteCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the Cache specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // cacheID - Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier).
@@ -219,13 +227,13 @@ func (client *CacheClient) getCreateRequest(ctx context.Context, resourceGroupNa
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *CacheClient) getHandleResponse(resp *http.Response) (CacheClientGetResponse, error) {
-	result := CacheClientGetResponse{RawResponse: resp}
+	result := CacheClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -236,6 +244,7 @@ func (client *CacheClient) getHandleResponse(resp *http.Response) (CacheClientGe
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the Cache specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // cacheID - Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier).
@@ -248,6 +257,9 @@ func (client *CacheClient) GetEntityTag(ctx context.Context, resourceGroupName s
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return CacheClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return CacheClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -278,37 +290,52 @@ func (client *CacheClient) getEntityTagCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *CacheClient) getEntityTagHandleResponse(resp *http.Response) (CacheClientGetEntityTagResponse, error) {
-	result := CacheClientGetEntityTagResponse{RawResponse: resp}
+	result := CacheClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of all external Caches in the specified service instance.
+// NewListByServicePager - Lists a collection of all external Caches in the specified service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - CacheClientListByServiceOptions contains the optional parameters for the CacheClient.ListByService method.
-func (client *CacheClient) ListByService(resourceGroupName string, serviceName string, options *CacheClientListByServiceOptions) *CacheClientListByServicePager {
-	return &CacheClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *CacheClient) NewListByServicePager(resourceGroupName string, serviceName string, options *CacheClientListByServiceOptions) *runtime.Pager[CacheClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[CacheClientListByServiceResponse]{
+		More: func(page CacheClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp CacheClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.CacheCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *CacheClientListByServiceResponse) (CacheClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return CacheClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return CacheClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return CacheClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -339,13 +366,13 @@ func (client *CacheClient) listByServiceCreateRequest(ctx context.Context, resou
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *CacheClient) listByServiceHandleResponse(resp *http.Response) (CacheClientListByServiceResponse, error) {
-	result := CacheClientListByServiceResponse{RawResponse: resp}
+	result := CacheClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CacheCollection); err != nil {
 		return CacheClientListByServiceResponse{}, err
 	}
@@ -354,6 +381,7 @@ func (client *CacheClient) listByServiceHandleResponse(resp *http.Response) (Cac
 
 // Update - Updates the details of the cache specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // cacheID - Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier).
@@ -402,14 +430,14 @@ func (client *CacheClient) updateCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *CacheClient) updateHandleResponse(resp *http.Response) (CacheClientUpdateResponse, error) {
-	result := CacheClientUpdateResponse{RawResponse: resp}
+	result := CacheClientUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}

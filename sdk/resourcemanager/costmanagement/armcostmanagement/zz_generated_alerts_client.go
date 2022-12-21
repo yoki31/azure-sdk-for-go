@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type AlertsClient struct {
 // NewAlertsClient creates a new instance of AlertsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAlertsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *AlertsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAlertsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*AlertsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &AlertsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // Dismiss - Dismisses the specified alert
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with alerts operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -88,13 +94,13 @@ func (client *AlertsClient) dismissCreateRequest(ctx context.Context, scope stri
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // dismissHandleResponse handles the Dismiss response.
 func (client *AlertsClient) dismissHandleResponse(resp *http.Response) (AlertsClientDismissResponse, error) {
-	result := AlertsClientDismissResponse{RawResponse: resp}
+	result := AlertsClientDismissResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Alert); err != nil {
 		return AlertsClientDismissResponse{}, err
 	}
@@ -103,6 +109,7 @@ func (client *AlertsClient) dismissHandleResponse(resp *http.Response) (AlertsCl
 
 // Get - Gets the alert for the scope by alert ID.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with alerts operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -142,13 +149,13 @@ func (client *AlertsClient) getCreateRequest(ctx context.Context, scope string, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *AlertsClient) getHandleResponse(resp *http.Response) (AlertsClientGetResponse, error) {
-	result := AlertsClientGetResponse{RawResponse: resp}
+	result := AlertsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Alert); err != nil {
 		return AlertsClientGetResponse{}, err
 	}
@@ -157,6 +164,7 @@ func (client *AlertsClient) getHandleResponse(resp *http.Response) (AlertsClient
 
 // List - Lists the alerts for scope defined.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with alerts operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -194,13 +202,13 @@ func (client *AlertsClient) listCreateRequest(ctx context.Context, scope string,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *AlertsClient) listHandleResponse(resp *http.Response) (AlertsClientListResponse, error) {
-	result := AlertsClientListResponse{RawResponse: resp}
+	result := AlertsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AlertsResult); err != nil {
 		return AlertsClientListResponse{}, err
 	}
@@ -209,6 +217,7 @@ func (client *AlertsClient) listHandleResponse(resp *http.Response) (AlertsClien
 
 // ListExternal - Lists the Alerts for external cloud provider type defined.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // externalCloudProviderType - The external cloud provider type associated with dimension/query operations. This includes
 // 'externalSubscriptions' for linked account and 'externalBillingAccounts' for consolidated account.
 // externalCloudProviderID - This can be '{externalSubscriptionId}' for linked account or '{externalBillingAccountId}' for
@@ -247,13 +256,13 @@ func (client *AlertsClient) listExternalCreateRequest(ctx context.Context, exter
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listExternalHandleResponse handles the ListExternal response.
 func (client *AlertsClient) listExternalHandleResponse(resp *http.Response) (AlertsClientListExternalResponse, error) {
-	result := AlertsClientListExternalResponse{RawResponse: resp}
+	result := AlertsClientListExternalResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AlertsResult); err != nil {
 		return AlertsClientListExternalResponse{}, err
 	}

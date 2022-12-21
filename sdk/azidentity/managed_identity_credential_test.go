@@ -1,17 +1,19 @@
+//go:build go1.18
+// +build go1.18
+
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 package azidentity
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"io"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -23,10 +25,8 @@ import (
 )
 
 const (
-	appServiceWindowsSuccessResp = `{"access_token": "new_token", "expires_on": "9/14/2017 00:00:00 PM +00:00", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
-	appServiceLinuxSuccessResp   = `{"access_token": "new_token", "expires_on": "09/14/2017 00:00:00 +00:00", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
-	expiresOnIntResp             = `{"access_token": "new_token", "refresh_token": "", "expires_in": "", "expires_on": "1560974028", "not_before": "1560970130", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
-	expiresOnNonStringIntResp    = `{"access_token": "new_token", "refresh_token": "", "expires_in": "", "expires_on": 1560974028, "not_before": "1560970130", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
+	expiresOnIntResp          = `{"access_token": "new_token", "refresh_token": "", "expires_in": "", "expires_on": "1560974028", "not_before": "1560970130", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
+	expiresOnNonStringIntResp = `{"access_token": "new_token", "refresh_token": "", "expires_in": "", "expires_on": 1560974028, "not_before": "1560970130", "resource": "https://vault.azure.net", "token_type": "Bearer"}`
 )
 
 // TODO: replace with 1.17's T.Setenv
@@ -34,25 +34,6 @@ func clearEnvVars(envVars ...string) {
 	for _, ev := range envVars {
 		_ = os.Unsetenv(ev)
 	}
-}
-
-// A simple fake IMDS. Similar to mock.Server but doesn't wrap httptest.Server. That's
-// important because IMDS is at 169.254.169.254, not httptest.Server's default 127.0.0.1.
-type mockIMDS struct {
-	resp []http.Response
-}
-
-func newMockImds(responses ...http.Response) (m *mockIMDS) {
-	return &mockIMDS{resp: responses}
-}
-
-func (m *mockIMDS) Do(req *http.Request) (*http.Response, error) {
-	if len(m.resp) > 0 {
-		resp := m.resp[0]
-		m.resp = m.resp[1:]
-		return &resp, nil
-	}
-	panic("no more responses")
 }
 
 // delayPolicy adds a delay to pipeline requests. Used to test timeout behavior.
@@ -100,7 +81,7 @@ func TestManagedIdentityCredential_AzureArc(t *testing.T) {
 	srv, close := mock.NewServer()
 	defer close()
 	srv.AppendResponse(mock.WithHeader("WWW-Authenticate", "Basic realm="+file.Name()), mock.WithStatusCode(401))
-	srv.AppendResponse(mock.WithPredicate(validateReq), mock.WithBody([]byte(accessTokenRespSuccess)))
+	srv.AppendResponse(mock.WithPredicate(validateReq), mock.WithBody(accessTokenRespSuccess))
 	srv.AppendResponse()
 
 	setEnvironmentVariables(t, map[string]string{
@@ -112,16 +93,7 @@ func TestManagedIdentityCredential_AzureArc(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token != tokenValue {
-		t.Fatalf("unexpected token: %s", tk.Token)
-	}
-	if tk.ExpiresOn.Before(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
-	}
+	testGetTokenSuccess(t, cred)
 }
 
 func TestManagedIdentityCredential_CloudShell(t *testing.T) {
@@ -140,7 +112,7 @@ func TestManagedIdentityCredential_CloudShell(t *testing.T) {
 	}
 	srv, close := mock.NewServer()
 	defer close()
-	srv.AppendResponse(mock.WithPredicate(validateReq), mock.WithBody([]byte(accessTokenRespSuccess)))
+	srv.AppendResponse(mock.WithPredicate(validateReq), mock.WithBody(accessTokenRespSuccess))
 	srv.AppendResponse()
 	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL()})
 	options := ManagedIdentityCredentialOptions{}
@@ -149,232 +121,74 @@ func TestManagedIdentityCredential_CloudShell(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token != tokenValue {
-		t.Fatalf("unexpected token value: %s", tk.Token)
-	}
-	srv.AppendResponse(mock.WithPredicate(validateReq), mock.WithStatusCode(http.StatusUnauthorized))
-	srv.AppendResponse()
-	_, err = msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err == nil {
-		t.Fatal("expected an error but didn't receive one")
-	}
+	testGetTokenSuccess(t, msiCred)
 }
 
-func TestManagedIdentityCredential_GetTokenInAppServiceV20170901Mock_windows(t *testing.T) {
-	srv, close := mock.NewServer()
-	defer close()
-	expectedSecret := "expected-secret"
-	pred := func(req *http.Request) bool {
-		if secret := req.Header.Get("Secret"); secret != expectedSecret {
-			t.Fatalf(`unexpected Secret header "%s"`, secret)
+func TestManagedIdentityCredential_AppService(t *testing.T) {
+	expectedID := "expected-ID"
+	expectedHeader := "header"
+	for _, id := range []ManagedIDKind{ClientID(expectedID), ResourceID(expectedID), nil} {
+		validateReq := func(req *http.Request) bool {
+			if h := req.Header.Get("X-IDENTITY-HEADER"); h != expectedHeader {
+				t.Fatalf("unexpected X-IDENTITY-HEADER: %s", h)
+			}
+			q := req.URL.Query()
+			if v := q.Get("api-version"); v != "2019-08-01" {
+				t.Fatalf(`unexpected api-version "%s"`, v)
+			}
+			if v := q.Get("resource"); v != strings.TrimSuffix(liveTestScope, "/.default") {
+				t.Fatalf(`unexpected resource "%s"`, v)
+			}
+			if id == nil {
+				if q.Get(qpClientID) != "" || q.Get(qpResID) != "" {
+					t.Fatal("request shouldn't include a user-assigned ID")
+				}
+			} else {
+				if q.Get(qpClientID) != "" && q.Get(qpResID) != "" {
+					t.Fatal("request includes two IDs")
+				}
+				var v string
+				if _, ok := id.(ClientID); ok {
+					v = q.Get(qpClientID)
+				} else if _, ok := id.(ResourceID); ok {
+					v = q.Get(qpResID)
+				}
+				if v != id.String() {
+					t.Fatalf(`unexpected id "%s"`, v)
+				}
+			}
+			return true
 		}
-		return true
-	}
-	srv.AppendResponse(mock.WithPredicate(pred), mock.WithBody([]byte(appServiceWindowsSuccessResp)))
-	srv.AppendResponse()
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: expectedSecret})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	msiCred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("Did not receive the correct token. Expected \"new_token\", Received: %s", tk.Token)
-	}
-	if msiCred.client.msiType != msiTypeAppServiceV20170901 {
-		t.Fatalf("Failed to detect the correct MSI Environment. Expected: %d, Received: %d", msiTypeAppServiceV20170901, msiCred.client.msiType)
+
+		t.Run(fmt.Sprintf("%T", id), func(t *testing.T) {
+			srv, close := mock.NewServer()
+			defer close()
+			srv.AppendResponse(
+				mock.WithPredicate(validateReq),
+				mock.WithBody([]byte(fmt.Sprintf(
+					`{"access_token": "%s", "expires_on": "%d", "resource": "https://vault.azure.net", "token_type": "Bearer", "client_id": "some-guid"}`,
+					tokenValue,
+					time.Now().Add(time.Hour).Unix(),
+				))),
+			)
+			srv.AppendResponse(mock.WithStatusCode(http.StatusBadRequest))
+			setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: expectedHeader})
+			options := ManagedIdentityCredentialOptions{ID: id}
+			options.Transport = srv
+			cred, err := NewManagedIdentityCredential(&options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			testGetTokenSuccess(t, cred)
+		})
 	}
 }
 
-func TestManagedIdentityCredential_GetTokenInAppServiceV20170901Mock_linux(t *testing.T) {
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(appServiceLinuxSuccessResp)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	msiCred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("Did not receive the correct token. Expected \"new_token\", Received: %s", tk.Token)
-	}
-	if msiCred.client.msiType != msiTypeAppServiceV20170901 {
-		t.Fatalf("Failed to detect the correct MSI Environment. Expected: %d, Received: %d", msiTypeAppServiceV20170901, msiCred.client.msiType)
-	}
-}
-
-func TestManagedIdentityCredential_GetTokenInAppServiceV20190801Mock_windows(t *testing.T) {
-	t.Skip("App Service 2019-08-01 isn't supported because it's unavailable in some Functions apps.")
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(appServiceWindowsSuccessResp)))
-	setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: "header"})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	msiCred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("Did not receive the correct token. Expected \"new_token\", Received: %s", tk.Token)
-	}
-	if msiCred.client.msiType != msiTypeAppServiceV20190801 {
-		t.Fatalf("Failed to detect the correct MSI Environment. Expected: %d, Received: %d", msiTypeAppServiceV20190801, msiCred.client.msiType)
-	}
-}
-
-func TestManagedIdentityCredential_GetTokenInAppServiceV20190801Mock_linux(t *testing.T) {
-	t.Skip("App Service 2019-08-01 isn't supported because it's unavailable in some Functions apps.")
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(appServiceLinuxSuccessResp)))
-	setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: "header"})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	msiCred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("Did not receive the correct token. Expected \"new_token\", Received: %s", tk.Token)
-	}
-	if msiCred.client.msiType != msiTypeAppServiceV20190801 {
-		t.Fatalf("Failed to detect the correct MSI Environment. Expected: %d, Received: %d", msiTypeAppServiceV20190801, msiCred.client.msiType)
-	}
-}
-
-// Azure Functions on linux environments currently doesn't properly support the identity header,
-// therefore, preference must be given to the legacy MSI_ENDPOINT variable.
-func TestManagedIdentityCredential_GetTokenInAzureFunctions_linux(t *testing.T) {
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(appServiceWindowsSuccessResp)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
-	setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: "header"})
-	msiCred, err := NewManagedIdentityCredential(&ManagedIdentityCredentialOptions{ClientOptions: azcore.ClientOptions{Transport: srv}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("Did not receive the correct token. Expected \"new_token\", Received: %s", tk.Token)
-	}
-	if msiCred.client.msiType != msiTypeAppServiceV20170901 {
-		t.Fatalf("Failed to detect the correct MSI Environment. Expected: %d, Received: %d", msiTypeAppServiceV20170901, msiCred.client.msiType)
-	}
-}
-
-func TestManagedIdentityCredential_CreateAppServiceAuthRequestV20190801(t *testing.T) {
-	t.Skip("App Service 2019-08-01 isn't supported because it's unavailable in some Functions apps.")
-	// setting a dummy value for MSI_ENDPOINT in order to be able to get a ManagedIdentityCredential type in order
-	// to test App Service authentication request creation.
-	setEnvironmentVariables(t, map[string]string{identityEndpoint: "somevalue", identityHeader: "header"})
-	cred, err := NewManagedIdentityCredential(nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	cred.client.endpoint = imdsEndpoint
-	req, err := cred.client.createAuthRequest(context.Background(), ClientID(fakeClientID), []string{liveTestScope})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if req.Raw().Header.Get("X-IDENTITY-HEADER") != "header" {
-		t.Fatalf("Unexpected value for secret header")
-	}
-	reqQueryParams, err := url.ParseQuery(req.Raw().URL.RawQuery)
-	if err != nil {
-		t.Fatalf("Unable to parse App Service request query params: %v", err)
-	}
-	if reqQueryParams["api-version"][0] != "2019-08-01" {
-		t.Fatalf("Unexpected App Service API version")
-	}
-	if reqQueryParams["resource"][0] != liveTestScope {
-		t.Fatalf("Unexpected resource in resource query param")
-	}
-	if reqQueryParams[qpClientID][0] != fakeClientID {
-		t.Fatalf("Unexpected client ID in resource query param")
-	}
-}
-
-func TestManagedIdentityCredential_CreateAppServiceAuthRequestV20170901(t *testing.T) {
-	// setting a dummy value for MSI_ENDPOINT in order to be able to get a ManagedIdentityCredential type in order
-	// to test App Service authentication request creation.
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: "somevalue", msiSecret: "secret"})
-	cred, err := NewManagedIdentityCredential(nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	cred.client.endpoint = imdsEndpoint
-	req, err := cred.client.createAuthRequest(context.Background(), ClientID(fakeClientID), []string{liveTestScope})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if req.Raw().Header.Get("secret") != "secret" {
-		t.Fatalf("Unexpected value for secret header")
-	}
-	reqQueryParams, err := url.ParseQuery(req.Raw().URL.RawQuery)
-	if err != nil {
-		t.Fatalf("Unable to parse App Service request query params: %v", err)
-	}
-	if reqQueryParams["api-version"][0] != "2017-09-01" {
-		t.Fatalf("Unexpected App Service API version")
-	}
-	if reqQueryParams["resource"][0] != liveTestScope {
-		t.Fatalf("Unexpected resource in resource query param")
-	}
-	if reqQueryParams["clientid"][0] != fakeClientID {
-		t.Fatalf("Unexpected client ID in resource query param")
-	}
-}
-
-func TestManagedIdentityCredential_CreateAccessTokenExpiresOnStringInt(t *testing.T) {
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(expiresOnIntResp)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	msiCred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	_, err = msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
-	}
-}
-
-func TestManagedIdentityCredential_GetTokenInAppServiceMockFail(t *testing.T) {
+func TestManagedIdentityCredential_AppServiceError(t *testing.T) {
 	srv, close := mock.NewServer()
 	defer close()
 	srv.AppendResponse(mock.WithStatusCode(http.StatusUnauthorized))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
+	setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: "secret"})
 	options := ManagedIdentityCredentialOptions{}
 	options.Transport = srv
 	msiCred, err := NewManagedIdentityCredential(&options)
@@ -385,22 +199,26 @@ func TestManagedIdentityCredential_GetTokenInAppServiceMockFail(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected an error but did not receive one")
 	}
+	if !strings.HasPrefix(err.Error(), credNameManagedIdentity) {
+		t.Fatal("missing credential type prefix")
+	}
 }
 
 func TestManagedIdentityCredential_GetTokenIMDS400(t *testing.T) {
-	res := http.Response{StatusCode: http.StatusBadRequest, Body: io.NopCloser(bytes.NewBufferString(""))}
+	srv, close := mock.NewServer(mock.WithTransformAllRequestsToTestServerUrl())
+	defer close()
+	srv.SetResponse(mock.WithStatusCode(http.StatusBadRequest), mock.WithBody([]byte("something went wrong")))
 	options := ManagedIdentityCredentialOptions{}
-	options.Transport = newMockImds(res, res, res)
+	options.Transport = srv
 	cred, err := NewManagedIdentityCredential(&options)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// cred should return credentialUnavailableError when IMDS responds 400 to a token request
-	var expected credentialUnavailableError
 	for i := 0; i < 3; i++ {
 		_, err = cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-		if !errors.As(err, &expected) {
-			t.Fatalf(`expected credentialUnavailableError, got %T: "%s"`, err, err.Error())
+		if _, ok := err.(*credentialUnavailableError); !ok {
+			t.Fatalf("expected credentialUnavailableError, received %T", err)
 		}
 	}
 }
@@ -440,15 +258,11 @@ func TestManagedIdentityCredential_GetTokenUnexpectedJSON(t *testing.T) {
 }
 
 func TestManagedIdentityCredential_CreateIMDSAuthRequest(t *testing.T) {
-	// setting a dummy value for MSI_ENDPOINT in order to be able to get a ManagedIdentityCredential type in order
-	// to test IMDS authentication request creation.
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: "somevalue", msiSecret: "secret"})
 	cred, err := NewManagedIdentityCredential(nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	cred.client.endpoint = imdsEndpoint
-	req, err := cred.client.createIMDSAuthRequest(context.Background(), ClientID(fakeClientID), []string{liveTestScope})
+	req, err := cred.mic.createIMDSAuthRequest(context.Background(), ClientID(fakeClientID), []string{liveTestScope})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -518,69 +332,13 @@ func TestManagedIdentityCredential_ScopesImmutable(t *testing.T) {
 	}
 }
 
-func TestManagedIdentityCredential_UseResourceID(t *testing.T) {
-	srv, close := mock.NewServer()
-	defer close()
-	srv.AppendResponse(mock.WithBody([]byte(appServiceWindowsSuccessResp)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
-	options := ManagedIdentityCredentialOptions{}
-	options.Transport = srv
-	options.ID = ResourceID("sample/resource/id")
-	cred, err := NewManagedIdentityCredential(&options)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token != "new_token" {
-		t.Fatalf("unexpected token returned. Expected: %s, Received: %s", "new_token", tk.Token)
-	}
-}
-
-func TestManagedIdentityCredential_ResourceID_AppServiceV20190801(t *testing.T) {
-	t.Skip("App Service 2019-08-01 isn't supported because it's unavailable in some Functions apps.")
-	setEnvironmentVariables(t, map[string]string{identityEndpoint: "somevalue", identityHeader: "header"})
-	resID := "sample/resource/id"
-	cred, err := NewManagedIdentityCredential(&ManagedIdentityCredentialOptions{ID: ResourceID(resID)})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	cred.client.endpoint = imdsEndpoint
-	req, err := cred.client.createAuthRequest(context.Background(), cred.id, []string{liveTestScope})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if req.Raw().Header.Get("X-IDENTITY-HEADER") != "header" {
-		t.Fatalf("Unexpected value for secret header")
-	}
-	reqQueryParams, err := url.ParseQuery(req.Raw().URL.RawQuery)
-	if err != nil {
-		t.Fatalf("Unable to parse App Service request query params: %v", err)
-	}
-	if reqQueryParams["api-version"][0] != "2019-08-01" {
-		t.Fatalf("Unexpected App Service API version")
-	}
-	if reqQueryParams["resource"][0] != liveTestScope {
-		t.Fatalf("Unexpected resource in resource query param")
-	}
-	if reqQueryParams[qpResID][0] != resID {
-		t.Fatalf("Unexpected resource ID in resource query param")
-	}
-}
-
 func TestManagedIdentityCredential_ResourceID_IMDS(t *testing.T) {
-	// setting a dummy value for MSI_ENDPOINT in order to avoid failure in the constructor
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: "http://localhost"})
 	resID := "sample/resource/id"
 	cred, err := NewManagedIdentityCredential(&ManagedIdentityCredentialOptions{ID: ResourceID(resID)})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	cred.client.msiType = msiTypeIMDS
-	cred.client.endpoint = imdsEndpoint
-	req, err := cred.client.createAuthRequest(context.Background(), cred.id, []string{liveTestScope})
+	req, err := cred.mic.createAuthRequest(context.Background(), cred.mic.id, []string{liveTestScope})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -603,7 +361,7 @@ func TestManagedIdentityCredential_CreateAccessTokenExpiresOnInt(t *testing.T) {
 	srv, close := mock.NewServer()
 	defer close()
 	srv.AppendResponse(mock.WithBody([]byte(expiresOnNonStringIntResp)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
+	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL()})
 	options := ManagedIdentityCredentialOptions{}
 	options.Transport = srv
 	msiCred, err := NewManagedIdentityCredential(&options)
@@ -612,7 +370,7 @@ func TestManagedIdentityCredential_CreateAccessTokenExpiresOnInt(t *testing.T) {
 	}
 	_, err = msiCred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
 	if err != nil {
-		t.Fatalf("Received an error when attempting to retrieve a token")
+		t.Fatal(err)
 	}
 }
 
@@ -621,7 +379,7 @@ func TestManagedIdentityCredential_CreateAccessTokenExpiresOnFail(t *testing.T) 
 	srv, close := mock.NewServer()
 	defer close()
 	srv.AppendResponse(mock.WithBody([]byte(`{"access_token": "new_token", "refresh_token": "", "expires_in": "", "expires_on": "15609740s28", "not_before": "1560970130", "resource": "https://vault.azure.net", "token_type": "Bearer"}`)))
-	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL(), msiSecret: "secret"})
+	setEnvironmentVariables(t, map[string]string{msiEndpoint: srv.URL()})
 	options := ManagedIdentityCredentialOptions{}
 	options.Transport = srv
 	msiCred, err := NewManagedIdentityCredential(&options)
@@ -651,16 +409,7 @@ func TestManagedIdentityCredential_IMDSLive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token == "" {
-		t.Fatal("GetToken returned an invalid token")
-	}
-	if tk.ExpiresOn.Before(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
-	}
+	testGetTokenSuccess(t, cred)
 }
 
 func TestManagedIdentityCredential_IMDSClientIDLive(t *testing.T) {
@@ -679,16 +428,7 @@ func TestManagedIdentityCredential_IMDSClientIDLive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token == "" {
-		t.Fatal("GetToken returned an invalid token")
-	}
-	if tk.ExpiresOn.Before(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
-	}
+	testGetTokenSuccess(t, cred)
 }
 
 func TestManagedIdentityCredential_IMDSResourceIDLive(t *testing.T) {
@@ -707,16 +447,7 @@ func TestManagedIdentityCredential_IMDSResourceIDLive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token == "" {
-		t.Fatal("GetToken returned an invalid token")
-	}
-	if tk.ExpiresOn.Before(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
-	}
+	testGetTokenSuccess(t, cred)
 }
 
 func TestManagedIdentityCredential_IMDSTimeoutExceeded(t *testing.T) {
@@ -729,27 +460,28 @@ func TestManagedIdentityCredential_IMDSTimeoutExceeded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cred.client.imdsTimeout = time.Nanosecond
+	cred.mic.imdsTimeout = time.Nanosecond
 	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	var expected credentialUnavailableError
-	if !errors.As(err, &expected) {
-		t.Fatalf(`expected credentialUnavailableError, got %T: "%v"`, err, err)
+	if _, ok := err.(*credentialUnavailableError); !ok {
+		t.Fatalf("expected credentialUnavailableError, received %T", err)
 	}
-	if tk != nil {
-		t.Fatal("GetToken returned a token and an error")
+	if !reflect.ValueOf(tk).IsZero() {
+		t.Fatal("expected a zero value AccessToken")
 	}
 }
 
 func TestManagedIdentityCredential_IMDSTimeoutSuccess(t *testing.T) {
 	resetEnvironmentVarsForTest()
-	res := http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBufferString(accessTokenRespSuccess))}
+	srv, close := mock.NewServer(mock.WithTransformAllRequestsToTestServerUrl())
+	defer close()
+	srv.AppendResponse(mock.WithStatusCode(http.StatusOK), mock.WithBody(accessTokenRespSuccess))
 	options := ManagedIdentityCredentialOptions{}
-	options.Transport = newMockImds(res, res)
+	options.Transport = srv
 	cred, err := NewManagedIdentityCredential(&options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cred.client.imdsTimeout = time.Minute
+	cred.mic.imdsTimeout = time.Minute
 	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
 	if err != nil {
 		t.Fatal(err)
@@ -757,10 +489,10 @@ func TestManagedIdentityCredential_IMDSTimeoutSuccess(t *testing.T) {
 	if tk.Token != tokenValue {
 		t.Fatalf(`got unexpected token "%s"`, tk.Token)
 	}
-	if !tk.ExpiresOn.After(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
+	if v := time.Until(tk.ExpiresOn); v > tokenExpiresIn*time.Second || tokenExpiresIn-v > time.Second {
+		t.Fatalf("expected token to expire in about %d seconds but it expires in %f seconds", tokenExpiresIn, v.Seconds())
 	}
-	if cred.client.imdsTimeout > 0 {
+	if cred.mic.imdsTimeout > 0 {
 		t.Fatal("credential didn't remove IMDS timeout after receiving a response")
 	}
 }
@@ -782,21 +514,12 @@ func TestManagedIdentityCredential_ServiceFabric(t *testing.T) {
 	}
 	srv, close := mock.NewServer()
 	defer close()
-	srv.AppendResponse(mock.WithPredicate(pred), mock.WithBody([]byte(accessTokenRespSuccess)))
+	srv.AppendResponse(mock.WithPredicate(pred), mock.WithBody(accessTokenRespSuccess))
 	srv.AppendResponse()
 	setEnvironmentVariables(t, map[string]string{identityEndpoint: srv.URL(), identityHeader: expectedSecret, identityServerThumbprint: "..."})
 	cred, err := NewManagedIdentityCredential(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	tk, err := cred.GetToken(context.Background(), policy.TokenRequestOptions{Scopes: []string{liveTestScope}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tk.Token != tokenValue {
-		t.Fatalf(`got unexpected token "%s"`, tk.Token)
-	}
-	if !tk.ExpiresOn.After(time.Now().UTC()) {
-		t.Fatal("GetToken returned an invalid expiration time")
-	}
+	testGetTokenSuccess(t, cred)
 }

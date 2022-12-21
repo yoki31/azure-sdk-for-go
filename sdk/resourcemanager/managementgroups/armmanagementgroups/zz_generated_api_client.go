@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -28,23 +29,28 @@ type APIClient struct {
 // NewAPIClient creates a new instance of APIClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPIClient(credential azcore.TokenCredential, options *arm.ClientOptions) *APIClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPIClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*APIClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APIClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Checks if the specified management group name is valid and unique
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // checkNameAvailabilityRequest - Management group name availability check parameters.
 // options - APIClientCheckNameAvailabilityOptions contains the optional parameters for the APIClient.CheckNameAvailability
 // method.
@@ -73,13 +79,13 @@ func (client *APIClient) checkNameAvailabilityCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, checkNameAvailabilityRequest)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *APIClient) checkNameAvailabilityHandleResponse(resp *http.Response) (APIClientCheckNameAvailabilityResponse, error) {
-	result := APIClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := APIClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CheckNameAvailabilityResult); err != nil {
 		return APIClientCheckNameAvailabilityResponse{}, err
 	}
@@ -88,6 +94,7 @@ func (client *APIClient) checkNameAvailabilityHandleResponse(resp *http.Response
 
 // StartTenantBackfill - Starts backfilling subscriptions for the Tenant.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // options - APIClientStartTenantBackfillOptions contains the optional parameters for the APIClient.StartTenantBackfill method.
 func (client *APIClient) StartTenantBackfill(ctx context.Context, options *APIClientStartTenantBackfillOptions) (APIClientStartTenantBackfillResponse, error) {
 	req, err := client.startTenantBackfillCreateRequest(ctx, options)
@@ -114,13 +121,13 @@ func (client *APIClient) startTenantBackfillCreateRequest(ctx context.Context, o
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // startTenantBackfillHandleResponse handles the StartTenantBackfill response.
 func (client *APIClient) startTenantBackfillHandleResponse(resp *http.Response) (APIClientStartTenantBackfillResponse, error) {
-	result := APIClientStartTenantBackfillResponse{RawResponse: resp}
+	result := APIClientStartTenantBackfillResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TenantBackfillStatusResult); err != nil {
 		return APIClientStartTenantBackfillResponse{}, err
 	}
@@ -129,6 +136,7 @@ func (client *APIClient) startTenantBackfillHandleResponse(resp *http.Response) 
 
 // TenantBackfillStatus - Gets tenant backfill status
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // options - APIClientTenantBackfillStatusOptions contains the optional parameters for the APIClient.TenantBackfillStatus
 // method.
 func (client *APIClient) TenantBackfillStatus(ctx context.Context, options *APIClientTenantBackfillStatusOptions) (APIClientTenantBackfillStatusResponse, error) {
@@ -156,13 +164,13 @@ func (client *APIClient) tenantBackfillStatusCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // tenantBackfillStatusHandleResponse handles the TenantBackfillStatus response.
 func (client *APIClient) tenantBackfillStatusHandleResponse(resp *http.Response) (APIClientTenantBackfillStatusResponse, error) {
-	result := APIClientTenantBackfillStatusResponse{RawResponse: resp}
+	result := APIClientTenantBackfillStatusResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TenantBackfillStatusResult); err != nil {
 		return APIClientTenantBackfillStatusResponse{}, err
 	}

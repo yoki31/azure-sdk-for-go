@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,41 +12,42 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/streamanalytics/armstreamanalytics"
 )
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Create_JavaScript.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Create_JavaScript.json
 func ExampleFunctionsClient_CreateOrReplace() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrReplace(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg1637",
+		"sj8653",
+		"function8197",
 		armstreamanalytics.Function{
 			Properties: &armstreamanalytics.ScalarFunctionProperties{
-				Type: to.StringPtr("<type>"),
-				Properties: &armstreamanalytics.ScalarFunctionConfiguration{
+				Type: to.Ptr("Scalar"),
+				Properties: &armstreamanalytics.FunctionConfiguration{
 					Binding: &armstreamanalytics.JavaScriptFunctionBinding{
-						Type: to.StringPtr("<type>"),
+						Type: to.Ptr("Microsoft.StreamAnalytics/JavascriptUdf"),
 						Properties: &armstreamanalytics.JavaScriptFunctionBindingProperties{
-							Script: to.StringPtr("<script>"),
+							Script: to.Ptr("function (x, y) { return x + y; }"),
 						},
 					},
 					Inputs: []*armstreamanalytics.FunctionInput{
 						{
-							DataType: to.StringPtr("<data-type>"),
+							DataType: to.Ptr("Any"),
 						}},
 					Output: &armstreamanalytics.FunctionOutput{
-						DataType: to.StringPtr("<data-type>"),
+						DataType: to.Ptr("Any"),
 					},
 				},
 			},
@@ -55,31 +56,35 @@ func ExampleFunctionsClient_CreateOrReplace() {
 			IfNoneMatch: nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FunctionsClientCreateOrReplaceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Update_JavaScript.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Update_JavaScript.json
 func ExampleFunctionsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg1637",
+		"sj8653",
+		"function8197",
 		armstreamanalytics.Function{
 			Properties: &armstreamanalytics.ScalarFunctionProperties{
-				Type: to.StringPtr("<type>"),
-				Properties: &armstreamanalytics.ScalarFunctionConfiguration{
+				Type: to.Ptr("Scalar"),
+				Properties: &armstreamanalytics.FunctionConfiguration{
 					Binding: &armstreamanalytics.JavaScriptFunctionBinding{
-						Type: to.StringPtr("<type>"),
+						Type: to.Ptr("Microsoft.StreamAnalytics/JavascriptUdf"),
 						Properties: &armstreamanalytics.JavaScriptFunctionBindingProperties{
-							Script: to.StringPtr("<script>"),
+							Script: to.Ptr("function (a, b) { return a * b; }"),
 						},
 					},
 				},
@@ -87,118 +92,135 @@ func ExampleFunctionsClient_Update() {
 		},
 		&armstreamanalytics.FunctionsClientUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FunctionsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Delete.json
 func ExampleFunctionsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg1637",
+		"sj8653",
+		"function8197",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Get_JavaScript.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Get_JavaScript.json
 func ExampleFunctionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg1637",
+		"sj8653",
+		"function8197",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FunctionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_ListByStreamingJob.json
-func ExampleFunctionsClient_ListByStreamingJob() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_ListByStreamingJob.json
+func ExampleFunctionsClient_NewListByStreamingJobPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
-	pager := client.ListByStreamingJob("<resource-group-name>",
-		"<job-name>",
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByStreamingJobPager("sjrg1637",
+		"sj8653",
 		&armstreamanalytics.FunctionsClientListByStreamingJobOptions{Select: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Test_JavaScript.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_Test_JavaScript.json
 func ExampleFunctionsClient_BeginTest() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginTest(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg1637",
+		"sj8653",
+		"function8197",
 		&armstreamanalytics.FunctionsClientBeginTestOptions{Function: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FunctionsClientTestResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_RetrieveDefaultDefinition_AzureML.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Function_RetrieveDefaultDefinition_AzureML.json
 func ExampleFunctionsClient_RetrieveDefaultDefinition() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewFunctionsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewFunctionsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.RetrieveDefaultDefinition(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<function-name>",
+		"sjrg7",
+		"sj9093",
+		"function588",
 		&armstreamanalytics.FunctionsClientRetrieveDefaultDefinitionOptions{FunctionRetrieveDefaultDefinitionParameters: &armstreamanalytics.AzureMachineLearningWebServiceFunctionRetrieveDefaultDefinitionParameters{
-			BindingType: to.StringPtr("<binding-type>"),
+			BindingType: to.Ptr("Microsoft.MachineLearning/WebService"),
 			BindingRetrievalProperties: &armstreamanalytics.AzureMachineLearningWebServiceFunctionBindingRetrievalProperties{
-				ExecuteEndpoint: to.StringPtr("<execute-endpoint>"),
-				UdfType:         to.StringPtr("<udf-type>"),
+				ExecuteEndpoint: to.Ptr("someAzureMLExecuteEndpointUrl"),
+				UdfType:         to.Ptr("Scalar"),
 			},
 		},
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FunctionsClientRetrieveDefaultDefinitionResult)
+	// TODO: use response item
+	_ = res
 }

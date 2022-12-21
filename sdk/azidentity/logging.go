@@ -1,3 +1,6 @@
+//go:build go1.18
+// +build go1.18
+
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
@@ -9,7 +12,6 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
-	"github.com/Azure/azure-sdk-for-go/sdk/internal/diag"
 	"github.com/Azure/azure-sdk-for-go/sdk/internal/log"
 )
 
@@ -19,26 +21,13 @@ import (
 const EventAuthentication log.Event = "Authentication"
 
 func logGetTokenSuccess(cred azcore.TokenCredential, opts policy.TokenRequestOptions) {
-	if !log.Should(EventAuthentication) {
-		return
-	}
-	msg := fmt.Sprintf("Azure Identity => GetToken() result for %T: SUCCESS\n", cred)
-	msg += fmt.Sprintf("\tCredential Scopes: [%s]", strings.Join(opts.Scopes, ", "))
-	log.Write(EventAuthentication, msg)
+	logGetTokenSuccessImpl(fmt.Sprintf("%T", cred), opts)
 }
 
-func logCredentialError(credName string, err error) {
-	log.Writef(EventAuthentication, "Azure Identity => ERROR in %s: %s", credName, err.Error())
-}
-
-func addGetTokenFailureLogs(credName string, err error, includeStack bool) {
-	if !log.Should(EventAuthentication) {
-		return
+func logGetTokenSuccessImpl(credName string, opts policy.TokenRequestOptions) {
+	if log.Should(EventAuthentication) {
+		scope := strings.Join(opts.Scopes, ", ")
+		msg := fmt.Sprintf(`%s.GetToken() acquired a token for scope "%s"\n`, credName, scope)
+		log.Write(EventAuthentication, msg)
 	}
-	stack := ""
-	if includeStack {
-		// skip the stack trace frames and ourself
-		stack = "\n" + diag.StackTrace(3, 32)
-	}
-	log.Writef(EventAuthentication, "Azure Identity => ERROR in GetToken() call for %s: %s%s", credName, err.Error(), stack)
 }

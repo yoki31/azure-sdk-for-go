@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,57 +17,63 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/GetSqlPoolBlobAuditing.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/GetSqlPoolBlobAuditing.json
 func ExampleSQLPoolBlobAuditingPoliciesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolBlobAuditingPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolBlobAuditingPoliciesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		armsynapse.Enum11("default"),
+		"blobauditingtest-6852",
+		"blobauditingtest-2080",
+		"testdb",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.SQLPoolBlobAuditingPoliciesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/CreateOrUpdateSqlPoolBlobAuditingWithAllParameters.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/CreateOrUpdateSqlPoolBlobAuditingWithAllParameters.json
 func ExampleSQLPoolBlobAuditingPoliciesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolBlobAuditingPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolBlobAuditingPoliciesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		armsynapse.Enum11("default"),
+		"blobauditingtest-4799",
+		"blobauditingtest-6440",
+		"testdb",
 		armsynapse.SQLPoolBlobAuditingPolicy{
 			Properties: &armsynapse.SQLPoolBlobAuditingPolicyProperties{
 				AuditActionsAndGroups: []*string{
-					to.StringPtr("DATABASE_LOGOUT_GROUP"),
-					to.StringPtr("DATABASE_ROLE_MEMBER_CHANGE_GROUP"),
-					to.StringPtr("UPDATE on database::TestDatabaseName by public")},
-				IsAzureMonitorTargetEnabled:  to.BoolPtr(true),
-				IsStorageSecondaryKeyInUse:   to.BoolPtr(false),
-				RetentionDays:                to.Int32Ptr(6),
-				State:                        armsynapse.BlobAuditingPolicyStateEnabled.ToPtr(),
-				StorageAccountAccessKey:      to.StringPtr("<storage-account-access-key>"),
-				StorageAccountSubscriptionID: to.StringPtr("<storage-account-subscription-id>"),
-				StorageEndpoint:              to.StringPtr("<storage-endpoint>"),
+					to.Ptr("DATABASE_LOGOUT_GROUP"),
+					to.Ptr("DATABASE_ROLE_MEMBER_CHANGE_GROUP"),
+					to.Ptr("UPDATE on database::TestDatabaseName by public")},
+				IsAzureMonitorTargetEnabled:  to.Ptr(true),
+				IsStorageSecondaryKeyInUse:   to.Ptr(false),
+				RetentionDays:                to.Ptr[int32](6),
+				State:                        to.Ptr(armsynapse.BlobAuditingPolicyStateEnabled),
+				StorageAccountAccessKey:      to.Ptr("sdlfkjabc+sdlfkjsdlkfsjdfLDKFTERLKFDFKLjsdfksjdflsdkfD2342309432849328476458/3RSD=="),
+				StorageAccountSubscriptionID: to.Ptr("00000000-1234-0000-5678-000000000000"),
+				StorageEndpoint:              to.Ptr("https://mystorage.blob.core.windows.net"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.SQLPoolBlobAuditingPoliciesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }

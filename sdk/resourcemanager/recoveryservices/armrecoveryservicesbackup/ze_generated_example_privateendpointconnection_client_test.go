@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,85 +12,94 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/recoveryservices/armrecoveryservicesbackup"
 )
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/PrivateEndpointConnection/GetPrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/PrivateEndpointConnection/GetPrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("04cf684a-d41f-4550-9f70-7708a3a2283b", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<private-endpoint-connection-name>",
+		"gaallavaultbvtd2msi",
+		"gaallaRG",
+		"gaallatestpe2.5704c932-249a-490b-a142-1396838cd3b",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/PrivateEndpointConnection/PutPrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/PrivateEndpointConnection/PutPrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionClient_BeginPut() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("04cf684a-d41f-4550-9f70-7708a3a2283b", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginPut(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<private-endpoint-connection-name>",
+		"gaallavaultbvtd2msi",
+		"gaallaRG",
+		"gaallatestpe2.5704c932-249a-490b-a142-1396838cd3b",
 		armrecoveryservicesbackup.PrivateEndpointConnectionResource{
 			Properties: &armrecoveryservicesbackup.PrivateEndpointConnection{
 				PrivateEndpoint: &armrecoveryservicesbackup.PrivateEndpoint{
-					ID: to.StringPtr("<id>"),
+					ID: to.Ptr("/subscriptions/04cf684a-d41f-4550-9f70-7708a3a2283b/resourceGroups/gaallaRG/providers/Microsoft.Network/privateEndpoints/gaallatestpe3"),
 				},
 				PrivateLinkServiceConnectionState: &armrecoveryservicesbackup.PrivateLinkServiceConnectionState{
-					Description: to.StringPtr("<description>"),
-					Status:      armrecoveryservicesbackup.PrivateEndpointConnectionStatus("Approved").ToPtr(),
+					Description: to.Ptr("Approved by johndoe@company.com"),
+					Status:      to.Ptr(armrecoveryservicesbackup.PrivateEndpointConnectionStatusApproved),
 				},
-				ProvisioningState: armrecoveryservicesbackup.ProvisioningState("Succeeded").ToPtr(),
+				ProvisioningState: to.Ptr(armrecoveryservicesbackup.ProvisioningStateSucceeded),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionClientPutResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/PrivateEndpointConnection/DeletePrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/PrivateEndpointConnection/DeletePrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewPrivateEndpointConnectionClient("04cf684a-d41f-4550-9f70-7708a3a2283b", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<private-endpoint-connection-name>",
+		"gaallavaultbvtd2msi",
+		"gaallaRG",
+		"gaallatestpe2.5704c932-249a-490b-a142-1396838cd3b",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

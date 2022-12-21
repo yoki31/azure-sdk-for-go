@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,51 +35,53 @@ type Client struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *Client {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*Client, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &Client{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginPerformConnectivityCheckAsync - Performs a connectivity check between the API Management service and a given destination,
 // and returns metrics for the connection, as well as errors encountered while trying to establish it.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // connectivityCheckRequestParams - Connectivity Check request parameters.
 // options - ClientBeginPerformConnectivityCheckAsyncOptions contains the optional parameters for the Client.BeginPerformConnectivityCheckAsync
 // method.
-func (client *Client) BeginPerformConnectivityCheckAsync(ctx context.Context, resourceGroupName string, serviceName string, connectivityCheckRequestParams ConnectivityCheckRequest, options *ClientBeginPerformConnectivityCheckAsyncOptions) (ClientPerformConnectivityCheckAsyncPollerResponse, error) {
-	resp, err := client.performConnectivityCheckAsync(ctx, resourceGroupName, serviceName, connectivityCheckRequestParams, options)
-	if err != nil {
-		return ClientPerformConnectivityCheckAsyncPollerResponse{}, err
+func (client *Client) BeginPerformConnectivityCheckAsync(ctx context.Context, resourceGroupName string, serviceName string, connectivityCheckRequestParams ConnectivityCheckRequest, options *ClientBeginPerformConnectivityCheckAsyncOptions) (*runtime.Poller[ClientPerformConnectivityCheckAsyncResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.performConnectivityCheckAsync(ctx, resourceGroupName, serviceName, connectivityCheckRequestParams, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ClientPerformConnectivityCheckAsyncResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ClientPerformConnectivityCheckAsyncResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClientPerformConnectivityCheckAsyncPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("Client.PerformConnectivityCheckAsync", "location", resp, client.pl)
-	if err != nil {
-		return ClientPerformConnectivityCheckAsyncPollerResponse{}, err
-	}
-	result.Poller = &ClientPerformConnectivityCheckAsyncPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PerformConnectivityCheckAsync - Performs a connectivity check between the API Management service and a given destination,
 // and returns metrics for the connection, as well as errors encountered while trying to establish it.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 func (client *Client) performConnectivityCheckAsync(ctx context.Context, resourceGroupName string, serviceName string, connectivityCheckRequestParams ConnectivityCheckRequest, options *ClientBeginPerformConnectivityCheckAsyncOptions) (*http.Response, error) {
 	req, err := client.performConnectivityCheckAsyncCreateRequest(ctx, resourceGroupName, serviceName, connectivityCheckRequestParams, options)
 	if err != nil {
@@ -116,6 +119,6 @@ func (client *Client) performConnectivityCheckAsyncCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, connectivityCheckRequestParams)
 }

@@ -1,6 +1,6 @@
 # Azure Data Factory Module for Go
 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory)](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory/v2)](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory/v2)
 
 The `armdatafactory` module provides operations for working with Azure Data Factory.
 
@@ -11,7 +11,7 @@ The `armdatafactory` module provides operations for working with Azure Data Fact
 ## Prerequisites
 
 - an [Azure subscription](https://azure.microsoft.com/free/)
-- Go 1.16 or above
+- Go 1.18 or above (You could download and install the latest version of Go from [here](https://go.dev/doc/install). It will replace the existing Go on your machine. If you want to install multiple Go versions on the same machine, you could refer this [doc](https://go.dev/doc/manage-install).)
 
 ## Install the package
 
@@ -20,7 +20,7 @@ This project uses [Go modules](https://github.com/golang/go/wiki/Modules) for ve
 Install the Azure Data Factory module:
 
 ```sh
-go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory
+go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/datafactory/armdatafactory/v2
 ```
 
 ## Authorization
@@ -38,16 +38,18 @@ For more information on authentication, please see the documentation for `aziden
 Azure Data Factory modules consist of one or more clients.  A client groups a set of related APIs, providing access to its functionality within the specified subscription.  Create one or more clients to access the APIs you require using your credential.
 
 ```go
-client := armdatafactory.NewTriggersClient(<subscription ID>, cred, nil)
+client, err := armdatafactory.NewTriggersClient(<subscription ID>, cred, nil)
 ```
 
 You can use `ClientOptions` in package `github.com/Azure/azure-sdk-for-go/sdk/azcore/arm` to set endpoint to connect with public and sovereign clouds as well as Azure Stack. For more information, please see the documentation for `azcore` at [pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azcore](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azcore).
 
 ```go
-options = arm.ClientOptions{
-    Host: arm.AzureChina,
+options := arm.ClientOptions {
+    ClientOptions: azcore.ClientOptions {
+        Cloud: cloud.AzureChina,
+    },
 }
-client := armdatafactory.NewTriggersClient(<subscription ID>, cred, &options)
+client, err := armdatafactory.NewTriggersClient(<subscription ID>, cred, &options)
 ```
 
 ## Provide Feedback

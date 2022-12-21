@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,221 +12,260 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/powerbidedicated/armpowerbidedicated"
 )
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/getCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/getCapacity.json
 func ExampleCapacitiesClient_GetDetails() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetDetails(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientGetDetailsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/createCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/createCapacity.json
 func ExampleCapacitiesClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		armpowerbidedicated.DedicatedCapacity{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("West US"),
 			Tags: map[string]*string{
-				"testKey": to.StringPtr("testValue"),
+				"testKey": to.Ptr("testValue"),
 			},
 			Properties: &armpowerbidedicated.DedicatedCapacityProperties{
 				Administration: &armpowerbidedicated.DedicatedCapacityAdministrators{
 					Members: []*string{
-						to.StringPtr("azsdktest@microsoft.com"),
-						to.StringPtr("azsdktest2@microsoft.com")},
+						to.Ptr("azsdktest@microsoft.com"),
+						to.Ptr("azsdktest2@microsoft.com")},
 				},
 			},
 			SKU: &armpowerbidedicated.CapacitySKU{
-				Name: to.StringPtr("<name>"),
-				Tier: armpowerbidedicated.CapacitySKUTier("PBIE_Azure").ToPtr(),
+				Name: to.Ptr("A1"),
+				Tier: to.Ptr(armpowerbidedicated.CapacitySKUTierPBIEAzure),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/deleteCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/deleteCapacity.json
 func ExampleCapacitiesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/updateCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/updateCapacity.json
 func ExampleCapacitiesClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		armpowerbidedicated.DedicatedCapacityUpdateParameters{
 			Properties: &armpowerbidedicated.DedicatedCapacityMutableProperties{
 				Administration: &armpowerbidedicated.DedicatedCapacityAdministrators{
 					Members: []*string{
-						to.StringPtr("azsdktest@microsoft.com"),
-						to.StringPtr("azsdktest2@microsoft.com")},
+						to.Ptr("azsdktest@microsoft.com"),
+						to.Ptr("azsdktest2@microsoft.com")},
 				},
 			},
 			SKU: &armpowerbidedicated.CapacitySKU{
-				Name: to.StringPtr("<name>"),
-				Tier: armpowerbidedicated.CapacitySKUTier("PBIE_Azure").ToPtr(),
+				Name: to.Ptr("A1"),
+				Tier: to.Ptr(armpowerbidedicated.CapacitySKUTierPBIEAzure),
 			},
 			Tags: map[string]*string{
-				"testKey": to.StringPtr("testValue"),
+				"testKey": to.Ptr("testValue"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/suspendCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/suspendCapacity.json
 func ExampleCapacitiesClient_BeginSuspend() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginSuspend(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/resumeCapacity.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/resumeCapacity.json
 func ExampleCapacitiesClient_BeginResume() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginResume(ctx,
-		"<resource-group-name>",
-		"<dedicated-capacity-name>",
+		"TestRG",
+		"azsdktest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/listCapacitiesInResourceGroup.json
-func ExampleCapacitiesClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/listCapacitiesInResourceGroup.json
+func ExampleCapacitiesClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
-	res, err := client.ListByResourceGroup(ctx,
-		"<resource-group-name>",
-		nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientListByResourceGroupResult)
+	pager := client.NewListByResourceGroupPager("TestRG",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/listCapacitiesInSubscription.json
-func ExampleCapacitiesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/listCapacitiesInSubscription.json
+func ExampleCapacitiesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
-	res, err := client.List(ctx,
-		nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientListResult)
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/checkNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbidedicated/resource-manager/Microsoft.PowerBIdedicated/stable/2021-01-01/examples/checkNameAvailability.json
 func ExampleCapacitiesClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbidedicated.NewCapacitiesClient("<subscription-id>", cred, nil)
+	client, err := armpowerbidedicated.NewCapacitiesClient("613192d7-503f-477a-9cfe-4efc3ee2bd60", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<location>",
+		"West US",
 		armpowerbidedicated.CheckCapacityNameAvailabilityParameters{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("azsdktest"),
+			Type: to.Ptr("Microsoft.PowerBIDedicated/capacities"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CapacitiesClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }

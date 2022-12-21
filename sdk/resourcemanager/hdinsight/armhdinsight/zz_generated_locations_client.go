@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type LocationsClient struct {
 // forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewLocationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *LocationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewLocationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*LocationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &LocationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Check the cluster name is available or not.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // options - LocationsClientCheckNameAvailabilityOptions contains the optional parameters for the LocationsClient.CheckNameAvailability
 // method.
@@ -88,13 +94,13 @@ func (client *LocationsClient) checkNameAvailabilityCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *LocationsClient) checkNameAvailabilityHandleResponse(resp *http.Response) (LocationsClientCheckNameAvailabilityResponse, error) {
-	result := LocationsClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := LocationsClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NameAvailabilityCheckResult); err != nil {
 		return LocationsClientCheckNameAvailabilityResponse{}, err
 	}
@@ -103,6 +109,7 @@ func (client *LocationsClient) checkNameAvailabilityHandleResponse(resp *http.Re
 
 // GetAzureAsyncOperationStatus - Get the async operation status.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // operationID - The long running operation id.
 // options - LocationsClientGetAzureAsyncOperationStatusOptions contains the optional parameters for the LocationsClient.GetAzureAsyncOperationStatus
@@ -144,13 +151,13 @@ func (client *LocationsClient) getAzureAsyncOperationStatusCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAzureAsyncOperationStatusHandleResponse handles the GetAzureAsyncOperationStatus response.
 func (client *LocationsClient) getAzureAsyncOperationStatusHandleResponse(resp *http.Response) (LocationsClientGetAzureAsyncOperationStatusResponse, error) {
-	result := LocationsClientGetAzureAsyncOperationStatusResponse{RawResponse: resp}
+	result := LocationsClientGetAzureAsyncOperationStatusResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AsyncOperationResult); err != nil {
 		return LocationsClientGetAzureAsyncOperationStatusResponse{}, err
 	}
@@ -159,6 +166,7 @@ func (client *LocationsClient) getAzureAsyncOperationStatusHandleResponse(resp *
 
 // GetCapabilities - Gets the capabilities for the specified location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // options - LocationsClientGetCapabilitiesOptions contains the optional parameters for the LocationsClient.GetCapabilities
 // method.
@@ -195,13 +203,13 @@ func (client *LocationsClient) getCapabilitiesCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getCapabilitiesHandleResponse handles the GetCapabilities response.
 func (client *LocationsClient) getCapabilitiesHandleResponse(resp *http.Response) (LocationsClientGetCapabilitiesResponse, error) {
-	result := LocationsClientGetCapabilitiesResponse{RawResponse: resp}
+	result := LocationsClientGetCapabilitiesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CapabilitiesResult); err != nil {
 		return LocationsClientGetCapabilitiesResponse{}, err
 	}
@@ -210,6 +218,7 @@ func (client *LocationsClient) getCapabilitiesHandleResponse(resp *http.Response
 
 // ListBillingSpecs - Lists the billingSpecs for the specified subscription and location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // options - LocationsClientListBillingSpecsOptions contains the optional parameters for the LocationsClient.ListBillingSpecs
 // method.
@@ -246,13 +255,13 @@ func (client *LocationsClient) listBillingSpecsCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBillingSpecsHandleResponse handles the ListBillingSpecs response.
 func (client *LocationsClient) listBillingSpecsHandleResponse(resp *http.Response) (LocationsClientListBillingSpecsResponse, error) {
-	result := LocationsClientListBillingSpecsResponse{RawResponse: resp}
+	result := LocationsClientListBillingSpecsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BillingResponseListResult); err != nil {
 		return LocationsClientListBillingSpecsResponse{}, err
 	}
@@ -261,6 +270,7 @@ func (client *LocationsClient) listBillingSpecsHandleResponse(resp *http.Respons
 
 // ListUsages - Lists the usages for the specified location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // options - LocationsClientListUsagesOptions contains the optional parameters for the LocationsClient.ListUsages method.
 func (client *LocationsClient) ListUsages(ctx context.Context, location string, options *LocationsClientListUsagesOptions) (LocationsClientListUsagesResponse, error) {
@@ -296,13 +306,13 @@ func (client *LocationsClient) listUsagesCreateRequest(ctx context.Context, loca
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listUsagesHandleResponse handles the ListUsages response.
 func (client *LocationsClient) listUsagesHandleResponse(resp *http.Response) (LocationsClientListUsagesResponse, error) {
-	result := LocationsClientListUsagesResponse{RawResponse: resp}
+	result := LocationsClientListUsagesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.UsagesListResult); err != nil {
 		return LocationsClientListUsagesResponse{}, err
 	}
@@ -311,6 +321,7 @@ func (client *LocationsClient) listUsagesHandleResponse(resp *http.Response) (Lo
 
 // ValidateClusterCreateRequest - Validate the cluster create request spec is valid or not.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The Azure location (region) for which to make the request.
 // options - LocationsClientValidateClusterCreateRequestOptions contains the optional parameters for the LocationsClient.ValidateClusterCreateRequest
 // method.
@@ -347,13 +358,13 @@ func (client *LocationsClient) validateClusterCreateRequestCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // validateClusterCreateRequestHandleResponse handles the ValidateClusterCreateRequest response.
 func (client *LocationsClient) validateClusterCreateRequestHandleResponse(resp *http.Response) (LocationsClientValidateClusterCreateRequestResponse, error) {
-	result := LocationsClientValidateClusterCreateRequestResponse{RawResponse: resp}
+	result := LocationsClientValidateClusterCreateRequestResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterCreateValidationResult); err != nil {
 		return LocationsClientValidateClusterCreateRequestResponse{}, err
 	}

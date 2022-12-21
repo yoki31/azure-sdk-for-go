@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -28,23 +29,28 @@ type DefaultAccountsClient struct {
 // NewDefaultAccountsClient creates a new instance of DefaultAccountsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDefaultAccountsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *DefaultAccountsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDefaultAccountsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*DefaultAccountsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DefaultAccountsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Get the default account for the scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // scopeTenantID - The tenant ID.
 // scopeType - The scope for the default account.
 // options - DefaultAccountsClientGetOptions contains the optional parameters for the DefaultAccountsClient.Get method.
@@ -78,13 +84,13 @@ func (client *DefaultAccountsClient) getCreateRequest(ctx context.Context, scope
 	}
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DefaultAccountsClient) getHandleResponse(resp *http.Response) (DefaultAccountsClientGetResponse, error) {
-	result := DefaultAccountsClientGetResponse{RawResponse: resp}
+	result := DefaultAccountsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DefaultAccountPayload); err != nil {
 		return DefaultAccountsClientGetResponse{}, err
 	}
@@ -93,6 +99,7 @@ func (client *DefaultAccountsClient) getHandleResponse(resp *http.Response) (Def
 
 // Remove - Removes the default account from the scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // scopeTenantID - The tenant ID.
 // scopeType - The scope for the default account.
 // options - DefaultAccountsClientRemoveOptions contains the optional parameters for the DefaultAccountsClient.Remove method.
@@ -108,7 +115,7 @@ func (client *DefaultAccountsClient) Remove(ctx context.Context, scopeTenantID s
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return DefaultAccountsClientRemoveResponse{}, runtime.NewResponseError(resp)
 	}
-	return DefaultAccountsClientRemoveResponse{RawResponse: resp}, nil
+	return DefaultAccountsClientRemoveResponse{}, nil
 }
 
 // removeCreateRequest creates the Remove request.
@@ -126,12 +133,13 @@ func (client *DefaultAccountsClient) removeCreateRequest(ctx context.Context, sc
 	}
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Set - Sets the default account for the scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // defaultAccountPayload - The payload containing the default account information and the scope.
 // options - DefaultAccountsClientSetOptions contains the optional parameters for the DefaultAccountsClient.Set method.
 func (client *DefaultAccountsClient) Set(ctx context.Context, defaultAccountPayload DefaultAccountPayload, options *DefaultAccountsClientSetOptions) (DefaultAccountsClientSetResponse, error) {
@@ -159,13 +167,13 @@ func (client *DefaultAccountsClient) setCreateRequest(ctx context.Context, defau
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, defaultAccountPayload)
 }
 
 // setHandleResponse handles the Set response.
 func (client *DefaultAccountsClient) setHandleResponse(resp *http.Response) (DefaultAccountsClientSetResponse, error) {
-	result := DefaultAccountsClientSetResponse{RawResponse: resp}
+	result := DefaultAccountsClientSetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DefaultAccountPayload); err != nil {
 		return DefaultAccountsClientSetResponse{}, err
 	}

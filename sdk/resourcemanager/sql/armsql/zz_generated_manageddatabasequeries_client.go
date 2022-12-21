@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ManagedDatabaseQueriesClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewManagedDatabaseQueriesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ManagedDatabaseQueriesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewManagedDatabaseQueriesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ManagedDatabaseQueriesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ManagedDatabaseQueriesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Get query by query id.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
@@ -102,37 +108,54 @@ func (client *ManagedDatabaseQueriesClient) getCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ManagedDatabaseQueriesClient) getHandleResponse(resp *http.Response) (ManagedDatabaseQueriesClientGetResponse, error) {
-	result := ManagedDatabaseQueriesClientGetResponse{RawResponse: resp}
+	result := ManagedDatabaseQueriesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedInstanceQuery); err != nil {
 		return ManagedDatabaseQueriesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByQuery - Get query execution statistics by query id.
+// NewListByQueryPager - Get query execution statistics by query id.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
 // databaseName - The name of the database.
 // options - ManagedDatabaseQueriesClientListByQueryOptions contains the optional parameters for the ManagedDatabaseQueriesClient.ListByQuery
 // method.
-func (client *ManagedDatabaseQueriesClient) ListByQuery(resourceGroupName string, managedInstanceName string, databaseName string, queryID string, options *ManagedDatabaseQueriesClientListByQueryOptions) *ManagedDatabaseQueriesClientListByQueryPager {
-	return &ManagedDatabaseQueriesClientListByQueryPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByQueryCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, queryID, options)
+func (client *ManagedDatabaseQueriesClient) NewListByQueryPager(resourceGroupName string, managedInstanceName string, databaseName string, queryID string, options *ManagedDatabaseQueriesClientListByQueryOptions) *runtime.Pager[ManagedDatabaseQueriesClientListByQueryResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagedDatabaseQueriesClientListByQueryResponse]{
+		More: func(page ManagedDatabaseQueriesClientListByQueryResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagedDatabaseQueriesClientListByQueryResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagedInstanceQueryStatistics.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagedDatabaseQueriesClientListByQueryResponse) (ManagedDatabaseQueriesClientListByQueryResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByQueryCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, queryID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagedDatabaseQueriesClientListByQueryResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagedDatabaseQueriesClientListByQueryResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagedDatabaseQueriesClientListByQueryResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByQueryHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByQueryCreateRequest creates the ListByQuery request.
@@ -174,13 +197,13 @@ func (client *ManagedDatabaseQueriesClient) listByQueryCreateRequest(ctx context
 	}
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByQueryHandleResponse handles the ListByQuery response.
 func (client *ManagedDatabaseQueriesClient) listByQueryHandleResponse(resp *http.Response) (ManagedDatabaseQueriesClientListByQueryResponse, error) {
-	result := ManagedDatabaseQueriesClientListByQueryResponse{RawResponse: resp}
+	result := ManagedDatabaseQueriesClientListByQueryResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedInstanceQueryStatistics); err != nil {
 		return ManagedDatabaseQueriesClientListByQueryResponse{}, err
 	}

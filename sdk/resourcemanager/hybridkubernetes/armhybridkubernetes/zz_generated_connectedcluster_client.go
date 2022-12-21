@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,51 @@ type ConnectedClusterClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewConnectedClusterClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ConnectedClusterClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewConnectedClusterClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ConnectedClusterClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ConnectedClusterClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - API to register a new Kubernetes cluster and create a tracked resource in Azure Resource Manager (ARM).
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // clusterName - The name of the Kubernetes cluster on which get is called.
 // connectedCluster - Parameters supplied to Create a Connected Cluster.
 // options - ConnectedClusterClientBeginCreateOptions contains the optional parameters for the ConnectedClusterClient.BeginCreate
 // method.
-func (client *ConnectedClusterClient) BeginCreate(ctx context.Context, resourceGroupName string, clusterName string, connectedCluster ConnectedCluster, options *ConnectedClusterClientBeginCreateOptions) (ConnectedClusterClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, clusterName, connectedCluster, options)
-	if err != nil {
-		return ConnectedClusterClientCreatePollerResponse{}, err
+func (client *ConnectedClusterClient) BeginCreate(ctx context.Context, resourceGroupName string, clusterName string, connectedCluster ConnectedCluster, options *ConnectedClusterClientBeginCreateOptions) (*runtime.Poller[ConnectedClusterClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, clusterName, connectedCluster, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ConnectedClusterClientCreateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ConnectedClusterClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ConnectedClusterClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ConnectedClusterClient.Create", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return ConnectedClusterClientCreatePollerResponse{}, err
-	}
-	result.Poller = &ConnectedClusterClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - API to register a new Kubernetes cluster and create a tracked resource in Azure Resource Manager (ARM).
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 func (client *ConnectedClusterClient) create(ctx context.Context, resourceGroupName string, clusterName string, connectedCluster ConnectedCluster, options *ConnectedClusterClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, clusterName, connectedCluster, options)
 	if err != nil {
@@ -113,36 +116,34 @@ func (client *ConnectedClusterClient) createCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, connectedCluster)
 }
 
 // BeginDelete - Delete a connected cluster, removing the tracked resource in Azure Resource Manager (ARM).
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // clusterName - The name of the Kubernetes cluster on which get is called.
 // options - ConnectedClusterClientBeginDeleteOptions contains the optional parameters for the ConnectedClusterClient.BeginDelete
 // method.
-func (client *ConnectedClusterClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, options *ConnectedClusterClientBeginDeleteOptions) (ConnectedClusterClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, options)
-	if err != nil {
-		return ConnectedClusterClientDeletePollerResponse{}, err
+func (client *ConnectedClusterClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, options *ConnectedClusterClientBeginDeleteOptions) (*runtime.Poller[ConnectedClusterClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ConnectedClusterClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ConnectedClusterClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ConnectedClusterClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ConnectedClusterClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return ConnectedClusterClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ConnectedClusterClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a connected cluster, removing the tracked resource in Azure Resource Manager (ARM).
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 func (client *ConnectedClusterClient) deleteOperation(ctx context.Context, resourceGroupName string, clusterName string, options *ConnectedClusterClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, clusterName, options)
 	if err != nil {
@@ -180,13 +181,14 @@ func (client *ConnectedClusterClient) deleteCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Returns the properties of the specified connected cluster, including name, identity, properties, and additional cluster
 // details.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // clusterName - The name of the Kubernetes cluster on which get is called.
 // options - ConnectedClusterClientGetOptions contains the optional parameters for the ConnectedClusterClient.Get method.
@@ -227,34 +229,51 @@ func (client *ConnectedClusterClient) getCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ConnectedClusterClient) getHandleResponse(resp *http.Response) (ConnectedClusterClientGetResponse, error) {
-	result := ConnectedClusterClientGetResponse{RawResponse: resp}
+	result := ConnectedClusterClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConnectedCluster); err != nil {
 		return ConnectedClusterClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - API to enumerate registered connected K8s clusters under a Resource Group
+// NewListByResourceGroupPager - API to enumerate registered connected K8s clusters under a Resource Group
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - ConnectedClusterClientListByResourceGroupOptions contains the optional parameters for the ConnectedClusterClient.ListByResourceGroup
 // method.
-func (client *ConnectedClusterClient) ListByResourceGroup(resourceGroupName string, options *ConnectedClusterClientListByResourceGroupOptions) *ConnectedClusterClientListByResourceGroupPager {
-	return &ConnectedClusterClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *ConnectedClusterClient) NewListByResourceGroupPager(resourceGroupName string, options *ConnectedClusterClientListByResourceGroupOptions) *runtime.Pager[ConnectedClusterClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ConnectedClusterClientListByResourceGroupResponse]{
+		More: func(page ConnectedClusterClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ConnectedClusterClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ConnectedClusterList.NextLink)
+		Fetcher: func(ctx context.Context, page *ConnectedClusterClientListByResourceGroupResponse) (ConnectedClusterClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ConnectedClusterClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ConnectedClusterClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ConnectedClusterClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -275,33 +294,50 @@ func (client *ConnectedClusterClient) listByResourceGroupCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ConnectedClusterClient) listByResourceGroupHandleResponse(resp *http.Response) (ConnectedClusterClientListByResourceGroupResponse, error) {
-	result := ConnectedClusterClientListByResourceGroupResponse{RawResponse: resp}
+	result := ConnectedClusterClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConnectedClusterList); err != nil {
 		return ConnectedClusterClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - API to enumerate registered connected K8s clusters under a Subscription
+// NewListBySubscriptionPager - API to enumerate registered connected K8s clusters under a Subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // options - ConnectedClusterClientListBySubscriptionOptions contains the optional parameters for the ConnectedClusterClient.ListBySubscription
 // method.
-func (client *ConnectedClusterClient) ListBySubscription(options *ConnectedClusterClientListBySubscriptionOptions) *ConnectedClusterClientListBySubscriptionPager {
-	return &ConnectedClusterClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *ConnectedClusterClient) NewListBySubscriptionPager(options *ConnectedClusterClientListBySubscriptionOptions) *runtime.Pager[ConnectedClusterClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ConnectedClusterClientListBySubscriptionResponse]{
+		More: func(page ConnectedClusterClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ConnectedClusterClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ConnectedClusterList.NextLink)
+		Fetcher: func(ctx context.Context, page *ConnectedClusterClientListBySubscriptionResponse) (ConnectedClusterClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ConnectedClusterClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ConnectedClusterClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ConnectedClusterClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -318,13 +354,13 @@ func (client *ConnectedClusterClient) listBySubscriptionCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *ConnectedClusterClient) listBySubscriptionHandleResponse(resp *http.Response) (ConnectedClusterClientListBySubscriptionResponse, error) {
-	result := ConnectedClusterClientListBySubscriptionResponse{RawResponse: resp}
+	result := ConnectedClusterClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConnectedClusterList); err != nil {
 		return ConnectedClusterClientListBySubscriptionResponse{}, err
 	}
@@ -334,6 +370,7 @@ func (client *ConnectedClusterClient) listBySubscriptionHandleResponse(resp *htt
 // ListClusterUserCredential - Gets cluster user credentials of the connected cluster with a specified resource group and
 // name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // clusterName - The name of the Kubernetes cluster on which get is called.
 // properties - ListClusterUserCredential properties
@@ -376,13 +413,13 @@ func (client *ConnectedClusterClient) listClusterUserCredentialCreateRequest(ctx
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, properties)
 }
 
 // listClusterUserCredentialHandleResponse handles the ListClusterUserCredential response.
 func (client *ConnectedClusterClient) listClusterUserCredentialHandleResponse(resp *http.Response) (ConnectedClusterClientListClusterUserCredentialResponse, error) {
-	result := ConnectedClusterClientListClusterUserCredentialResponse{RawResponse: resp}
+	result := ConnectedClusterClientListClusterUserCredentialResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CredentialResults); err != nil {
 		return ConnectedClusterClientListClusterUserCredentialResponse{}, err
 	}
@@ -391,6 +428,7 @@ func (client *ConnectedClusterClient) listClusterUserCredentialHandleResponse(re
 
 // Update - API to update certain properties of the connected cluster resource
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // clusterName - The name of the Kubernetes cluster on which get is called.
 // connectedClusterPatch - Parameters supplied to update Connected Cluster.
@@ -432,13 +470,13 @@ func (client *ConnectedClusterClient) updateCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, connectedClusterPatch)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ConnectedClusterClient) updateHandleResponse(resp *http.Response) (ConnectedClusterClientUpdateResponse, error) {
-	result := ConnectedClusterClientUpdateResponse{RawResponse: resp}
+	result := ConnectedClusterClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ConnectedCluster); err != nil {
 		return ConnectedClusterClientUpdateResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type DataSetMappingsClient struct {
 // subscriptionID - The subscription identifier
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDataSetMappingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DataSetMappingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDataSetMappingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DataSetMappingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DataSetMappingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Create a DataSetMapping
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareSubscriptionName - The name of the share subscription which will hold the data set sink.
@@ -102,13 +108,13 @@ func (client *DataSetMappingsClient) createCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, dataSetMapping)
 }
 
 // createHandleResponse handles the Create response.
 func (client *DataSetMappingsClient) createHandleResponse(resp *http.Response) (DataSetMappingsClientCreateResponse, error) {
-	result := DataSetMappingsClientCreateResponse{RawResponse: resp}
+	result := DataSetMappingsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return DataSetMappingsClientCreateResponse{}, err
 	}
@@ -117,6 +123,7 @@ func (client *DataSetMappingsClient) createHandleResponse(resp *http.Response) (
 
 // Delete - Delete a DataSetMapping in a shareSubscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareSubscriptionName - The name of the shareSubscription.
@@ -134,7 +141,7 @@ func (client *DataSetMappingsClient) Delete(ctx context.Context, resourceGroupNa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return DataSetMappingsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return DataSetMappingsClientDeleteResponse{RawResponse: resp}, nil
+	return DataSetMappingsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -167,12 +174,13 @@ func (client *DataSetMappingsClient) deleteCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a DataSetMapping in a shareSubscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareSubscriptionName - The name of the shareSubscription.
@@ -223,36 +231,53 @@ func (client *DataSetMappingsClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DataSetMappingsClient) getHandleResponse(resp *http.Response) (DataSetMappingsClientGetResponse, error) {
-	result := DataSetMappingsClientGetResponse{RawResponse: resp}
+	result := DataSetMappingsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return DataSetMappingsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByShareSubscription - List DataSetMappings in a share subscription
+// NewListByShareSubscriptionPager - List DataSetMappings in a share subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareSubscriptionName - The name of the share subscription.
 // options - DataSetMappingsClientListByShareSubscriptionOptions contains the optional parameters for the DataSetMappingsClient.ListByShareSubscription
 // method.
-func (client *DataSetMappingsClient) ListByShareSubscription(resourceGroupName string, accountName string, shareSubscriptionName string, options *DataSetMappingsClientListByShareSubscriptionOptions) *DataSetMappingsClientListByShareSubscriptionPager {
-	return &DataSetMappingsClientListByShareSubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByShareSubscriptionCreateRequest(ctx, resourceGroupName, accountName, shareSubscriptionName, options)
+func (client *DataSetMappingsClient) NewListByShareSubscriptionPager(resourceGroupName string, accountName string, shareSubscriptionName string, options *DataSetMappingsClientListByShareSubscriptionOptions) *runtime.Pager[DataSetMappingsClientListByShareSubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DataSetMappingsClientListByShareSubscriptionResponse]{
+		More: func(page DataSetMappingsClientListByShareSubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DataSetMappingsClientListByShareSubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DataSetMappingList.NextLink)
+		Fetcher: func(ctx context.Context, page *DataSetMappingsClientListByShareSubscriptionResponse) (DataSetMappingsClientListByShareSubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByShareSubscriptionCreateRequest(ctx, resourceGroupName, accountName, shareSubscriptionName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DataSetMappingsClientListByShareSubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DataSetMappingsClientListByShareSubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DataSetMappingsClientListByShareSubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByShareSubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByShareSubscriptionCreateRequest creates the ListByShareSubscription request.
@@ -290,13 +315,13 @@ func (client *DataSetMappingsClient) listByShareSubscriptionCreateRequest(ctx co
 		reqQP.Set("$orderby", *options.Orderby)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByShareSubscriptionHandleResponse handles the ListByShareSubscription response.
 func (client *DataSetMappingsClient) listByShareSubscriptionHandleResponse(resp *http.Response) (DataSetMappingsClientListByShareSubscriptionResponse, error) {
-	result := DataSetMappingsClientListByShareSubscriptionResponse{RawResponse: resp}
+	result := DataSetMappingsClientListByShareSubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DataSetMappingList); err != nil {
 		return DataSetMappingsClientListByShareSubscriptionResponse{}, err
 	}

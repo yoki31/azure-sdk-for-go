@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,228 +14,260 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/servicebus/armservicebus"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/servicebus/armservicebus/v2"
 )
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleListAll.json
-func ExampleQueuesClient_ListAuthorizationRules() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleListAll.json
+func ExampleQueuesClient_NewListAuthorizationRulesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
-	pager := client.ListAuthorizationRules("<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListAuthorizationRulesPager("ArunMonocle",
+		"sdk-Namespace-7982",
+		"sdk-Queues-2317",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleCreate.json
 func ExampleQueuesClient_CreateOrUpdateAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdateAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-7982",
+		"sdk-Queues-2317",
+		"sdk-AuthRules-5800",
 		armservicebus.SBAuthorizationRule{
 			Properties: &armservicebus.SBAuthorizationRuleProperties{
 				Rights: []*armservicebus.AccessRights{
-					armservicebus.AccessRightsListen.ToPtr(),
-					armservicebus.AccessRightsSend.ToPtr()},
+					to.Ptr(armservicebus.AccessRightsListen),
+					to.Ptr(armservicebus.AccessRightsSend)},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientCreateOrUpdateAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleDelete.json
 func ExampleQueuesClient_DeleteAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.DeleteAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-namespace-7982",
+		"sdk-Queues-2317",
+		"sdk-AuthRules-5800",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleGet.json
 func ExampleQueuesClient_GetAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-7982",
+		"sdk-Queues-2317",
+		"sdk-AuthRules-5800",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientGetAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleListKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleListKey.json
 func ExampleQueuesClient_ListKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-namespace-7982",
+		"sdk-Queues-2317",
+		"sdk-AuthRules-5800",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientListKeysResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueAuthorizationRuleRegenerateKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueAuthorizationRuleRegenerateKey.json
 func ExampleQueuesClient_RegenerateKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.RegenerateKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-namespace-7982",
+		"sdk-Queues-2317",
+		"sdk-AuthRules-5800",
 		armservicebus.RegenerateAccessKeyParameters{
-			KeyType: armservicebus.KeyTypePrimaryKey.ToPtr(),
+			KeyType: to.Ptr(armservicebus.KeyTypePrimaryKey),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientRegenerateKeysResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueListByNameSpace.json
-func ExampleQueuesClient_ListByNamespace() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueListByNameSpace.json
+func ExampleQueuesClient_NewListByNamespacePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
-	pager := client.ListByNamespace("<resource-group-name>",
-		"<namespace-name>",
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByNamespacePager("ArunMonocle",
+		"sdk-Namespace-3174",
 		&armservicebus.QueuesClientListByNamespaceOptions{Skip: nil,
 			Top: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueCreate.json
 func ExampleQueuesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
+		"ArunMonocle",
+		"sdk-Namespace-3174",
+		"sdk-Queues-5647",
 		armservicebus.SBQueue{
 			Properties: &armservicebus.SBQueueProperties{
-				EnablePartitioning: to.BoolPtr(true),
+				EnablePartitioning: to.Ptr(true),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueDelete.json
 func ExampleQueuesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
+		"ArunMonocle",
+		"sdk-Namespace-183",
+		"sdk-Queues-8708",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/servicebus/resource-manager/Microsoft.ServiceBus/stable/2021-11-01/examples/Queues/SBQueueGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/servicebus/resource-manager/Microsoft.ServiceBus/preview/2022-01-01-preview/examples/Queues/SBQueueGet.json
 func ExampleQueuesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armservicebus.NewQueuesClient("<subscription-id>", cred, nil)
+	client, err := armservicebus.NewQueuesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<queue-name>",
+		"ArunMonocle",
+		"sdk-Namespace-3174",
+		"sdk-Queues-5647",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.QueuesClientGetResult)
+	// TODO: use response item
+	_ = res
 }

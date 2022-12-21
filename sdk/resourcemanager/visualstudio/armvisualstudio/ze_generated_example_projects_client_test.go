@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,128 +12,146 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/visualstudio/armvisualstudio"
 )
 
-// x-ms-original-file: specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectResources_List.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectResources_List.json
 func ExampleProjectsClient_ListByResourceGroup() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvisualstudio.NewProjectsClient("<subscription-id>", cred, nil)
+	client, err := armvisualstudio.NewProjectsClient("0de7f055-dbea-498d-8e9e-da287eedca90", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListByResourceGroup(ctx,
-		"<resource-group-name>",
-		"<root-resource-name>",
+		"VS-Example-Group",
+		"ExampleAccount",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProjectsClientListByResourceGroupResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/CreateProjectResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/CreateProjectResource.json
 func ExampleProjectsClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvisualstudio.NewProjectsClient("<subscription-id>", cred, nil)
+	client, err := armvisualstudio.NewProjectsClient("0de7f055-dbea-498d-8e9e-da287eedca90", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<root-resource-name>",
-		"<resource-name>",
+		"VS-Example-Group",
+		"ExampleAccount",
+		"ExampleProject",
 		armvisualstudio.ProjectResource{
-			Name:     to.StringPtr("<name>"),
-			Type:     to.StringPtr("<type>"),
-			ID:       to.StringPtr("<id>"),
-			Location: to.StringPtr("<location>"),
+			Name:     to.Ptr("ExampleProject"),
+			Type:     to.Ptr("Microsoft.VisualStudio/account/project"),
+			ID:       to.Ptr("/subscriptions/0de7f055-dbea-498d-8e9e-da287eedca90/resourceGroups/VS-Example-Group/providers/Microsoft.VisualStudio/account/ExampleAccount/project/ExampleProject"),
+			Location: to.Ptr("Central US"),
 			Tags:     map[string]*string{},
 			Properties: map[string]*string{
-				"ProcessTemplateId":    to.StringPtr("6B724908-EF14-45CF-84F8-768B5384DA45"),
-				"VersionControlOption": to.StringPtr("Git"),
+				"ProcessTemplateId":    to.Ptr("6B724908-EF14-45CF-84F8-768B5384DA45"),
+				"VersionControlOption": to.Ptr("Git"),
 			},
 		},
 		&armvisualstudio.ProjectsClientBeginCreateOptions{Validating: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProjectsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectResource.json
 func ExampleProjectsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvisualstudio.NewProjectsClient("<subscription-id>", cred, nil)
+	client, err := armvisualstudio.NewProjectsClient("0de7f055-dbea-498d-8e9e-da287eedca90", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<root-resource-name>",
-		"<resource-name>",
+		"VS-Example-Group",
+		"ExampleAccount",
+		"ExampleProject",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProjectsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/UpdateProjectResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/UpdateProjectResource.json
 func ExampleProjectsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvisualstudio.NewProjectsClient("<subscription-id>", cred, nil)
+	client, err := armvisualstudio.NewProjectsClient("0de7f055-dbea-498d-8e9e-da287eedca90", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<root-resource-name>",
-		"<resource-name>",
+		"VS-Example-Group",
+		"ExampleAccount",
+		"ExampleProject",
 		armvisualstudio.ProjectResource{
-			Name:       to.StringPtr("<name>"),
-			Type:       to.StringPtr("<type>"),
-			ID:         to.StringPtr("<id>"),
-			Location:   to.StringPtr("<location>"),
+			Name:       to.Ptr("ms.example"),
+			Type:       to.Ptr("Microsoft.VisualStudio/account/extension"),
+			ID:         to.Ptr("/subscriptions/0de7f055-dbea-498d-8e9e-da287eedca90/resourceGroups/VS-Example-Group/providers/microsoft.visualstudio/account/ExampleAccount/project/ExampleProject"),
+			Location:   to.Ptr("Central US"),
 			Tags:       map[string]*string{},
 			Properties: map[string]*string{},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProjectsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectJobStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/visualstudio/resource-manager/Microsoft.VisualStudio/preview/2014-04-01-preview/examples/GetProjectJobStatus.json
 func ExampleProjectsClient_GetJobStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvisualstudio.NewProjectsClient("<subscription-id>", cred, nil)
-	res, err := client.GetJobStatus(ctx,
-		"<resource-group-name>",
-		"<root-resource-name>",
-		"<resource-name>",
-		"<sub-container-name>",
-		"<operation>",
-		&armvisualstudio.ProjectsClientGetJobStatusOptions{JobID: to.StringPtr("<job-id>")})
+	client, err := armvisualstudio.NewProjectsClient("0de7f055-dbea-498d-8e9e-da287eedca90", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProjectsClientGetJobStatusResult)
+	res, err := client.GetJobStatus(ctx,
+		"VS-Example-Group",
+		"ExampleAccount",
+		"ExampleProject",
+		"ExampleProject",
+		"put",
+		&armvisualstudio.ProjectsClientGetJobStatusOptions{JobID: to.Ptr("126167d2-d710-4b5d-80a8-a1d58717142d")})
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
 }

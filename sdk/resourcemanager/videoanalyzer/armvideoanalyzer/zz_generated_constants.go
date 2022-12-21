@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -9,8 +9,8 @@
 package armvideoanalyzer
 
 const (
-	module  = "armvideoanalyzer"
-	version = "v0.1.0"
+	moduleName    = "armvideoanalyzer"
+	moduleVersion = "v0.4.2"
 )
 
 // AccessPolicyEccAlgo - Elliptical curve algorithm to be used: ES256, ES384 or ES512.
@@ -34,11 +34,6 @@ func PossibleAccessPolicyEccAlgoValues() []AccessPolicyEccAlgo {
 	}
 }
 
-// ToPtr returns a *AccessPolicyEccAlgo pointing to the current value.
-func (c AccessPolicyEccAlgo) ToPtr() *AccessPolicyEccAlgo {
-	return &c
-}
-
 // AccessPolicyRole - Defines the access level granted by this policy.
 type AccessPolicyRole string
 
@@ -52,11 +47,6 @@ func PossibleAccessPolicyRoleValues() []AccessPolicyRole {
 	return []AccessPolicyRole{
 		AccessPolicyRoleReader,
 	}
-}
-
-// ToPtr returns a *AccessPolicyRole pointing to the current value.
-func (c AccessPolicyRole) ToPtr() *AccessPolicyRole {
-	return &c
 }
 
 // AccessPolicyRsaAlgo - RSA algorithm to be used: RS256, RS384 or RS512.
@@ -80,11 +70,6 @@ func PossibleAccessPolicyRsaAlgoValues() []AccessPolicyRsaAlgo {
 	}
 }
 
-// ToPtr returns a *AccessPolicyRsaAlgo pointing to the current value.
-func (c AccessPolicyRsaAlgo) ToPtr() *AccessPolicyRsaAlgo {
-	return &c
-}
-
 // AccountEncryptionKeyType - The type of key used to encrypt the Account Key.
 type AccountEncryptionKeyType string
 
@@ -103,11 +88,6 @@ func PossibleAccountEncryptionKeyTypeValues() []AccountEncryptionKeyType {
 	}
 }
 
-// ToPtr returns a *AccountEncryptionKeyType pointing to the current value.
-func (c AccountEncryptionKeyType) ToPtr() *AccountEncryptionKeyType {
-	return &c
-}
-
 // ActionType - Indicates the action type.
 type ActionType string
 
@@ -121,11 +101,6 @@ func PossibleActionTypeValues() []ActionType {
 	return []ActionType{
 		ActionTypeInternal,
 	}
-}
-
-// ToPtr returns a *ActionType pointing to the current value.
-func (c ActionType) ToPtr() *ActionType {
-	return &c
 }
 
 // CheckNameAvailabilityReason - The reason why the given name is not available.
@@ -142,11 +117,6 @@ func PossibleCheckNameAvailabilityReasonValues() []CheckNameAvailabilityReason {
 		CheckNameAvailabilityReasonAlreadyExists,
 		CheckNameAvailabilityReasonInvalid,
 	}
-}
-
-// ToPtr returns a *CheckNameAvailabilityReason pointing to the current value.
-func (c CheckNameAvailabilityReason) ToPtr() *CheckNameAvailabilityReason {
-	return &c
 }
 
 // CreatedByType - The type of identity that created the resource.
@@ -169,30 +139,29 @@ func PossibleCreatedByTypeValues() []CreatedByType {
 	}
 }
 
-// ToPtr returns a *CreatedByType pointing to the current value.
-func (c CreatedByType) ToPtr() *CreatedByType {
-	return &c
-}
-
 // EncoderSystemPresetType - Name of the built-in encoding preset.
 type EncoderSystemPresetType string
 
 const (
-	// EncoderSystemPresetTypeSingleLayer1080PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture height of 1080 pixels,
-	// and at a maximum bitrate of 6000 Kbps. Encoded video has the same average frame rate as the input. The aspect ratio of the input is preserved. If the
-	// input content has audio, then it is encoded with AAC-LC codec at 128 Kbps
+	// EncoderSystemPresetTypeSingleLayer1080PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a
+	// picture height of 1080 pixels, and at a maximum bitrate of 6000 Kbps. Encoded video has the same average frame rate as
+	// the input. The aspect ratio of the input is preserved. If the input content has audio, then it is encoded with AAC-LC codec
+	// at 128 Kbps
 	EncoderSystemPresetTypeSingleLayer1080PH264AAC EncoderSystemPresetType = "SingleLayer_1080p_H264_AAC"
-	// EncoderSystemPresetTypeSingleLayer2160PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture height of 2160 pixels,
-	// and at a maximum bitrate of 16000 Kbps. Encoded video has the same average frame rate as the input. The aspect ratio of the input is preserved. If the
-	// input content has audio, then it is encoded with AAC-LC codec at 128 Kbps
+	// EncoderSystemPresetTypeSingleLayer2160PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a
+	// picture height of 2160 pixels, and at a maximum bitrate of 16000 Kbps. Encoded video has the same average frame rate as
+	// the input. The aspect ratio of the input is preserved. If the input content has audio, then it is encoded with AAC-LC codec
+	// at 128 Kbps
 	EncoderSystemPresetTypeSingleLayer2160PH264AAC EncoderSystemPresetType = "SingleLayer_2160p_H264_AAC"
-	// EncoderSystemPresetTypeSingleLayer540PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture height of 540 pixels, and
-	// at a maximum bitrate of 2000 Kbps. Encoded video has the same average frame rate as the input. The aspect ratio of the input is preserved. If the input
-	// content has audio, then it is encoded with AAC-LC codec at 96 Kbps
+	// EncoderSystemPresetTypeSingleLayer540PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture
+	// height of 540 pixels, and at a maximum bitrate of 2000 Kbps. Encoded video has the same average frame rate as the input.
+	// The aspect ratio of the input is preserved. If the input content has audio, then it is encoded with AAC-LC codec at 96
+	// Kbps
 	EncoderSystemPresetTypeSingleLayer540PH264AAC EncoderSystemPresetType = "SingleLayer_540p_H264_AAC"
-	// EncoderSystemPresetTypeSingleLayer720PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture height of 720 pixels, and
-	// at a maximum bitrate of 3500 Kbps. Encoded video has the same average frame rate as the input. The aspect ratio of the input is preserved. If the input
-	// content has audio, then it is encoded with AAC-LC codec at 96 Kbps
+	// EncoderSystemPresetTypeSingleLayer720PH264AAC - Produces an MP4 file where the video is encoded with H.264 codec at a picture
+	// height of 720 pixels, and at a maximum bitrate of 3500 Kbps. Encoded video has the same average frame rate as the input.
+	// The aspect ratio of the input is preserved. If the input content has audio, then it is encoded with AAC-LC codec at 96
+	// Kbps
 	EncoderSystemPresetTypeSingleLayer720PH264AAC EncoderSystemPresetType = "SingleLayer_720p_H264_AAC"
 )
 
@@ -204,11 +173,6 @@ func PossibleEncoderSystemPresetTypeValues() []EncoderSystemPresetType {
 		EncoderSystemPresetTypeSingleLayer540PH264AAC,
 		EncoderSystemPresetTypeSingleLayer720PH264AAC,
 	}
-}
-
-// ToPtr returns a *EncoderSystemPresetType pointing to the current value.
-func (c EncoderSystemPresetType) ToPtr() *EncoderSystemPresetType {
-	return &c
 }
 
 // Kind - Topology kind.
@@ -229,20 +193,15 @@ func PossibleKindValues() []Kind {
 	}
 }
 
-// ToPtr returns a *Kind pointing to the current value.
-func (c Kind) ToPtr() *Kind {
-	return &c
-}
-
 // LivePipelineState - Current state of the pipeline (read-only).
 type LivePipelineState string
 
 const (
 	// LivePipelineStateActivating - The live pipeline is transitioning into the active state.
 	LivePipelineStateActivating LivePipelineState = "Activating"
-	// LivePipelineStateActive - The live pipeline is active and able to process media. If your data source is not available, for instance, if your RTSP camera
-	// is powered off or unreachable, the pipeline will still be active and periodically retrying the connection. Your Azure subscription will be billed for
-	// the duration in which the live pipeline is in the active state.
+	// LivePipelineStateActive - The live pipeline is active and able to process media. If your data source is not available,
+	// for instance, if your RTSP camera is powered off or unreachable, the pipeline will still be active and periodically retrying
+	// the connection. Your Azure subscription will be billed for the duration in which the live pipeline is in the active state.
 	LivePipelineStateActive LivePipelineState = "Active"
 	// LivePipelineStateDeactivating - The live pipeline is transitioning into the inactive state.
 	LivePipelineStateDeactivating LivePipelineState = "Deactivating"
@@ -258,11 +217,6 @@ func PossibleLivePipelineStateValues() []LivePipelineState {
 		LivePipelineStateDeactivating,
 		LivePipelineStateInactive,
 	}
-}
-
-// ToPtr returns a *LivePipelineState pointing to the current value.
-func (c LivePipelineState) ToPtr() *LivePipelineState {
-	return &c
 }
 
 // MetricAggregationType - The metric aggregation type
@@ -286,11 +240,6 @@ func PossibleMetricAggregationTypeValues() []MetricAggregationType {
 	}
 }
 
-// ToPtr returns a *MetricAggregationType pointing to the current value.
-func (c MetricAggregationType) ToPtr() *MetricAggregationType {
-	return &c
-}
-
 // MetricUnit - The metric unit
 type MetricUnit string
 
@@ -310,11 +259,6 @@ func PossibleMetricUnitValues() []MetricUnit {
 		MetricUnitCount,
 		MetricUnitMilliseconds,
 	}
-}
-
-// ToPtr returns a *MetricUnit pointing to the current value.
-func (c MetricUnit) ToPtr() *MetricUnit {
-	return &c
 }
 
 // ParameterType - Type of the parameter.
@@ -344,11 +288,6 @@ func PossibleParameterTypeValues() []ParameterType {
 	}
 }
 
-// ToPtr returns a *ParameterType pointing to the current value.
-func (c ParameterType) ToPtr() *ParameterType {
-	return &c
-}
-
 // PipelineJobState - Current state of the pipeline (read-only).
 type PipelineJobState string
 
@@ -373,11 +312,6 @@ func PossiblePipelineJobStateValues() []PipelineJobState {
 	}
 }
 
-// ToPtr returns a *PipelineJobState pointing to the current value.
-func (c PipelineJobState) ToPtr() *PipelineJobState {
-	return &c
-}
-
 // PrivateEndpointConnectionProvisioningState - The current provisioning state.
 type PrivateEndpointConnectionProvisioningState string
 
@@ -398,11 +332,6 @@ func PossiblePrivateEndpointConnectionProvisioningStateValues() []PrivateEndpoin
 	}
 }
 
-// ToPtr returns a *PrivateEndpointConnectionProvisioningState pointing to the current value.
-func (c PrivateEndpointConnectionProvisioningState) ToPtr() *PrivateEndpointConnectionProvisioningState {
-	return &c
-}
-
 // PrivateEndpointServiceConnectionStatus - The private endpoint connection status.
 type PrivateEndpointServiceConnectionStatus string
 
@@ -419,11 +348,6 @@ func PossiblePrivateEndpointServiceConnectionStatusValues() []PrivateEndpointSer
 		PrivateEndpointServiceConnectionStatusPending,
 		PrivateEndpointServiceConnectionStatusRejected,
 	}
-}
-
-// ToPtr returns a *PrivateEndpointServiceConnectionStatus pointing to the current value.
-func (c PrivateEndpointServiceConnectionStatus) ToPtr() *PrivateEndpointServiceConnectionStatus {
-	return &c
 }
 
 // ProvisioningState - Provisioning state of the Video Analyzer account.
@@ -447,11 +371,6 @@ func PossibleProvisioningStateValues() []ProvisioningState {
 	}
 }
 
-// ToPtr returns a *ProvisioningState pointing to the current value.
-func (c ProvisioningState) ToPtr() *ProvisioningState {
-	return &c
-}
-
 // PublicNetworkAccess - Whether or not public network access is allowed for resources under the Video Analyzer account.
 type PublicNetworkAccess string
 
@@ -470,18 +389,14 @@ func PossiblePublicNetworkAccessValues() []PublicNetworkAccess {
 	}
 }
 
-// ToPtr returns a *PublicNetworkAccess pointing to the current value.
-func (c PublicNetworkAccess) ToPtr() *PublicNetworkAccess {
-	return &c
-}
-
-// RtspTransport - Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are interleaved on the TCP RTSP
-// connection. When using HTTP, the RTSP messages are exchanged
+// RtspTransport - Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are
+// interleaved on the TCP RTSP connection. When using HTTP, the RTSP messages are exchanged
 // through long lived HTTP connections, and the RTP packages are interleaved in the HTTP connections alongside the RTSP messages.
 type RtspTransport string
 
 const (
-	// RtspTransportHTTP - HTTP transport. RTSP messages are exchanged over long running HTTP requests and RTP packets are interleaved within the HTTP channel.
+	// RtspTransportHTTP - HTTP transport. RTSP messages are exchanged over long running HTTP requests and RTP packets are interleaved
+	// within the HTTP channel.
 	RtspTransportHTTP RtspTransport = "Http"
 	// RtspTransportTCP - TCP transport. RTSP is used directly over TCP and RTP packets are interleaved within the TCP channel.
 	RtspTransportTCP RtspTransport = "Tcp"
@@ -495,19 +410,14 @@ func PossibleRtspTransportValues() []RtspTransport {
 	}
 }
 
-// ToPtr returns a *RtspTransport pointing to the current value.
-func (c RtspTransport) ToPtr() *RtspTransport {
-	return &c
-}
-
 // SKUName - The SKU name.
 type SKUName string
 
 const (
 	// SKUNameBatchS1 - Represents the Batch S1 SKU name. Using this SKU you can create pipeline jobs to process recorded content.
 	SKUNameBatchS1 SKUName = "Batch_S1"
-	// SKUNameLiveS1 - Represents the Live S1 SKU name. Using this SKU you can create live pipelines to capture, record, and stream live video from RTSP-capable
-	// cameras at bitrate settings from 0.5 Kbps to 3000 Kbps.
+	// SKUNameLiveS1 - Represents the Live S1 SKU name. Using this SKU you can create live pipelines to capture, record, and stream
+	// live video from RTSP-capable cameras at bitrate settings from 0.5 Kbps to 3000 Kbps.
 	SKUNameLiveS1 SKUName = "Live_S1"
 )
 
@@ -517,11 +427,6 @@ func PossibleSKUNameValues() []SKUName {
 		SKUNameBatchS1,
 		SKUNameLiveS1,
 	}
-}
-
-// ToPtr returns a *SKUName pointing to the current value.
-func (c SKUName) ToPtr() *SKUName {
-	return &c
 }
 
 // SKUTier - The SKU tier.
@@ -539,11 +444,6 @@ func PossibleSKUTierValues() []SKUTier {
 	}
 }
 
-// ToPtr returns a *SKUTier pointing to the current value.
-func (c SKUTier) ToPtr() *SKUTier {
-	return &c
-}
-
 // VideoAnalyzerEndpointType - The type of the endpoint.
 type VideoAnalyzerEndpointType string
 
@@ -559,23 +459,18 @@ func PossibleVideoAnalyzerEndpointTypeValues() []VideoAnalyzerEndpointType {
 	}
 }
 
-// ToPtr returns a *VideoAnalyzerEndpointType pointing to the current value.
-func (c VideoAnalyzerEndpointType) ToPtr() *VideoAnalyzerEndpointType {
-	return &c
-}
-
-// VideoScaleMode - Describes the video scaling mode to be applied. Default mode is 'Pad'. If the mode is 'Pad' or 'Stretch' then both width and height
-// must be specified. Else if the mode is 'PreserveAspectRatio' then
+// VideoScaleMode - Describes the video scaling mode to be applied. Default mode is 'Pad'. If the mode is 'Pad' or 'Stretch'
+// then both width and height must be specified. Else if the mode is 'PreserveAspectRatio' then
 // only one of width or height need be provided.
 type VideoScaleMode string
 
 const (
-	// VideoScaleModePad - Pads the video with black horizontal stripes (letterbox) or black vertical stripes (pillar-box) so the video is resized to the specified
-	// dimensions while not altering the content aspect ratio.
+	// VideoScaleModePad - Pads the video with black horizontal stripes (letterbox) or black vertical stripes (pillar-box) so
+	// the video is resized to the specified dimensions while not altering the content aspect ratio.
 	VideoScaleModePad VideoScaleMode = "Pad"
-	// VideoScaleModePreserveAspectRatio - Preserves the same aspect ratio as the input video. If only one video dimension is provided, the second dimension
-	// is calculated based on the input video aspect ratio. When 2 dimensions are provided, the video is resized to fit the most constraining dimension, considering
-	// the input video size and aspect ratio.
+	// VideoScaleModePreserveAspectRatio - Preserves the same aspect ratio as the input video. If only one video dimension is
+	// provided, the second dimension is calculated based on the input video aspect ratio. When 2 dimensions are provided, the
+	// video is resized to fit the most constraining dimension, considering the input video size and aspect ratio.
 	VideoScaleModePreserveAspectRatio VideoScaleMode = "PreserveAspectRatio"
 	// VideoScaleModeStretch - Stretches the original video so it resized to the specified dimensions.
 	VideoScaleModeStretch VideoScaleMode = "Stretch"
@@ -590,23 +485,19 @@ func PossibleVideoScaleModeValues() []VideoScaleMode {
 	}
 }
 
-// ToPtr returns a *VideoScaleMode pointing to the current value.
-func (c VideoScaleMode) ToPtr() *VideoScaleMode {
-	return &c
-}
-
 // VideoType - Video content type. Different content types are suitable for different applications and scenarios.
 type VideoType string
 
 const (
-	// VideoTypeArchive - Archive is flexible format that represents a video stream associated with wall-clock time. The video archive can either be continuous
-	// or discontinuous. An archive is discontinuous when there are gaps in the recording due to various reasons, such as the live pipeline being stopped, camera
-	// being disconnected or due to the use of event based recordings through the use of a signal gate. There is no limit to the archive duration and new video
-	// data can be appended to the existing archive at any time, as long as the same video codec and codec parameters are being used. Videos of this type are
-	// suitable for appending and long term archival.
+	// VideoTypeArchive - Archive is flexible format that represents a video stream associated with wall-clock time. The video
+	// archive can either be continuous or discontinuous. An archive is discontinuous when there are gaps in the recording due
+	// to various reasons, such as the live pipeline being stopped, camera being disconnected or due to the use of event based
+	// recordings through the use of a signal gate. There is no limit to the archive duration and new video data can be appended
+	// to the existing archive at any time, as long as the same video codec and codec parameters are being used. Videos of this
+	// type are suitable for appending and long term archival.
 	VideoTypeArchive VideoType = "Archive"
-	// VideoTypeFile - File represents a video which is stored as a single media file, such as MP4. Videos of this type are suitable to be downloaded for external
-	// consumption.
+	// VideoTypeFile - File represents a video which is stored as a single media file, such as MP4. Videos of this type are suitable
+	// to be downloaded for external consumption.
 	VideoTypeFile VideoType = "File"
 )
 
@@ -616,9 +507,4 @@ func PossibleVideoTypeValues() []VideoType {
 		VideoTypeArchive,
 		VideoTypeFile,
 	}
-}
-
-// ToPtr returns a *VideoType pointing to the current value.
-func (c VideoType) ToPtr() *VideoType {
-	return &c
 }

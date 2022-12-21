@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ServiceFabricsClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServiceFabricsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServiceFabricsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServiceFabricsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServiceFabricsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServiceFabricsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create or replace an existing service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
@@ -59,26 +65,21 @@ func NewServiceFabricsClient(subscriptionID string, credential azcore.TokenCrede
 // serviceFabric - A Service Fabric.
 // options - ServiceFabricsClientBeginCreateOrUpdateOptions contains the optional parameters for the ServiceFabricsClient.BeginCreateOrUpdate
 // method.
-func (client *ServiceFabricsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, labName string, userName string, name string, serviceFabric ServiceFabric, options *ServiceFabricsClientBeginCreateOrUpdateOptions) (ServiceFabricsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, labName, userName, name, serviceFabric, options)
-	if err != nil {
-		return ServiceFabricsClientCreateOrUpdatePollerResponse{}, err
+func (client *ServiceFabricsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, labName string, userName string, name string, serviceFabric ServiceFabric, options *ServiceFabricsClientBeginCreateOrUpdateOptions) (*runtime.Poller[ServiceFabricsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, labName, userName, name, serviceFabric, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServiceFabricsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServiceFabricsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServiceFabricsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServiceFabricsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ServiceFabricsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ServiceFabricsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or replace an existing service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 func (client *ServiceFabricsClient) createOrUpdate(ctx context.Context, resourceGroupName string, labName string, userName string, name string, serviceFabric ServiceFabric, options *ServiceFabricsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, labName, userName, name, serviceFabric, options)
 	if err != nil {
@@ -124,38 +125,34 @@ func (client *ServiceFabricsClient) createOrUpdateCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serviceFabric)
 }
 
 // BeginDelete - Delete service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
 // name - The name of the service fabric.
 // options - ServiceFabricsClientBeginDeleteOptions contains the optional parameters for the ServiceFabricsClient.BeginDelete
 // method.
-func (client *ServiceFabricsClient) BeginDelete(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginDeleteOptions) (ServiceFabricsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, labName, userName, name, options)
-	if err != nil {
-		return ServiceFabricsClientDeletePollerResponse{}, err
+func (client *ServiceFabricsClient) BeginDelete(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginDeleteOptions) (*runtime.Poller[ServiceFabricsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, labName, userName, name, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServiceFabricsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServiceFabricsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServiceFabricsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServiceFabricsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return ServiceFabricsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ServiceFabricsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 func (client *ServiceFabricsClient) deleteOperation(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, labName, userName, name, options)
 	if err != nil {
@@ -201,12 +198,13 @@ func (client *ServiceFabricsClient) deleteCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get service fabric.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
@@ -260,35 +258,52 @@ func (client *ServiceFabricsClient) getCreateRequest(ctx context.Context, resour
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServiceFabricsClient) getHandleResponse(resp *http.Response) (ServiceFabricsClientGetResponse, error) {
-	result := ServiceFabricsClientGetResponse{RawResponse: resp}
+	result := ServiceFabricsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceFabric); err != nil {
 		return ServiceFabricsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - List service fabrics in a given user profile.
+// NewListPager - List service fabrics in a given user profile.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
 // options - ServiceFabricsClientListOptions contains the optional parameters for the ServiceFabricsClient.List method.
-func (client *ServiceFabricsClient) List(resourceGroupName string, labName string, userName string, options *ServiceFabricsClientListOptions) *ServiceFabricsClientListPager {
-	return &ServiceFabricsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, labName, userName, options)
+func (client *ServiceFabricsClient) NewListPager(resourceGroupName string, labName string, userName string, options *ServiceFabricsClientListOptions) *runtime.Pager[ServiceFabricsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServiceFabricsClientListResponse]{
+		More: func(page ServiceFabricsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServiceFabricsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ServiceFabricList.NextLink)
+		Fetcher: func(ctx context.Context, page *ServiceFabricsClientListResponse) (ServiceFabricsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, labName, userName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServiceFabricsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServiceFabricsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServiceFabricsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -329,13 +344,13 @@ func (client *ServiceFabricsClient) listCreateRequest(ctx context.Context, resou
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ServiceFabricsClient) listHandleResponse(resp *http.Response) (ServiceFabricsClientListResponse, error) {
-	result := ServiceFabricsClientListResponse{RawResponse: resp}
+	result := ServiceFabricsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceFabricList); err != nil {
 		return ServiceFabricsClientListResponse{}, err
 	}
@@ -344,6 +359,7 @@ func (client *ServiceFabricsClient) listHandleResponse(resp *http.Response) (Ser
 
 // ListApplicableSchedules - Lists the applicable start/stop schedules, if any.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
@@ -395,13 +411,13 @@ func (client *ServiceFabricsClient) listApplicableSchedulesCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listApplicableSchedulesHandleResponse handles the ListApplicableSchedules response.
 func (client *ServiceFabricsClient) listApplicableSchedulesHandleResponse(resp *http.Response) (ServiceFabricsClientListApplicableSchedulesResponse, error) {
-	result := ServiceFabricsClientListApplicableSchedulesResponse{RawResponse: resp}
+	result := ServiceFabricsClientListApplicableSchedulesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplicableSchedule); err != nil {
 		return ServiceFabricsClientListApplicableSchedulesResponse{}, err
 	}
@@ -410,32 +426,28 @@ func (client *ServiceFabricsClient) listApplicableSchedulesHandleResponse(resp *
 
 // BeginStart - Start a service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
 // name - The name of the service fabric.
 // options - ServiceFabricsClientBeginStartOptions contains the optional parameters for the ServiceFabricsClient.BeginStart
 // method.
-func (client *ServiceFabricsClient) BeginStart(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStartOptions) (ServiceFabricsClientStartPollerResponse, error) {
-	resp, err := client.start(ctx, resourceGroupName, labName, userName, name, options)
-	if err != nil {
-		return ServiceFabricsClientStartPollerResponse{}, err
+func (client *ServiceFabricsClient) BeginStart(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStartOptions) (*runtime.Poller[ServiceFabricsClientStartResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.start(ctx, resourceGroupName, labName, userName, name, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServiceFabricsClientStartResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServiceFabricsClientStartResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServiceFabricsClientStartPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServiceFabricsClient.Start", "", resp, client.pl)
-	if err != nil {
-		return ServiceFabricsClientStartPollerResponse{}, err
-	}
-	result.Poller = &ServiceFabricsClientStartPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Start - Start a service fabric. This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 func (client *ServiceFabricsClient) start(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStartOptions) (*http.Response, error) {
 	req, err := client.startCreateRequest(ctx, resourceGroupName, labName, userName, name, options)
 	if err != nil {
@@ -481,38 +493,34 @@ func (client *ServiceFabricsClient) startCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginStop - Stop a service fabric This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
 // name - The name of the service fabric.
 // options - ServiceFabricsClientBeginStopOptions contains the optional parameters for the ServiceFabricsClient.BeginStop
 // method.
-func (client *ServiceFabricsClient) BeginStop(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStopOptions) (ServiceFabricsClientStopPollerResponse, error) {
-	resp, err := client.stop(ctx, resourceGroupName, labName, userName, name, options)
-	if err != nil {
-		return ServiceFabricsClientStopPollerResponse{}, err
+func (client *ServiceFabricsClient) BeginStop(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStopOptions) (*runtime.Poller[ServiceFabricsClientStopResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.stop(ctx, resourceGroupName, labName, userName, name, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ServiceFabricsClientStopResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ServiceFabricsClientStopResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServiceFabricsClientStopPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServiceFabricsClient.Stop", "", resp, client.pl)
-	if err != nil {
-		return ServiceFabricsClientStopPollerResponse{}, err
-	}
-	result.Poller = &ServiceFabricsClientStopPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Stop - Stop a service fabric This operation can take a while to complete.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 func (client *ServiceFabricsClient) stop(ctx context.Context, resourceGroupName string, labName string, userName string, name string, options *ServiceFabricsClientBeginStopOptions) (*http.Response, error) {
 	req, err := client.stopCreateRequest(ctx, resourceGroupName, labName, userName, name, options)
 	if err != nil {
@@ -558,12 +566,13 @@ func (client *ServiceFabricsClient) stopCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Update - Allows modifying tags of service fabrics. All other properties will be ignored.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // userName - The name of the user profile.
@@ -615,13 +624,13 @@ func (client *ServiceFabricsClient) updateCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serviceFabric)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ServiceFabricsClient) updateHandleResponse(resp *http.Response) (ServiceFabricsClientUpdateResponse, error) {
-	result := ServiceFabricsClientUpdateResponse{RawResponse: resp}
+	result := ServiceFabricsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceFabric); err != nil {
 		return ServiceFabricsClientUpdateResponse{}, err
 	}

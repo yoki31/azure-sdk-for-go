@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,182 +17,190 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/videoanalyzer/armvideoanalyzer"
 )
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-list.json
-func ExampleAccessPoliciesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-list.json
+func ExampleAccessPoliciesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewAccessPoliciesClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<account-name>",
-		&armvideoanalyzer.AccessPoliciesListOptions{Top: to.Int32Ptr(2)})
-	for pager.NextPage(ctx) {
-		if err := pager.Err(); err != nil {
+	client, err := armvideoanalyzer.NewAccessPoliciesClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("testrg",
+		"testaccount2",
+		&armvideoanalyzer.AccessPoliciesClientListOptions{Top: to.Ptr[int32](2)})
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("AccessPolicyEntity.ID: %s\n", *v.ID)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-get.json
 func ExampleAccessPoliciesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewAccessPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewAccessPoliciesClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<access-policy-name>",
+		"testrg",
+		"testaccount2",
+		"accessPolicyName1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("AccessPolicyEntity.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-create.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-create.json
 func ExampleAccessPoliciesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewAccessPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewAccessPoliciesClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<access-policy-name>",
+		"testrg",
+		"testaccount2",
+		"accessPolicyName1",
 		armvideoanalyzer.AccessPolicyEntity{
 			Properties: &armvideoanalyzer.AccessPolicyProperties{
 				Authentication: &armvideoanalyzer.JwtAuthentication{
-					AuthenticationBase: armvideoanalyzer.AuthenticationBase{
-						Type: to.StringPtr("<type>"),
-					},
+					Type: to.Ptr("#Microsoft.VideoAnalyzer.JwtAuthentication"),
 					Audiences: []*string{
-						to.StringPtr("audience1")},
+						to.Ptr("audience1")},
 					Claims: []*armvideoanalyzer.TokenClaim{
 						{
-							Name:  to.StringPtr("<name>"),
-							Value: to.StringPtr("<value>"),
+							Name:  to.Ptr("claimname1"),
+							Value: to.Ptr("claimvalue1"),
 						},
 						{
-							Name:  to.StringPtr("<name>"),
-							Value: to.StringPtr("<value>"),
+							Name:  to.Ptr("claimname2"),
+							Value: to.Ptr("claimvalue2"),
 						}},
 					Issuers: []*string{
-						to.StringPtr("issuer1"),
-						to.StringPtr("issuer2")},
+						to.Ptr("issuer1"),
+						to.Ptr("issuer2")},
 					Keys: []armvideoanalyzer.TokenKeyClassification{
 						&armvideoanalyzer.RsaTokenKey{
-							TokenKey: armvideoanalyzer.TokenKey{
-								Type: to.StringPtr("<type>"),
-								Kid:  to.StringPtr("<kid>"),
-							},
-							Alg: armvideoanalyzer.AccessPolicyRsaAlgoRS256.ToPtr(),
-							E:   to.StringPtr("<e>"),
-							N:   to.StringPtr("<n>"),
+							Type: to.Ptr("#Microsoft.VideoAnalyzer.RsaTokenKey"),
+							Kid:  to.Ptr("123"),
+							Alg:  to.Ptr(armvideoanalyzer.AccessPolicyRsaAlgoRS256),
+							E:    to.Ptr("ZLFzZTY0IQ=="),
+							N:    to.Ptr("YmFzZTY0IQ=="),
 						},
 						&armvideoanalyzer.EccTokenKey{
-							TokenKey: armvideoanalyzer.TokenKey{
-								Type: to.StringPtr("<type>"),
-								Kid:  to.StringPtr("<kid>"),
-							},
-							Alg: armvideoanalyzer.AccessPolicyEccAlgoES256.ToPtr(),
-							X:   to.StringPtr("<x>"),
-							Y:   to.StringPtr("<y>"),
+							Type: to.Ptr("#Microsoft.VideoAnalyzer.EccTokenKey"),
+							Kid:  to.Ptr("124"),
+							Alg:  to.Ptr(armvideoanalyzer.AccessPolicyEccAlgoES256),
+							X:    to.Ptr("XX=="),
+							Y:    to.Ptr("YY=="),
 						}},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("AccessPolicyEntity.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-delete.json
 func ExampleAccessPoliciesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewAccessPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewAccessPoliciesClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<access-policy-name>",
+		"testrg",
+		"testaccount2",
+		"accessPolicyName1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-patch.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/access-policy-patch.json
 func ExampleAccessPoliciesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewAccessPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewAccessPoliciesClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<access-policy-name>",
+		"testrg",
+		"testaccount2",
+		"accessPolicyName1",
 		armvideoanalyzer.AccessPolicyEntity{
 			Properties: &armvideoanalyzer.AccessPolicyProperties{
 				Authentication: &armvideoanalyzer.JwtAuthentication{
-					AuthenticationBase: armvideoanalyzer.AuthenticationBase{
-						Type: to.StringPtr("<type>"),
-					},
+					Type: to.Ptr("#Microsoft.VideoAnalyzer.JwtAuthentication"),
 					Audiences: []*string{
-						to.StringPtr("audience1")},
+						to.Ptr("audience1")},
 					Claims: []*armvideoanalyzer.TokenClaim{
 						{
-							Name:  to.StringPtr("<name>"),
-							Value: to.StringPtr("<value>"),
+							Name:  to.Ptr("claimname1"),
+							Value: to.Ptr("claimvalue1"),
 						},
 						{
-							Name:  to.StringPtr("<name>"),
-							Value: to.StringPtr("<value>"),
+							Name:  to.Ptr("claimname2"),
+							Value: to.Ptr("claimvalue2"),
 						}},
 					Issuers: []*string{
-						to.StringPtr("issuer1"),
-						to.StringPtr("issuer2")},
+						to.Ptr("issuer1"),
+						to.Ptr("issuer2")},
 					Keys: []armvideoanalyzer.TokenKeyClassification{
 						&armvideoanalyzer.RsaTokenKey{
-							TokenKey: armvideoanalyzer.TokenKey{
-								Type: to.StringPtr("<type>"),
-								Kid:  to.StringPtr("<kid>"),
-							},
-							Alg: armvideoanalyzer.AccessPolicyRsaAlgoRS256.ToPtr(),
-							E:   to.StringPtr("<e>"),
-							N:   to.StringPtr("<n>"),
+							Type: to.Ptr("#Microsoft.VideoAnalyzer.RsaTokenKey"),
+							Kid:  to.Ptr("123"),
+							Alg:  to.Ptr(armvideoanalyzer.AccessPolicyRsaAlgoRS256),
+							E:    to.Ptr("ZLFzZTY0IQ=="),
+							N:    to.Ptr("YmFzZTY0IQ=="),
 						},
 						&armvideoanalyzer.EccTokenKey{
-							TokenKey: armvideoanalyzer.TokenKey{
-								Type: to.StringPtr("<type>"),
-								Kid:  to.StringPtr("<kid>"),
-							},
-							Alg: armvideoanalyzer.AccessPolicyEccAlgoES256.ToPtr(),
-							X:   to.StringPtr("<x>"),
-							Y:   to.StringPtr("<y>"),
+							Type: to.Ptr("#Microsoft.VideoAnalyzer.EccTokenKey"),
+							Kid:  to.Ptr("124"),
+							Alg:  to.Ptr(armvideoanalyzer.AccessPolicyEccAlgoES256),
+							X:    to.Ptr("XX=="),
+							Y:    to.Ptr("YY=="),
 						}},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("AccessPolicyEntity.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }

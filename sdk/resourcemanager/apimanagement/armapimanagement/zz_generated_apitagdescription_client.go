@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type APITagDescriptionClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPITagDescriptionClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *APITagDescriptionClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPITagDescriptionClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*APITagDescriptionClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APITagDescriptionClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create/Update tag description in scope of the Api.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -108,15 +114,15 @@ func (client *APITagDescriptionClient) createOrUpdateCreateRequest(ctx context.C
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *APITagDescriptionClient) createOrUpdateHandleResponse(resp *http.Response) (APITagDescriptionClientCreateOrUpdateResponse, error) {
-	result := APITagDescriptionClientCreateOrUpdateResponse{RawResponse: resp}
+	result := APITagDescriptionClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -128,6 +134,7 @@ func (client *APITagDescriptionClient) createOrUpdateHandleResponse(resp *http.R
 
 // Delete - Delete tag description for the Api.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -150,7 +157,7 @@ func (client *APITagDescriptionClient) Delete(ctx context.Context, resourceGroup
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return APITagDescriptionClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return APITagDescriptionClientDeleteResponse{RawResponse: resp}, nil
+	return APITagDescriptionClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -183,13 +190,14 @@ func (client *APITagDescriptionClient) deleteCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get Tag description in scope of API
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -242,13 +250,13 @@ func (client *APITagDescriptionClient) getCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *APITagDescriptionClient) getHandleResponse(resp *http.Response) (APITagDescriptionClientGetResponse, error) {
-	result := APITagDescriptionClientGetResponse{RawResponse: resp}
+	result := APITagDescriptionClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -259,6 +267,7 @@ func (client *APITagDescriptionClient) getHandleResponse(resp *http.Response) (A
 }
 
 // GetEntityTag - Gets the entity state version of the tag specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
@@ -275,6 +284,9 @@ func (client *APITagDescriptionClient) GetEntityTag(ctx context.Context, resourc
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return APITagDescriptionClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return APITagDescriptionClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -309,41 +321,56 @@ func (client *APITagDescriptionClient) getEntityTagCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *APITagDescriptionClient) getEntityTagHandleResponse(resp *http.Response) (APITagDescriptionClientGetEntityTagResponse, error) {
-	result := APITagDescriptionClientGetEntityTagResponse{RawResponse: resp}
+	result := APITagDescriptionClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists all Tags descriptions in scope of API. Model similar to swagger - tagDescription is defined on API
-// level but tag may be assigned to the Operations
+// NewListByServicePager - Lists all Tags descriptions in scope of API. Model similar to swagger - tagDescription is defined
+// on API level but tag may be assigned to the Operations
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API revision identifier. Must be unique in the current API Management service instance. Non-current revision has
 // ;rev=n as a suffix where n is the revision number.
 // options - APITagDescriptionClientListByServiceOptions contains the optional parameters for the APITagDescriptionClient.ListByService
 // method.
-func (client *APITagDescriptionClient) ListByService(resourceGroupName string, serviceName string, apiID string, options *APITagDescriptionClientListByServiceOptions) *APITagDescriptionClientListByServicePager {
-	return &APITagDescriptionClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, options)
+func (client *APITagDescriptionClient) NewListByServicePager(resourceGroupName string, serviceName string, apiID string, options *APITagDescriptionClientListByServiceOptions) *runtime.Pager[APITagDescriptionClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[APITagDescriptionClientListByServiceResponse]{
+		More: func(page APITagDescriptionClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp APITagDescriptionClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.TagDescriptionCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *APITagDescriptionClientListByServiceResponse) (APITagDescriptionClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return APITagDescriptionClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return APITagDescriptionClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return APITagDescriptionClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -381,13 +408,13 @@ func (client *APITagDescriptionClient) listByServiceCreateRequest(ctx context.Co
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *APITagDescriptionClient) listByServiceHandleResponse(resp *http.Response) (APITagDescriptionClientListByServiceResponse, error) {
-	result := APITagDescriptionClientListByServiceResponse{RawResponse: resp}
+	result := APITagDescriptionClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagDescriptionCollection); err != nil {
 		return APITagDescriptionClientListByServiceResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,92 +17,109 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/search/armsearch"
 )
 
-// x-ms-original-file: specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/UpdatePrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/UpdatePrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsearch.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsearch.NewPrivateEndpointConnectionsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<search-service-name>",
-		"<private-endpoint-connection-name>",
+		"rg1",
+		"mysearchservice",
+		"testEndpoint.50bf4fbe-d7c1-4b48-a642-4f5892642546",
 		armsearch.PrivateEndpointConnection{
 			Properties: &armsearch.PrivateEndpointConnectionProperties{
 				PrivateLinkServiceConnectionState: &armsearch.PrivateEndpointConnectionPropertiesPrivateLinkServiceConnectionState{
-					Description: to.StringPtr("<description>"),
-					Status:      armsearch.PrivateLinkServiceConnectionStatusRejected.ToPtr(),
+					Description: to.Ptr("Rejected for some reason"),
+					Status:      to.Ptr(armsearch.PrivateLinkServiceConnectionStatusRejected),
 				},
 			},
 		},
-		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil})
+		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil},
+		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/GetPrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/GetPrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsearch.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
-	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<search-service-name>",
-		"<private-endpoint-connection-name>",
-		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil})
+	client, err := armsearch.NewPrivateEndpointConnectionsClient("subid", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientGetResult)
+	res, err := client.Get(ctx,
+		"rg1",
+		"mysearchservice",
+		"testEndpoint.50bf4fbe-d7c1-4b48-a642-4f5892642546",
+		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/DeletePrivateEndpointConnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/DeletePrivateEndpointConnection.json
 func ExamplePrivateEndpointConnectionsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsearch.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
-	res, err := client.Delete(ctx,
-		"<resource-group-name>",
-		"<search-service-name>",
-		"<private-endpoint-connection-name>",
-		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil})
+	client, err := armsearch.NewPrivateEndpointConnectionsClient("subid", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientDeleteResult)
+	res, err := client.Delete(ctx,
+		"rg1",
+		"mysearchservice",
+		"testEndpoint.50bf4fbe-d7c1-4b48-a642-4f5892642546",
+		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/ListPrivateEndpointConnectionsByService.json
-func ExamplePrivateEndpointConnectionsClient_ListByService() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/search/resource-manager/Microsoft.Search/stable/2020-08-01/examples/ListPrivateEndpointConnectionsByService.json
+func ExamplePrivateEndpointConnectionsClient_NewListByServicePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsearch.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
-	pager := client.ListByService("<resource-group-name>",
-		"<search-service-name>",
-		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	client, err := armsearch.NewPrivateEndpointConnectionsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServicePager("rg1",
+		"mysearchservice",
+		&armsearch.SearchManagementRequestOptions{ClientRequestID: nil},
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

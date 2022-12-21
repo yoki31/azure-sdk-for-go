@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -29,19 +30,23 @@ type GenerateDetailedCostReportClient struct {
 // NewGenerateDetailedCostReportClient creates a new instance of GenerateDetailedCostReportClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewGenerateDetailedCostReportClient(credential azcore.TokenCredential, options *arm.ClientOptions) *GenerateDetailedCostReportClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewGenerateDetailedCostReportClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*GenerateDetailedCostReportClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &GenerateDetailedCostReportClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOperation - Generates the detailed cost report for provided date range, billing period(Only enterprise customers)
@@ -50,6 +55,7 @@ func NewGenerateDetailedCostReportClient(credential azcore.TokenCredential, opti
 // and if the operation is completed the blob file where generated detailed
 // cost report is being stored.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with usage details operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for
 // Billing Account scope, '/providers/Microsoft.Billing/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}'
@@ -64,22 +70,18 @@ func NewGenerateDetailedCostReportClient(credential azcore.TokenCredential, opti
 // parameters - Parameters supplied to the Create detailed cost report operation.
 // options - GenerateDetailedCostReportClientBeginCreateOperationOptions contains the optional parameters for the GenerateDetailedCostReportClient.BeginCreateOperation
 // method.
-func (client *GenerateDetailedCostReportClient) BeginCreateOperation(ctx context.Context, scope string, parameters GenerateDetailedCostReportDefinition, options *GenerateDetailedCostReportClientBeginCreateOperationOptions) (GenerateDetailedCostReportClientCreateOperationPollerResponse, error) {
-	resp, err := client.createOperation(ctx, scope, parameters, options)
-	if err != nil {
-		return GenerateDetailedCostReportClientCreateOperationPollerResponse{}, err
+func (client *GenerateDetailedCostReportClient) BeginCreateOperation(ctx context.Context, scope string, parameters GenerateDetailedCostReportDefinition, options *GenerateDetailedCostReportClientBeginCreateOperationOptions) (*runtime.Poller[GenerateDetailedCostReportClientCreateOperationResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOperation(ctx, scope, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[GenerateDetailedCostReportClientCreateOperationResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[GenerateDetailedCostReportClientCreateOperationResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := GenerateDetailedCostReportClientCreateOperationPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("GenerateDetailedCostReportClient.CreateOperation", "location", resp, client.pl)
-	if err != nil {
-		return GenerateDetailedCostReportClientCreateOperationPollerResponse{}, err
-	}
-	result.Poller = &GenerateDetailedCostReportClientCreateOperationPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOperation - Generates the detailed cost report for provided date range, billing period(Only enterprise customers)
@@ -88,6 +90,7 @@ func (client *GenerateDetailedCostReportClient) BeginCreateOperation(ctx context
 // and if the operation is completed the blob file where generated detailed
 // cost report is being stored.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 func (client *GenerateDetailedCostReportClient) createOperation(ctx context.Context, scope string, parameters GenerateDetailedCostReportDefinition, options *GenerateDetailedCostReportClientBeginCreateOperationOptions) (*http.Response, error) {
 	req, err := client.createOperationCreateRequest(ctx, scope, parameters, options)
 	if err != nil {
@@ -114,6 +117,6 @@ func (client *GenerateDetailedCostReportClient) createOperationCreateRequest(ctx
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

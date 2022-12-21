@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,50 @@ type ManagedInstanceAdministratorsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewManagedInstanceAdministratorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ManagedInstanceAdministratorsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewManagedInstanceAdministratorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ManagedInstanceAdministratorsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ManagedInstanceAdministratorsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a managed instance administrator.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
 // parameters - The requested administrator parameters.
 // options - ManagedInstanceAdministratorsClientBeginCreateOrUpdateOptions contains the optional parameters for the ManagedInstanceAdministratorsClient.BeginCreateOrUpdate
 // method.
-func (client *ManagedInstanceAdministratorsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, parameters ManagedInstanceAdministrator, options *ManagedInstanceAdministratorsClientBeginCreateOrUpdateOptions) (ManagedInstanceAdministratorsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, managedInstanceName, administratorName, parameters, options)
-	if err != nil {
-		return ManagedInstanceAdministratorsClientCreateOrUpdatePollerResponse{}, err
+func (client *ManagedInstanceAdministratorsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, parameters ManagedInstanceAdministrator, options *ManagedInstanceAdministratorsClientBeginCreateOrUpdateOptions) (*runtime.Poller[ManagedInstanceAdministratorsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, managedInstanceName, administratorName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ManagedInstanceAdministratorsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ManagedInstanceAdministratorsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ManagedInstanceAdministratorsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ManagedInstanceAdministratorsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ManagedInstanceAdministratorsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ManagedInstanceAdministratorsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a managed instance administrator.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *ManagedInstanceAdministratorsClient) createOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, parameters ManagedInstanceAdministrator, options *ManagedInstanceAdministratorsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, managedInstanceName, administratorName, parameters, options)
 	if err != nil {
@@ -118,37 +119,33 @@ func (client *ManagedInstanceAdministratorsClient) createOrUpdateCreateRequest(c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a managed instance administrator.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
 // options - ManagedInstanceAdministratorsClientBeginDeleteOptions contains the optional parameters for the ManagedInstanceAdministratorsClient.BeginDelete
 // method.
-func (client *ManagedInstanceAdministratorsClient) BeginDelete(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, options *ManagedInstanceAdministratorsClientBeginDeleteOptions) (ManagedInstanceAdministratorsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, managedInstanceName, administratorName, options)
-	if err != nil {
-		return ManagedInstanceAdministratorsClientDeletePollerResponse{}, err
+func (client *ManagedInstanceAdministratorsClient) BeginDelete(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, options *ManagedInstanceAdministratorsClientBeginDeleteOptions) (*runtime.Poller[ManagedInstanceAdministratorsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, managedInstanceName, administratorName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ManagedInstanceAdministratorsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ManagedInstanceAdministratorsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ManagedInstanceAdministratorsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ManagedInstanceAdministratorsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return ManagedInstanceAdministratorsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ManagedInstanceAdministratorsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a managed instance administrator.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *ManagedInstanceAdministratorsClient) deleteOperation(ctx context.Context, resourceGroupName string, managedInstanceName string, administratorName AdministratorName, options *ManagedInstanceAdministratorsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, managedInstanceName, administratorName, options)
 	if err != nil {
@@ -195,6 +192,7 @@ func (client *ManagedInstanceAdministratorsClient) deleteCreateRequest(ctx conte
 
 // Get - Gets a managed instance administrator.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
@@ -241,36 +239,53 @@ func (client *ManagedInstanceAdministratorsClient) getCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ManagedInstanceAdministratorsClient) getHandleResponse(resp *http.Response) (ManagedInstanceAdministratorsClientGetResponse, error) {
-	result := ManagedInstanceAdministratorsClientGetResponse{RawResponse: resp}
+	result := ManagedInstanceAdministratorsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedInstanceAdministrator); err != nil {
 		return ManagedInstanceAdministratorsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByInstance - Gets a list of managed instance administrators.
+// NewListByInstancePager - Gets a list of managed instance administrators.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
 // options - ManagedInstanceAdministratorsClientListByInstanceOptions contains the optional parameters for the ManagedInstanceAdministratorsClient.ListByInstance
 // method.
-func (client *ManagedInstanceAdministratorsClient) ListByInstance(resourceGroupName string, managedInstanceName string, options *ManagedInstanceAdministratorsClientListByInstanceOptions) *ManagedInstanceAdministratorsClientListByInstancePager {
-	return &ManagedInstanceAdministratorsClientListByInstancePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByInstanceCreateRequest(ctx, resourceGroupName, managedInstanceName, options)
+func (client *ManagedInstanceAdministratorsClient) NewListByInstancePager(resourceGroupName string, managedInstanceName string, options *ManagedInstanceAdministratorsClientListByInstanceOptions) *runtime.Pager[ManagedInstanceAdministratorsClientListByInstanceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagedInstanceAdministratorsClientListByInstanceResponse]{
+		More: func(page ManagedInstanceAdministratorsClientListByInstanceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagedInstanceAdministratorsClientListByInstanceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagedInstanceAdministratorListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagedInstanceAdministratorsClientListByInstanceResponse) (ManagedInstanceAdministratorsClientListByInstanceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByInstanceCreateRequest(ctx, resourceGroupName, managedInstanceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagedInstanceAdministratorsClientListByInstanceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagedInstanceAdministratorsClientListByInstanceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagedInstanceAdministratorsClientListByInstanceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByInstanceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByInstanceCreateRequest creates the ListByInstance request.
@@ -295,13 +310,13 @@ func (client *ManagedInstanceAdministratorsClient) listByInstanceCreateRequest(c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByInstanceHandleResponse handles the ListByInstance response.
 func (client *ManagedInstanceAdministratorsClient) listByInstanceHandleResponse(resp *http.Response) (ManagedInstanceAdministratorsClientListByInstanceResponse, error) {
-	result := ManagedInstanceAdministratorsClientListByInstanceResponse{RawResponse: resp}
+	result := ManagedInstanceAdministratorsClientListByInstanceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedInstanceAdministratorListResult); err != nil {
 		return ManagedInstanceAdministratorsClientListByInstanceResponse{}, err
 	}

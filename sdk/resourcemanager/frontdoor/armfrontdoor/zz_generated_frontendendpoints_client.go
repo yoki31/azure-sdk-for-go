@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,49 +35,51 @@ type FrontendEndpointsClient struct {
 // ID forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewFrontendEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *FrontendEndpointsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewFrontendEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*FrontendEndpointsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &FrontendEndpointsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginDisableHTTPS - Disables a frontendEndpoint for HTTPS traffic
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // frontDoorName - Name of the Front Door which is globally unique.
 // frontendEndpointName - Name of the Frontend endpoint which is unique within the Front Door.
 // options - FrontendEndpointsClientBeginDisableHTTPSOptions contains the optional parameters for the FrontendEndpointsClient.BeginDisableHTTPS
 // method.
-func (client *FrontendEndpointsClient) BeginDisableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, options *FrontendEndpointsClientBeginDisableHTTPSOptions) (FrontendEndpointsClientDisableHTTPSPollerResponse, error) {
-	resp, err := client.disableHTTPS(ctx, resourceGroupName, frontDoorName, frontendEndpointName, options)
-	if err != nil {
-		return FrontendEndpointsClientDisableHTTPSPollerResponse{}, err
+func (client *FrontendEndpointsClient) BeginDisableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, options *FrontendEndpointsClientBeginDisableHTTPSOptions) (*runtime.Poller[FrontendEndpointsClientDisableHTTPSResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.disableHTTPS(ctx, resourceGroupName, frontDoorName, frontendEndpointName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[FrontendEndpointsClientDisableHTTPSResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[FrontendEndpointsClientDisableHTTPSResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := FrontendEndpointsClientDisableHTTPSPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("FrontendEndpointsClient.DisableHTTPS", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return FrontendEndpointsClientDisableHTTPSPollerResponse{}, err
-	}
-	result.Poller = &FrontendEndpointsClientDisableHTTPSPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // DisableHTTPS - Disables a frontendEndpoint for HTTPS traffic
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 func (client *FrontendEndpointsClient) disableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, options *FrontendEndpointsClientBeginDisableHTTPSOptions) (*http.Response, error) {
 	req, err := client.disableHTTPSCreateRequest(ctx, resourceGroupName, frontDoorName, frontendEndpointName, options)
 	if err != nil {
@@ -118,38 +121,36 @@ func (client *FrontendEndpointsClient) disableHTTPSCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginEnableHTTPS - Enables a frontendEndpoint for HTTPS traffic
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // frontDoorName - Name of the Front Door which is globally unique.
 // frontendEndpointName - Name of the Frontend endpoint which is unique within the Front Door.
 // customHTTPSConfiguration - The configuration specifying how to enable HTTPS
 // options - FrontendEndpointsClientBeginEnableHTTPSOptions contains the optional parameters for the FrontendEndpointsClient.BeginEnableHTTPS
 // method.
-func (client *FrontendEndpointsClient) BeginEnableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, customHTTPSConfiguration CustomHTTPSConfiguration, options *FrontendEndpointsClientBeginEnableHTTPSOptions) (FrontendEndpointsClientEnableHTTPSPollerResponse, error) {
-	resp, err := client.enableHTTPS(ctx, resourceGroupName, frontDoorName, frontendEndpointName, customHTTPSConfiguration, options)
-	if err != nil {
-		return FrontendEndpointsClientEnableHTTPSPollerResponse{}, err
+func (client *FrontendEndpointsClient) BeginEnableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, customHTTPSConfiguration CustomHTTPSConfiguration, options *FrontendEndpointsClientBeginEnableHTTPSOptions) (*runtime.Poller[FrontendEndpointsClientEnableHTTPSResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.enableHTTPS(ctx, resourceGroupName, frontDoorName, frontendEndpointName, customHTTPSConfiguration, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[FrontendEndpointsClientEnableHTTPSResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[FrontendEndpointsClientEnableHTTPSResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := FrontendEndpointsClientEnableHTTPSPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("FrontendEndpointsClient.EnableHTTPS", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return FrontendEndpointsClientEnableHTTPSPollerResponse{}, err
-	}
-	result.Poller = &FrontendEndpointsClientEnableHTTPSPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // EnableHTTPS - Enables a frontendEndpoint for HTTPS traffic
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 func (client *FrontendEndpointsClient) enableHTTPS(ctx context.Context, resourceGroupName string, frontDoorName string, frontendEndpointName string, customHTTPSConfiguration CustomHTTPSConfiguration, options *FrontendEndpointsClientBeginEnableHTTPSOptions) (*http.Response, error) {
 	req, err := client.enableHTTPSCreateRequest(ctx, resourceGroupName, frontDoorName, frontendEndpointName, customHTTPSConfiguration, options)
 	if err != nil {
@@ -191,12 +192,13 @@ func (client *FrontendEndpointsClient) enableHTTPSCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, customHTTPSConfiguration)
 }
 
 // Get - Gets a Frontend endpoint with the specified name within the specified Front Door.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // frontDoorName - Name of the Front Door which is globally unique.
 // frontendEndpointName - Name of the Frontend endpoint which is unique within the Front Door.
@@ -242,35 +244,52 @@ func (client *FrontendEndpointsClient) getCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *FrontendEndpointsClient) getHandleResponse(resp *http.Response) (FrontendEndpointsClientGetResponse, error) {
-	result := FrontendEndpointsClientGetResponse{RawResponse: resp}
+	result := FrontendEndpointsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FrontendEndpoint); err != nil {
 		return FrontendEndpointsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByFrontDoor - Lists all of the frontend endpoints within a Front Door.
+// NewListByFrontDoorPager - Lists all of the frontend endpoints within a Front Door.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // frontDoorName - Name of the Front Door which is globally unique.
 // options - FrontendEndpointsClientListByFrontDoorOptions contains the optional parameters for the FrontendEndpointsClient.ListByFrontDoor
 // method.
-func (client *FrontendEndpointsClient) ListByFrontDoor(resourceGroupName string, frontDoorName string, options *FrontendEndpointsClientListByFrontDoorOptions) *FrontendEndpointsClientListByFrontDoorPager {
-	return &FrontendEndpointsClientListByFrontDoorPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByFrontDoorCreateRequest(ctx, resourceGroupName, frontDoorName, options)
+func (client *FrontendEndpointsClient) NewListByFrontDoorPager(resourceGroupName string, frontDoorName string, options *FrontendEndpointsClientListByFrontDoorOptions) *runtime.Pager[FrontendEndpointsClientListByFrontDoorResponse] {
+	return runtime.NewPager(runtime.PagingHandler[FrontendEndpointsClientListByFrontDoorResponse]{
+		More: func(page FrontendEndpointsClientListByFrontDoorResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp FrontendEndpointsClientListByFrontDoorResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.FrontendEndpointsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *FrontendEndpointsClientListByFrontDoorResponse) (FrontendEndpointsClientListByFrontDoorResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByFrontDoorCreateRequest(ctx, resourceGroupName, frontDoorName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return FrontendEndpointsClientListByFrontDoorResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return FrontendEndpointsClientListByFrontDoorResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return FrontendEndpointsClientListByFrontDoorResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByFrontDoorHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByFrontDoorCreateRequest creates the ListByFrontDoor request.
@@ -295,13 +314,13 @@ func (client *FrontendEndpointsClient) listByFrontDoorCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByFrontDoorHandleResponse handles the ListByFrontDoor response.
 func (client *FrontendEndpointsClient) listByFrontDoorHandleResponse(resp *http.Response) (FrontendEndpointsClientListByFrontDoorResponse, error) {
-	result := FrontendEndpointsClientListByFrontDoorResponse{RawResponse: resp}
+	result := FrontendEndpointsClientListByFrontDoorResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.FrontendEndpointsListResult); err != nil {
 		return FrontendEndpointsClientListByFrontDoorResponse{}, err
 	}

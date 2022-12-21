@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type DisasterRecoveryConfigsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDisasterRecoveryConfigsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DisasterRecoveryConfigsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDisasterRecoveryConfigsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DisasterRecoveryConfigsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DisasterRecoveryConfigsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BreakPairing - This operation disables the Disaster Recovery and stops replicating changes from primary to secondary namespaces
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -69,7 +75,7 @@ func (client *DisasterRecoveryConfigsClient) BreakPairing(ctx context.Context, r
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return DisasterRecoveryConfigsClientBreakPairingResponse{}, runtime.NewResponseError(resp)
 	}
-	return DisasterRecoveryConfigsClientBreakPairingResponse{RawResponse: resp}, nil
+	return DisasterRecoveryConfigsClientBreakPairingResponse{}, nil
 }
 
 // breakPairingCreateRequest creates the BreakPairing request.
@@ -96,14 +102,15 @@ func (client *DisasterRecoveryConfigsClient) breakPairingCreateRequest(ctx conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // CheckNameAvailability - Check the give namespace name availability.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // parameters - Parameters to check availability of the given namespace name
@@ -144,15 +151,15 @@ func (client *DisasterRecoveryConfigsClient) checkNameAvailabilityCreateRequest(
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *DisasterRecoveryConfigsClient) checkNameAvailabilityHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientCheckNameAvailabilityResponse, error) {
-	result := DisasterRecoveryConfigsClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CheckNameAvailabilityResult); err != nil {
 		return DisasterRecoveryConfigsClientCheckNameAvailabilityResponse{}, err
 	}
@@ -161,6 +168,7 @@ func (client *DisasterRecoveryConfigsClient) checkNameAvailabilityHandleResponse
 
 // CreateOrUpdate - Creates or updates a new Alias(Disaster Recovery configuration)
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -206,15 +214,15 @@ func (client *DisasterRecoveryConfigsClient) createOrUpdateCreateRequest(ctx con
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *DisasterRecoveryConfigsClient) createOrUpdateHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientCreateOrUpdateResponse, error) {
-	result := DisasterRecoveryConfigsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArmDisasterRecovery); err != nil {
 		return DisasterRecoveryConfigsClientCreateOrUpdateResponse{}, err
 	}
@@ -223,6 +231,7 @@ func (client *DisasterRecoveryConfigsClient) createOrUpdateHandleResponse(resp *
 
 // Delete - Deletes an Alias(Disaster Recovery configuration)
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -240,7 +249,7 @@ func (client *DisasterRecoveryConfigsClient) Delete(ctx context.Context, resourc
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return DisasterRecoveryConfigsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return DisasterRecoveryConfigsClientDeleteResponse{RawResponse: resp}, nil
+	return DisasterRecoveryConfigsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -267,14 +276,15 @@ func (client *DisasterRecoveryConfigsClient) deleteCreateRequest(ctx context.Con
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // FailOver - Invokes GEO DR failover and reconfigure the alias to point to the secondary namespace
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -292,7 +302,7 @@ func (client *DisasterRecoveryConfigsClient) FailOver(ctx context.Context, resou
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return DisasterRecoveryConfigsClientFailOverResponse{}, runtime.NewResponseError(resp)
 	}
-	return DisasterRecoveryConfigsClientFailOverResponse{RawResponse: resp}, nil
+	return DisasterRecoveryConfigsClientFailOverResponse{}, nil
 }
 
 // failOverCreateRequest creates the FailOver request.
@@ -319,9 +329,9 @@ func (client *DisasterRecoveryConfigsClient) failOverCreateRequest(ctx context.C
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Parameters != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Parameters)
 	}
@@ -330,6 +340,7 @@ func (client *DisasterRecoveryConfigsClient) failOverCreateRequest(ctx context.C
 
 // Get - Retrieves Alias(Disaster Recovery configuration) for primary or secondary namespace
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -374,15 +385,15 @@ func (client *DisasterRecoveryConfigsClient) getCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DisasterRecoveryConfigsClient) getHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientGetResponse, error) {
-	result := DisasterRecoveryConfigsClientGetResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArmDisasterRecovery); err != nil {
 		return DisasterRecoveryConfigsClientGetResponse{}, err
 	}
@@ -391,6 +402,7 @@ func (client *DisasterRecoveryConfigsClient) getHandleResponse(resp *http.Respon
 
 // GetAuthorizationRule - Gets an authorization rule for a namespace by rule name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -440,37 +452,54 @@ func (client *DisasterRecoveryConfigsClient) getAuthorizationRuleCreateRequest(c
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAuthorizationRuleHandleResponse handles the GetAuthorizationRule response.
 func (client *DisasterRecoveryConfigsClient) getAuthorizationRuleHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientGetAuthorizationRuleResponse, error) {
-	result := DisasterRecoveryConfigsClientGetAuthorizationRuleResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientGetAuthorizationRuleResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SBAuthorizationRule); err != nil {
 		return DisasterRecoveryConfigsClientGetAuthorizationRuleResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets all Alias(Disaster Recovery configurations)
+// NewListPager - Gets all Alias(Disaster Recovery configurations)
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // options - DisasterRecoveryConfigsClientListOptions contains the optional parameters for the DisasterRecoveryConfigsClient.List
 // method.
-func (client *DisasterRecoveryConfigsClient) List(resourceGroupName string, namespaceName string, options *DisasterRecoveryConfigsClientListOptions) *DisasterRecoveryConfigsClientListPager {
-	return &DisasterRecoveryConfigsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, resourceGroupName, namespaceName, options)
+func (client *DisasterRecoveryConfigsClient) NewListPager(resourceGroupName string, namespaceName string, options *DisasterRecoveryConfigsClientListOptions) *runtime.Pager[DisasterRecoveryConfigsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DisasterRecoveryConfigsClientListResponse]{
+		More: func(page DisasterRecoveryConfigsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DisasterRecoveryConfigsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ArmDisasterRecoveryListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DisasterRecoveryConfigsClientListResponse) (DisasterRecoveryConfigsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, resourceGroupName, namespaceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DisasterRecoveryConfigsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DisasterRecoveryConfigsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DisasterRecoveryConfigsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -493,38 +522,55 @@ func (client *DisasterRecoveryConfigsClient) listCreateRequest(ctx context.Conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *DisasterRecoveryConfigsClient) listHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientListResponse, error) {
-	result := DisasterRecoveryConfigsClientListResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ArmDisasterRecoveryListResult); err != nil {
 		return DisasterRecoveryConfigsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAuthorizationRules - Gets the authorization rules for a namespace.
+// NewListAuthorizationRulesPager - Gets the authorization rules for a namespace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
 // options - DisasterRecoveryConfigsClientListAuthorizationRulesOptions contains the optional parameters for the DisasterRecoveryConfigsClient.ListAuthorizationRules
 // method.
-func (client *DisasterRecoveryConfigsClient) ListAuthorizationRules(resourceGroupName string, namespaceName string, alias string, options *DisasterRecoveryConfigsClientListAuthorizationRulesOptions) *DisasterRecoveryConfigsClientListAuthorizationRulesPager {
-	return &DisasterRecoveryConfigsClientListAuthorizationRulesPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAuthorizationRulesCreateRequest(ctx, resourceGroupName, namespaceName, alias, options)
+func (client *DisasterRecoveryConfigsClient) NewListAuthorizationRulesPager(resourceGroupName string, namespaceName string, alias string, options *DisasterRecoveryConfigsClientListAuthorizationRulesOptions) *runtime.Pager[DisasterRecoveryConfigsClientListAuthorizationRulesResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DisasterRecoveryConfigsClientListAuthorizationRulesResponse]{
+		More: func(page DisasterRecoveryConfigsClientListAuthorizationRulesResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DisasterRecoveryConfigsClientListAuthorizationRulesResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SBAuthorizationRuleListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DisasterRecoveryConfigsClientListAuthorizationRulesResponse) (DisasterRecoveryConfigsClientListAuthorizationRulesResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAuthorizationRulesCreateRequest(ctx, resourceGroupName, namespaceName, alias, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DisasterRecoveryConfigsClientListAuthorizationRulesResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DisasterRecoveryConfigsClientListAuthorizationRulesResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DisasterRecoveryConfigsClientListAuthorizationRulesResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAuthorizationRulesHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAuthorizationRulesCreateRequest creates the ListAuthorizationRules request.
@@ -551,15 +597,15 @@ func (client *DisasterRecoveryConfigsClient) listAuthorizationRulesCreateRequest
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAuthorizationRulesHandleResponse handles the ListAuthorizationRules response.
 func (client *DisasterRecoveryConfigsClient) listAuthorizationRulesHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientListAuthorizationRulesResponse, error) {
-	result := DisasterRecoveryConfigsClientListAuthorizationRulesResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientListAuthorizationRulesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SBAuthorizationRuleListResult); err != nil {
 		return DisasterRecoveryConfigsClientListAuthorizationRulesResponse{}, err
 	}
@@ -568,6 +614,7 @@ func (client *DisasterRecoveryConfigsClient) listAuthorizationRulesHandleRespons
 
 // ListKeys - Gets the primary and secondary connection strings for the namespace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // alias - The Disaster Recovery configuration name
@@ -617,15 +664,15 @@ func (client *DisasterRecoveryConfigsClient) listKeysCreateRequest(ctx context.C
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listKeysHandleResponse handles the ListKeys response.
 func (client *DisasterRecoveryConfigsClient) listKeysHandleResponse(resp *http.Response) (DisasterRecoveryConfigsClientListKeysResponse, error) {
-	result := DisasterRecoveryConfigsClientListKeysResponse{RawResponse: resp}
+	result := DisasterRecoveryConfigsClientListKeysResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AccessKeys); err != nil {
 		return DisasterRecoveryConfigsClientListKeysResponse{}, err
 	}

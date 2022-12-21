@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ServerDevOpsAuditSettingsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServerDevOpsAuditSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServerDevOpsAuditSettingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServerDevOpsAuditSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServerDevOpsAuditSettingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServerDevOpsAuditSettingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a server's DevOps audit settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -58,26 +64,23 @@ func NewServerDevOpsAuditSettingsClient(subscriptionID string, credential azcore
 // parameters - Properties of DevOps audit settings
 // options - ServerDevOpsAuditSettingsClientBeginCreateOrUpdateOptions contains the optional parameters for the ServerDevOpsAuditSettingsClient.BeginCreateOrUpdate
 // method.
-func (client *ServerDevOpsAuditSettingsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, devOpsAuditingSettingsName string, parameters ServerDevOpsAuditingSettings, options *ServerDevOpsAuditSettingsClientBeginCreateOrUpdateOptions) (ServerDevOpsAuditSettingsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, devOpsAuditingSettingsName, parameters, options)
-	if err != nil {
-		return ServerDevOpsAuditSettingsClientCreateOrUpdatePollerResponse{}, err
+func (client *ServerDevOpsAuditSettingsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, devOpsAuditingSettingsName string, parameters ServerDevOpsAuditingSettings, options *ServerDevOpsAuditSettingsClientBeginCreateOrUpdateOptions) (*runtime.Poller[ServerDevOpsAuditSettingsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, devOpsAuditingSettingsName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ServerDevOpsAuditSettingsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ServerDevOpsAuditSettingsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ServerDevOpsAuditSettingsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ServerDevOpsAuditSettingsClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return ServerDevOpsAuditSettingsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ServerDevOpsAuditSettingsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a server's DevOps audit settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *ServerDevOpsAuditSettingsClient) createOrUpdate(ctx context.Context, resourceGroupName string, serverName string, devOpsAuditingSettingsName string, parameters ServerDevOpsAuditingSettings, options *ServerDevOpsAuditSettingsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, serverName, devOpsAuditingSettingsName, parameters, options)
 	if err != nil {
@@ -119,12 +122,13 @@ func (client *ServerDevOpsAuditSettingsClient) createOrUpdateCreateRequest(ctx c
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Get - Gets a server's DevOps audit settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -172,36 +176,53 @@ func (client *ServerDevOpsAuditSettingsClient) getCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServerDevOpsAuditSettingsClient) getHandleResponse(resp *http.Response) (ServerDevOpsAuditSettingsClientGetResponse, error) {
-	result := ServerDevOpsAuditSettingsClientGetResponse{RawResponse: resp}
+	result := ServerDevOpsAuditSettingsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServerDevOpsAuditingSettings); err != nil {
 		return ServerDevOpsAuditSettingsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByServer - Lists DevOps audit settings of a server.
+// NewListByServerPager - Lists DevOps audit settings of a server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // options - ServerDevOpsAuditSettingsClientListByServerOptions contains the optional parameters for the ServerDevOpsAuditSettingsClient.ListByServer
 // method.
-func (client *ServerDevOpsAuditSettingsClient) ListByServer(resourceGroupName string, serverName string, options *ServerDevOpsAuditSettingsClientListByServerOptions) *ServerDevOpsAuditSettingsClientListByServerPager {
-	return &ServerDevOpsAuditSettingsClientListByServerPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+func (client *ServerDevOpsAuditSettingsClient) NewListByServerPager(resourceGroupName string, serverName string, options *ServerDevOpsAuditSettingsClientListByServerOptions) *runtime.Pager[ServerDevOpsAuditSettingsClientListByServerResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServerDevOpsAuditSettingsClientListByServerResponse]{
+		More: func(page ServerDevOpsAuditSettingsClientListByServerResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServerDevOpsAuditSettingsClientListByServerResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ServerDevOpsAuditSettingsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ServerDevOpsAuditSettingsClientListByServerResponse) (ServerDevOpsAuditSettingsClientListByServerResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServerDevOpsAuditSettingsClientListByServerResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServerDevOpsAuditSettingsClientListByServerResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServerDevOpsAuditSettingsClientListByServerResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServerHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServerCreateRequest creates the ListByServer request.
@@ -226,13 +247,13 @@ func (client *ServerDevOpsAuditSettingsClient) listByServerCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServerHandleResponse handles the ListByServer response.
 func (client *ServerDevOpsAuditSettingsClient) listByServerHandleResponse(resp *http.Response) (ServerDevOpsAuditSettingsClientListByServerResponse, error) {
-	result := ServerDevOpsAuditSettingsClientListByServerResponse{RawResponse: resp}
+	result := ServerDevOpsAuditSettingsClientListByServerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServerDevOpsAuditSettingsListResult); err != nil {
 		return ServerDevOpsAuditSettingsClientListByServerResponse{}, err
 	}

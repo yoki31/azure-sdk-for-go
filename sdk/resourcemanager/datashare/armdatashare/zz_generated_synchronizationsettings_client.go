@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type SynchronizationSettingsClient struct {
 // subscriptionID - The subscription identifier
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSynchronizationSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SynchronizationSettingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSynchronizationSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SynchronizationSettingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SynchronizationSettingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Create a synchronizationSetting
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share to add the synchronization setting to.
@@ -103,13 +109,13 @@ func (client *SynchronizationSettingsClient) createCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, synchronizationSetting)
 }
 
 // createHandleResponse handles the Create response.
 func (client *SynchronizationSettingsClient) createHandleResponse(resp *http.Response) (SynchronizationSettingsClientCreateResponse, error) {
-	result := SynchronizationSettingsClientCreateResponse{RawResponse: resp}
+	result := SynchronizationSettingsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return SynchronizationSettingsClientCreateResponse{}, err
 	}
@@ -118,32 +124,28 @@ func (client *SynchronizationSettingsClient) createHandleResponse(resp *http.Res
 
 // BeginDelete - Delete a synchronizationSetting in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
 // synchronizationSettingName - The name of the synchronizationSetting .
 // options - SynchronizationSettingsClientBeginDeleteOptions contains the optional parameters for the SynchronizationSettingsClient.BeginDelete
 // method.
-func (client *SynchronizationSettingsClient) BeginDelete(ctx context.Context, resourceGroupName string, accountName string, shareName string, synchronizationSettingName string, options *SynchronizationSettingsClientBeginDeleteOptions) (SynchronizationSettingsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, accountName, shareName, synchronizationSettingName, options)
-	if err != nil {
-		return SynchronizationSettingsClientDeletePollerResponse{}, err
+func (client *SynchronizationSettingsClient) BeginDelete(ctx context.Context, resourceGroupName string, accountName string, shareName string, synchronizationSettingName string, options *SynchronizationSettingsClientBeginDeleteOptions) (*runtime.Poller[SynchronizationSettingsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, accountName, shareName, synchronizationSettingName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[SynchronizationSettingsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[SynchronizationSettingsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := SynchronizationSettingsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("SynchronizationSettingsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return SynchronizationSettingsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &SynchronizationSettingsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a synchronizationSetting in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *SynchronizationSettingsClient) deleteOperation(ctx context.Context, resourceGroupName string, accountName string, shareName string, synchronizationSettingName string, options *SynchronizationSettingsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, accountName, shareName, synchronizationSettingName, options)
 	if err != nil {
@@ -189,12 +191,13 @@ func (client *SynchronizationSettingsClient) deleteCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a synchronizationSetting in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
@@ -246,36 +249,53 @@ func (client *SynchronizationSettingsClient) getCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SynchronizationSettingsClient) getHandleResponse(resp *http.Response) (SynchronizationSettingsClientGetResponse, error) {
-	result := SynchronizationSettingsClientGetResponse{RawResponse: resp}
+	result := SynchronizationSettingsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return SynchronizationSettingsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByShare - List synchronizationSettings in a share
+// NewListBySharePager - List synchronizationSettings in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
 // options - SynchronizationSettingsClientListByShareOptions contains the optional parameters for the SynchronizationSettingsClient.ListByShare
 // method.
-func (client *SynchronizationSettingsClient) ListByShare(resourceGroupName string, accountName string, shareName string, options *SynchronizationSettingsClientListByShareOptions) *SynchronizationSettingsClientListBySharePager {
-	return &SynchronizationSettingsClientListBySharePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByShareCreateRequest(ctx, resourceGroupName, accountName, shareName, options)
+func (client *SynchronizationSettingsClient) NewListBySharePager(resourceGroupName string, accountName string, shareName string, options *SynchronizationSettingsClientListByShareOptions) *runtime.Pager[SynchronizationSettingsClientListByShareResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SynchronizationSettingsClientListByShareResponse]{
+		More: func(page SynchronizationSettingsClientListByShareResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SynchronizationSettingsClientListByShareResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SynchronizationSettingList.NextLink)
+		Fetcher: func(ctx context.Context, page *SynchronizationSettingsClientListByShareResponse) (SynchronizationSettingsClientListByShareResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByShareCreateRequest(ctx, resourceGroupName, accountName, shareName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SynchronizationSettingsClientListByShareResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SynchronizationSettingsClientListByShareResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SynchronizationSettingsClientListByShareResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByShareHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByShareCreateRequest creates the ListByShare request.
@@ -307,13 +327,13 @@ func (client *SynchronizationSettingsClient) listByShareCreateRequest(ctx contex
 		reqQP.Set("$skipToken", *options.SkipToken)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByShareHandleResponse handles the ListByShare response.
 func (client *SynchronizationSettingsClient) listByShareHandleResponse(resp *http.Response) (SynchronizationSettingsClientListByShareResponse, error) {
-	result := SynchronizationSettingsClientListByShareResponse{RawResponse: resp}
+	result := SynchronizationSettingsClientListByShareResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SynchronizationSettingList); err != nil {
 		return SynchronizationSettingsClientListByShareResponse{}, err
 	}

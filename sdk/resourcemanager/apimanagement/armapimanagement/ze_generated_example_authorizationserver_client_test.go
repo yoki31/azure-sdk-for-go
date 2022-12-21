@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,172 +17,195 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/apimanagement/armapimanagement"
 )
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListAuthorizationServers.json
-func ExampleAuthorizationServerClient_ListByService() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementListAuthorizationServers.json
+func ExampleAuthorizationServerClient_NewListByServicePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
-	pager := client.ListByService("<resource-group-name>",
-		"<service-name>",
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServicePager("rg1",
+		"apimService1",
 		&armapimanagement.AuthorizationServerClientListByServiceOptions{Filter: nil,
 			Top:  nil,
 			Skip: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadAuthorizationServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementHeadAuthorizationServer.json
 func ExampleAuthorizationServerClient_GetEntityTag() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.GetEntityTag(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
+		"rg1",
+		"apimService1",
+		"newauthServer2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetAuthorizationServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementGetAuthorizationServer.json
 func ExampleAuthorizationServerClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
+		"rg1",
+		"apimService1",
+		"newauthServer2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.AuthorizationServerClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateAuthorizationServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementCreateAuthorizationServer.json
 func ExampleAuthorizationServerClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
+		"rg1",
+		"apimService1",
+		"newauthServer",
 		armapimanagement.AuthorizationServerContract{
 			Properties: &armapimanagement.AuthorizationServerContractProperties{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("test server"),
 				AuthorizationMethods: []*armapimanagement.AuthorizationMethod{
-					armapimanagement.AuthorizationMethodGET.ToPtr()},
+					to.Ptr(armapimanagement.AuthorizationMethodGET)},
 				BearerTokenSendingMethods: []*armapimanagement.BearerTokenSendingMethod{
-					armapimanagement.BearerTokenSendingMethod("authorizationHeader").ToPtr()},
-				DefaultScope:               to.StringPtr("<default-scope>"),
-				ResourceOwnerPassword:      to.StringPtr("<resource-owner-password>"),
-				ResourceOwnerUsername:      to.StringPtr("<resource-owner-username>"),
-				SupportState:               to.BoolPtr(true),
-				TokenEndpoint:              to.StringPtr("<token-endpoint>"),
-				AuthorizationEndpoint:      to.StringPtr("<authorization-endpoint>"),
-				ClientID:                   to.StringPtr("<client-id>"),
-				ClientRegistrationEndpoint: to.StringPtr("<client-registration-endpoint>"),
-				ClientSecret:               to.StringPtr("<client-secret>"),
-				DisplayName:                to.StringPtr("<display-name>"),
+					to.Ptr(armapimanagement.BearerTokenSendingMethodAuthorizationHeader)},
+				DefaultScope:               to.Ptr("read write"),
+				ResourceOwnerPassword:      to.Ptr("pwd"),
+				ResourceOwnerUsername:      to.Ptr("un"),
+				SupportState:               to.Ptr(true),
+				TokenEndpoint:              to.Ptr("https://www.contoso.com/oauth2/token"),
+				AuthorizationEndpoint:      to.Ptr("https://www.contoso.com/oauth2/auth"),
+				ClientID:                   to.Ptr("1"),
+				ClientRegistrationEndpoint: to.Ptr("https://www.contoso.com/apps"),
+				ClientSecret:               to.Ptr("2"),
+				DisplayName:                to.Ptr("test2"),
 				GrantTypes: []*armapimanagement.GrantType{
-					armapimanagement.GrantType("authorizationCode").ToPtr(),
-					armapimanagement.GrantType("implicit").ToPtr()},
+					to.Ptr(armapimanagement.GrantTypeAuthorizationCode),
+					to.Ptr(armapimanagement.GrantTypeImplicit)},
 			},
 		},
 		&armapimanagement.AuthorizationServerClientCreateOrUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.AuthorizationServerClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementUpdateAuthorizationServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementUpdateAuthorizationServer.json
 func ExampleAuthorizationServerClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"newauthServer",
+		"*",
 		armapimanagement.AuthorizationServerUpdateContract{
 			Properties: &armapimanagement.AuthorizationServerUpdateContractProperties{
-				ClientID:     to.StringPtr("<client-id>"),
-				ClientSecret: to.StringPtr("<client-secret>"),
+				ClientID:     to.Ptr("update"),
+				ClientSecret: to.Ptr("updated"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.AuthorizationServerClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteAuthorizationServer.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementDeleteAuthorizationServer.json
 func ExampleAuthorizationServerClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
-		"<if-match>",
+		"rg1",
+		"apimService1",
+		"newauthServer2",
+		"*",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementAuthorizationServerListSecrets.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/apimanagement/resource-manager/Microsoft.ApiManagement/stable/2021-08-01/examples/ApiManagementAuthorizationServerListSecrets.json
 func ExampleAuthorizationServerClient_ListSecrets() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapimanagement.NewAuthorizationServerClient("<subscription-id>", cred, nil)
+	client, err := armapimanagement.NewAuthorizationServerClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListSecrets(ctx,
-		"<resource-group-name>",
-		"<service-name>",
-		"<authsid>",
+		"rg1",
+		"apimService1",
+		"newauthServer2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.AuthorizationServerClientListSecretsResult)
+	// TODO: use response item
+	_ = res
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,25 +32,30 @@ type ExportsClient struct {
 // NewExportsClient creates a new instance of ExportsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewExportsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *ExportsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewExportsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*ExportsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ExportsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - The operation to create or update a export. Update operation requires latest eTag to be set in the request.
 // You may obtain the latest eTag by performing a get operation. Create operation does not
 // require eTag.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -93,13 +99,13 @@ func (client *ExportsClient) createOrUpdateCreateRequest(ctx context.Context, sc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ExportsClient) createOrUpdateHandleResponse(resp *http.Response) (ExportsClientCreateOrUpdateResponse, error) {
-	result := ExportsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ExportsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Export); err != nil {
 		return ExportsClientCreateOrUpdateResponse{}, err
 	}
@@ -108,6 +114,7 @@ func (client *ExportsClient) createOrUpdateHandleResponse(resp *http.Response) (
 
 // Delete - The operation to delete a export.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -132,7 +139,7 @@ func (client *ExportsClient) Delete(ctx context.Context, scope string, exportNam
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return ExportsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ExportsClientDeleteResponse{RawResponse: resp}, nil
+	return ExportsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -150,12 +157,13 @@ func (client *ExportsClient) deleteCreateRequest(ctx context.Context, scope stri
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Execute - The operation to execute an export.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -180,7 +188,7 @@ func (client *ExportsClient) Execute(ctx context.Context, scope string, exportNa
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return ExportsClientExecuteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ExportsClientExecuteResponse{RawResponse: resp}, nil
+	return ExportsClientExecuteResponse{}, nil
 }
 
 // executeCreateRequest creates the Execute request.
@@ -198,12 +206,13 @@ func (client *ExportsClient) executeCreateRequest(ctx context.Context, scope str
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - The operation to get the export for the defined scope by export name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -249,13 +258,13 @@ func (client *ExportsClient) getCreateRequest(ctx context.Context, scope string,
 		reqQP.Set("$expand", *options.Expand)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ExportsClient) getHandleResponse(resp *http.Response) (ExportsClientGetResponse, error) {
-	result := ExportsClientGetResponse{RawResponse: resp}
+	result := ExportsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Export); err != nil {
 		return ExportsClientGetResponse{}, err
 	}
@@ -264,6 +273,7 @@ func (client *ExportsClient) getHandleResponse(resp *http.Response) (ExportsClie
 
 // GetExecutionHistory - The operation to get the execution history of an export for the defined scope and export name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -307,13 +317,13 @@ func (client *ExportsClient) getExecutionHistoryCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getExecutionHistoryHandleResponse handles the GetExecutionHistory response.
 func (client *ExportsClient) getExecutionHistoryHandleResponse(resp *http.Response) (ExportsClientGetExecutionHistoryResponse, error) {
-	result := ExportsClientGetExecutionHistoryResponse{RawResponse: resp}
+	result := ExportsClientGetExecutionHistoryResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ExportExecutionListResult); err != nil {
 		return ExportsClientGetExecutionHistoryResponse{}, err
 	}
@@ -322,6 +332,7 @@ func (client *ExportsClient) getExecutionHistoryHandleResponse(resp *http.Respon
 
 // List - The operation to list all exports at the given scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // scope - The scope associated with export operations. This includes '/subscriptions/{subscriptionId}/' for subscription
 // scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for
 // resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and
@@ -362,13 +373,13 @@ func (client *ExportsClient) listCreateRequest(ctx context.Context, scope string
 		reqQP.Set("$expand", *options.Expand)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ExportsClient) listHandleResponse(resp *http.Response) (ExportsClientListResponse, error) {
-	result := ExportsClientListResponse{RawResponse: resp}
+	result := ExportsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ExportListResult); err != nil {
 		return ExportsClientListResponse{}, err
 	}

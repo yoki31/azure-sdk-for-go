@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ManagedBackupShortTermRetentionPoliciesClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewManagedBackupShortTermRetentionPoliciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ManagedBackupShortTermRetentionPoliciesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewManagedBackupShortTermRetentionPoliciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ManagedBackupShortTermRetentionPoliciesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ManagedBackupShortTermRetentionPoliciesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Updates a managed database's short term retention policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
@@ -59,26 +65,21 @@ func NewManagedBackupShortTermRetentionPoliciesClient(subscriptionID string, cre
 // parameters - The short term retention policy info.
 // options - ManagedBackupShortTermRetentionPoliciesClientBeginCreateOrUpdateOptions contains the optional parameters for
 // the ManagedBackupShortTermRetentionPoliciesClient.BeginCreateOrUpdate method.
-func (client *ManagedBackupShortTermRetentionPoliciesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginCreateOrUpdateOptions) (ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
-	if err != nil {
-		return ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdatePollerResponse{}, err
+func (client *ManagedBackupShortTermRetentionPoliciesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginCreateOrUpdateOptions) (*runtime.Poller[ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ManagedBackupShortTermRetentionPoliciesClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ManagedBackupShortTermRetentionPoliciesClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Updates a managed database's short term retention policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *ManagedBackupShortTermRetentionPoliciesClient) createOrUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
 	if err != nil {
@@ -124,12 +125,13 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) createOrUpdateCreat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Get - Gets a managed database's short term retention policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
@@ -182,37 +184,54 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) getCreateRequest(ct
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ManagedBackupShortTermRetentionPoliciesClient) getHandleResponse(resp *http.Response) (ManagedBackupShortTermRetentionPoliciesClientGetResponse, error) {
-	result := ManagedBackupShortTermRetentionPoliciesClientGetResponse{RawResponse: resp}
+	result := ManagedBackupShortTermRetentionPoliciesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedBackupShortTermRetentionPolicy); err != nil {
 		return ManagedBackupShortTermRetentionPoliciesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByDatabase - Gets a managed database's short term retention policy list.
+// NewListByDatabasePager - Gets a managed database's short term retention policy list.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
 // databaseName - The name of the database.
 // options - ManagedBackupShortTermRetentionPoliciesClientListByDatabaseOptions contains the optional parameters for the ManagedBackupShortTermRetentionPoliciesClient.ListByDatabase
 // method.
-func (client *ManagedBackupShortTermRetentionPoliciesClient) ListByDatabase(resourceGroupName string, managedInstanceName string, databaseName string, options *ManagedBackupShortTermRetentionPoliciesClientListByDatabaseOptions) *ManagedBackupShortTermRetentionPoliciesClientListByDatabasePager {
-	return &ManagedBackupShortTermRetentionPoliciesClientListByDatabasePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByDatabaseCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, options)
+func (client *ManagedBackupShortTermRetentionPoliciesClient) NewListByDatabasePager(resourceGroupName string, managedInstanceName string, databaseName string, options *ManagedBackupShortTermRetentionPoliciesClientListByDatabaseOptions) *runtime.Pager[ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse]{
+		More: func(page ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagedBackupShortTermRetentionPolicyListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse) (ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByDatabaseCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByDatabaseHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByDatabaseCreateRequest creates the ListByDatabase request.
@@ -241,13 +260,13 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) listByDatabaseCreat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByDatabaseHandleResponse handles the ListByDatabase response.
 func (client *ManagedBackupShortTermRetentionPoliciesClient) listByDatabaseHandleResponse(resp *http.Response) (ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse, error) {
-	result := ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{RawResponse: resp}
+	result := ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagedBackupShortTermRetentionPolicyListResult); err != nil {
 		return ManagedBackupShortTermRetentionPoliciesClientListByDatabaseResponse{}, err
 	}
@@ -256,6 +275,7 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) listByDatabaseHandl
 
 // BeginUpdate - Updates a managed database's short term retention policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // managedInstanceName - The name of the managed instance.
@@ -264,26 +284,21 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) listByDatabaseHandl
 // parameters - The short term retention policy info.
 // options - ManagedBackupShortTermRetentionPoliciesClientBeginUpdateOptions contains the optional parameters for the ManagedBackupShortTermRetentionPoliciesClient.BeginUpdate
 // method.
-func (client *ManagedBackupShortTermRetentionPoliciesClient) BeginUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginUpdateOptions) (ManagedBackupShortTermRetentionPoliciesClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
-	if err != nil {
-		return ManagedBackupShortTermRetentionPoliciesClientUpdatePollerResponse{}, err
+func (client *ManagedBackupShortTermRetentionPoliciesClient) BeginUpdate(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginUpdateOptions) (*runtime.Poller[ManagedBackupShortTermRetentionPoliciesClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ManagedBackupShortTermRetentionPoliciesClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ManagedBackupShortTermRetentionPoliciesClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ManagedBackupShortTermRetentionPoliciesClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ManagedBackupShortTermRetentionPoliciesClient.Update", "", resp, client.pl)
-	if err != nil {
-		return ManagedBackupShortTermRetentionPoliciesClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &ManagedBackupShortTermRetentionPoliciesClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates a managed database's short term retention policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *ManagedBackupShortTermRetentionPoliciesClient) update(ctx context.Context, resourceGroupName string, managedInstanceName string, databaseName string, policyName ManagedShortTermRetentionPolicyName, parameters ManagedBackupShortTermRetentionPolicy, options *ManagedBackupShortTermRetentionPoliciesClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, managedInstanceName, databaseName, policyName, parameters, options)
 	if err != nil {
@@ -329,6 +344,6 @@ func (client *ManagedBackupShortTermRetentionPoliciesClient) updateCreateRequest
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

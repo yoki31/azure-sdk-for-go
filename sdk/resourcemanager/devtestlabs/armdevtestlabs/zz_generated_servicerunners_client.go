@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ServiceRunnersClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServiceRunnersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServiceRunnersClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServiceRunnersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServiceRunnersClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServiceRunnersClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or replace an existing service runner.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the service runner.
@@ -98,13 +104,13 @@ func (client *ServiceRunnersClient) createOrUpdateCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, serviceRunner)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ServiceRunnersClient) createOrUpdateHandleResponse(resp *http.Response) (ServiceRunnersClientCreateOrUpdateResponse, error) {
-	result := ServiceRunnersClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ServiceRunnersClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceRunner); err != nil {
 		return ServiceRunnersClientCreateOrUpdateResponse{}, err
 	}
@@ -113,6 +119,7 @@ func (client *ServiceRunnersClient) createOrUpdateHandleResponse(resp *http.Resp
 
 // Delete - Delete service runner.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the service runner.
@@ -129,7 +136,7 @@ func (client *ServiceRunnersClient) Delete(ctx context.Context, resourceGroupNam
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ServiceRunnersClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ServiceRunnersClientDeleteResponse{RawResponse: resp}, nil
+	return ServiceRunnersClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -158,12 +165,13 @@ func (client *ServiceRunnersClient) deleteCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get service runner.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the service runner.
@@ -209,13 +217,13 @@ func (client *ServiceRunnersClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServiceRunnersClient) getHandleResponse(resp *http.Response) (ServiceRunnersClientGetResponse, error) {
-	result := ServiceRunnersClientGetResponse{RawResponse: resp}
+	result := ServiceRunnersClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ServiceRunner); err != nil {
 		return ServiceRunnersClientGetResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,51 @@ type WorkspaceSQLAADAdminsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewWorkspaceSQLAADAdminsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *WorkspaceSQLAADAdminsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewWorkspaceSQLAADAdminsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*WorkspaceSQLAADAdminsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &WorkspaceSQLAADAdminsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a workspace SQL active directory admin
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // aadAdminInfo - Workspace active directory administrator properties
 // options - WorkspaceSQLAADAdminsClientBeginCreateOrUpdateOptions contains the optional parameters for the WorkspaceSQLAADAdminsClient.BeginCreateOrUpdate
 // method.
-func (client *WorkspaceSQLAADAdminsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, aadAdminInfo WorkspaceAADAdminInfo, options *WorkspaceSQLAADAdminsClientBeginCreateOrUpdateOptions) (WorkspaceSQLAADAdminsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, aadAdminInfo, options)
-	if err != nil {
-		return WorkspaceSQLAADAdminsClientCreateOrUpdatePollerResponse{}, err
+func (client *WorkspaceSQLAADAdminsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, aadAdminInfo WorkspaceAADAdminInfo, options *WorkspaceSQLAADAdminsClientBeginCreateOrUpdateOptions) (*runtime.Poller[WorkspaceSQLAADAdminsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, aadAdminInfo, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[WorkspaceSQLAADAdminsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspaceSQLAADAdminsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspaceSQLAADAdminsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspaceSQLAADAdminsClient.CreateOrUpdate", "location", resp, client.pl)
-	if err != nil {
-		return WorkspaceSQLAADAdminsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &WorkspaceSQLAADAdminsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a workspace SQL active directory admin
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *WorkspaceSQLAADAdminsClient) createOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, aadAdminInfo WorkspaceAADAdminInfo, options *WorkspaceSQLAADAdminsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, workspaceName, aadAdminInfo, options)
 	if err != nil {
@@ -113,36 +116,34 @@ func (client *WorkspaceSQLAADAdminsClient) createOrUpdateCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, aadAdminInfo)
 }
 
 // BeginDelete - Deletes a workspace SQL active directory admin
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // options - WorkspaceSQLAADAdminsClientBeginDeleteOptions contains the optional parameters for the WorkspaceSQLAADAdminsClient.BeginDelete
 // method.
-func (client *WorkspaceSQLAADAdminsClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspaceSQLAADAdminsClientBeginDeleteOptions) (WorkspaceSQLAADAdminsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, options)
-	if err != nil {
-		return WorkspaceSQLAADAdminsClientDeletePollerResponse{}, err
+func (client *WorkspaceSQLAADAdminsClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspaceSQLAADAdminsClientBeginDeleteOptions) (*runtime.Poller[WorkspaceSQLAADAdminsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[WorkspaceSQLAADAdminsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspaceSQLAADAdminsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspaceSQLAADAdminsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspaceSQLAADAdminsClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return WorkspaceSQLAADAdminsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &WorkspaceSQLAADAdminsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a workspace SQL active directory admin
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *WorkspaceSQLAADAdminsClient) deleteOperation(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspaceSQLAADAdminsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, workspaceName, options)
 	if err != nil {
@@ -180,12 +181,13 @@ func (client *WorkspaceSQLAADAdminsClient) deleteCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a workspace SQL active directory admin
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // options - WorkspaceSQLAADAdminsClientGetOptions contains the optional parameters for the WorkspaceSQLAADAdminsClient.Get
@@ -227,13 +229,13 @@ func (client *WorkspaceSQLAADAdminsClient) getCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *WorkspaceSQLAADAdminsClient) getHandleResponse(resp *http.Response) (WorkspaceSQLAADAdminsClientGetResponse, error) {
-	result := WorkspaceSQLAADAdminsClientGetResponse{RawResponse: resp}
+	result := WorkspaceSQLAADAdminsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkspaceAADAdminInfo); err != nil {
 		return WorkspaceSQLAADAdminsClientGetResponse{}, err
 	}

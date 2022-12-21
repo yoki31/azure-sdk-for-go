@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ProtectionIntentClient struct {
 // subscriptionID - The subscription Id.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewProtectionIntentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ProtectionIntentClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewProtectionIntentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ProtectionIntentClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ProtectionIntentClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create Intent for Enabling backup of an item. This is a synchronous operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // fabricName - Fabric name associated with the backup item.
@@ -101,15 +107,15 @@ func (client *ProtectionIntentClient) createOrUpdateCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ProtectionIntentClient) createOrUpdateHandleResponse(resp *http.Response) (ProtectionIntentClientCreateOrUpdateResponse, error) {
-	result := ProtectionIntentClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ProtectionIntentClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ProtectionIntentResource); err != nil {
 		return ProtectionIntentClientCreateOrUpdateResponse{}, err
 	}
@@ -118,6 +124,7 @@ func (client *ProtectionIntentClient) createOrUpdateHandleResponse(resp *http.Re
 
 // Delete - Used to remove intent from an item
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // fabricName - Fabric name associated with the intent.
@@ -135,7 +142,7 @@ func (client *ProtectionIntentClient) Delete(ctx context.Context, vaultName stri
 	if !runtime.HasStatusCode(resp, http.StatusNoContent) {
 		return ProtectionIntentClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ProtectionIntentClientDeleteResponse{RawResponse: resp}, nil
+	return ProtectionIntentClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -166,7 +173,7 @@ func (client *ProtectionIntentClient) deleteCreateRequest(ctx context.Context, v
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	return req, nil
 }
@@ -174,6 +181,7 @@ func (client *ProtectionIntentClient) deleteCreateRequest(ctx context.Context, v
 // Get - Provides the details of the protection intent up item. This is an asynchronous operation. To know the status of the
 // operation, call the GetItemOperationResult API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // fabricName - Fabric name associated with the backed up item.
@@ -222,15 +230,15 @@ func (client *ProtectionIntentClient) getCreateRequest(ctx context.Context, vaul
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ProtectionIntentClient) getHandleResponse(resp *http.Response) (ProtectionIntentClientGetResponse, error) {
-	result := ProtectionIntentClientGetResponse{RawResponse: resp}
+	result := ProtectionIntentClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ProtectionIntentResource); err != nil {
 		return ProtectionIntentClientGetResponse{}, err
 	}
@@ -242,6 +250,7 @@ func (client *ProtectionIntentClient) getHandleResponse(resp *http.Response) (Pr
 // 2. VM is already protected
 // 3. Any VM related configuration passed in properties.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // azureRegion - Azure region to hit Api
 // parameters - Enable backup validation request on Virtual Machine
 // options - ProtectionIntentClientValidateOptions contains the optional parameters for the ProtectionIntentClient.Validate
@@ -277,15 +286,15 @@ func (client *ProtectionIntentClient) validateCreateRequest(ctx context.Context,
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // validateHandleResponse handles the Validate response.
 func (client *ProtectionIntentClient) validateHandleResponse(resp *http.Response) (ProtectionIntentClientValidateResponse, error) {
-	result := ProtectionIntentClientValidateResponse{RawResponse: resp}
+	result := ProtectionIntentClientValidateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PreValidateEnableBackupResponse); err != nil {
 		return ProtectionIntentClientValidateResponse{}, err
 	}

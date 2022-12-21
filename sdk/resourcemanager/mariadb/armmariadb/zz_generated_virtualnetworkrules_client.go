@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,50 @@ type VirtualNetworkRulesClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewVirtualNetworkRulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *VirtualNetworkRulesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewVirtualNetworkRulesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*VirtualNetworkRulesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &VirtualNetworkRulesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates an existing virtual network rule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverName - The name of the server.
 // virtualNetworkRuleName - The name of the virtual network rule.
 // parameters - The requested virtual Network Rule Resource state.
 // options - VirtualNetworkRulesClientBeginCreateOrUpdateOptions contains the optional parameters for the VirtualNetworkRulesClient.BeginCreateOrUpdate
 // method.
-func (client *VirtualNetworkRulesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, parameters VirtualNetworkRule, options *VirtualNetworkRulesClientBeginCreateOrUpdateOptions) (VirtualNetworkRulesClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, virtualNetworkRuleName, parameters, options)
-	if err != nil {
-		return VirtualNetworkRulesClientCreateOrUpdatePollerResponse{}, err
+func (client *VirtualNetworkRulesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, parameters VirtualNetworkRule, options *VirtualNetworkRulesClientBeginCreateOrUpdateOptions) (*runtime.Poller[VirtualNetworkRulesClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, virtualNetworkRuleName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[VirtualNetworkRulesClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[VirtualNetworkRulesClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := VirtualNetworkRulesClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("VirtualNetworkRulesClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return VirtualNetworkRulesClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &VirtualNetworkRulesClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates an existing virtual network rule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 func (client *VirtualNetworkRulesClient) createOrUpdate(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, parameters VirtualNetworkRule, options *VirtualNetworkRulesClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, serverName, virtualNetworkRuleName, parameters, options)
 	if err != nil {
@@ -118,37 +119,33 @@ func (client *VirtualNetworkRulesClient) createOrUpdateCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes the virtual network rule with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverName - The name of the server.
 // virtualNetworkRuleName - The name of the virtual network rule.
 // options - VirtualNetworkRulesClientBeginDeleteOptions contains the optional parameters for the VirtualNetworkRulesClient.BeginDelete
 // method.
-func (client *VirtualNetworkRulesClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, options *VirtualNetworkRulesClientBeginDeleteOptions) (VirtualNetworkRulesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, virtualNetworkRuleName, options)
-	if err != nil {
-		return VirtualNetworkRulesClientDeletePollerResponse{}, err
+func (client *VirtualNetworkRulesClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, options *VirtualNetworkRulesClientBeginDeleteOptions) (*runtime.Poller[VirtualNetworkRulesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, virtualNetworkRuleName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[VirtualNetworkRulesClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[VirtualNetworkRulesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := VirtualNetworkRulesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("VirtualNetworkRulesClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return VirtualNetworkRulesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &VirtualNetworkRulesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the virtual network rule with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 func (client *VirtualNetworkRulesClient) deleteOperation(ctx context.Context, resourceGroupName string, serverName string, virtualNetworkRuleName string, options *VirtualNetworkRulesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, serverName, virtualNetworkRuleName, options)
 	if err != nil {
@@ -195,6 +192,7 @@ func (client *VirtualNetworkRulesClient) deleteCreateRequest(ctx context.Context
 
 // Get - Gets a virtual network rule.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverName - The name of the server.
 // virtualNetworkRuleName - The name of the virtual network rule.
@@ -240,35 +238,52 @@ func (client *VirtualNetworkRulesClient) getCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *VirtualNetworkRulesClient) getHandleResponse(resp *http.Response) (VirtualNetworkRulesClientGetResponse, error) {
-	result := VirtualNetworkRulesClientGetResponse{RawResponse: resp}
+	result := VirtualNetworkRulesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.VirtualNetworkRule); err != nil {
 		return VirtualNetworkRulesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByServer - Gets a list of virtual network rules in a server.
+// NewListByServerPager - Gets a list of virtual network rules in a server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // serverName - The name of the server.
 // options - VirtualNetworkRulesClientListByServerOptions contains the optional parameters for the VirtualNetworkRulesClient.ListByServer
 // method.
-func (client *VirtualNetworkRulesClient) ListByServer(resourceGroupName string, serverName string, options *VirtualNetworkRulesClientListByServerOptions) *VirtualNetworkRulesClientListByServerPager {
-	return &VirtualNetworkRulesClientListByServerPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+func (client *VirtualNetworkRulesClient) NewListByServerPager(resourceGroupName string, serverName string, options *VirtualNetworkRulesClientListByServerOptions) *runtime.Pager[VirtualNetworkRulesClientListByServerResponse] {
+	return runtime.NewPager(runtime.PagingHandler[VirtualNetworkRulesClientListByServerResponse]{
+		More: func(page VirtualNetworkRulesClientListByServerResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp VirtualNetworkRulesClientListByServerResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.VirtualNetworkRuleListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *VirtualNetworkRulesClientListByServerResponse) (VirtualNetworkRulesClientListByServerResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return VirtualNetworkRulesClientListByServerResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return VirtualNetworkRulesClientListByServerResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return VirtualNetworkRulesClientListByServerResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServerHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServerCreateRequest creates the ListByServer request.
@@ -293,13 +308,13 @@ func (client *VirtualNetworkRulesClient) listByServerCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServerHandleResponse handles the ListByServer response.
 func (client *VirtualNetworkRulesClient) listByServerHandleResponse(resp *http.Response) (VirtualNetworkRulesClientListByServerResponse, error) {
-	result := VirtualNetworkRulesClientListByServerResponse{RawResponse: resp}
+	result := VirtualNetworkRulesClientListByServerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.VirtualNetworkRuleListResult); err != nil {
 		return VirtualNetworkRulesClientListByServerResponse{}, err
 	}

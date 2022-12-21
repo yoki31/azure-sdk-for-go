@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,116 +12,128 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcemover/armresourcemover"
 )
 
-// x-ms-original-file: specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_List.json
-func ExampleMoveResourcesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_List.json
+func ExampleMoveResourcesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresourcemover.NewMoveResourcesClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<move-collection-name>",
-		&armresourcemover.MoveResourcesListOptions{Filter: nil})
-	for pager.NextPage(ctx) {
-		if err := pager.Err(); err != nil {
+	client, err := armresourcemover.NewMoveResourcesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("rg1",
+		"movecollection1",
+		&armresourcemover.MoveResourcesClientListOptions{Filter: nil})
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("MoveResource.ID: %s\n", *v.ID)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Create.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Create.json
 func ExampleMoveResourcesClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresourcemover.NewMoveResourcesClient("<subscription-id>", cred, nil)
+	client, err := armresourcemover.NewMoveResourcesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<move-collection-name>",
-		"<move-resource-name>",
-		&armresourcemover.MoveResourcesBeginCreateOptions{Body: &armresourcemover.MoveResource{
+		"rg1",
+		"movecollection1",
+		"moveresourcename1",
+		&armresourcemover.MoveResourcesClientBeginCreateOptions{Body: &armresourcemover.MoveResource{
 			Properties: &armresourcemover.MoveResourceProperties{
 				DependsOnOverrides: []*armresourcemover.MoveResourceDependencyOverride{
 					{
-						ID:       to.StringPtr("<id>"),
-						TargetID: to.StringPtr("<target-id>"),
+						ID:       to.Ptr("/subscriptions/c4488a3f-a7f7-4ad4-aa72-0e1f4d9c0756/resourceGroups/eastusRG/providers/Microsoft.Network/networkInterfaces/eastusvm140"),
+						TargetID: to.Ptr("/subscriptions/c4488a3f-a7f7-4ad4-aa72-0e1f4d9c0756/resourceGroups/westusRG/providers/Microsoft.Network/networkInterfaces/eastusvm140"),
 					}},
 				ResourceSettings: &armresourcemover.VirtualMachineResourceSettings{
-					ResourceSettings: armresourcemover.ResourceSettings{
-						ResourceType:       to.StringPtr("<resource-type>"),
-						TargetResourceName: to.StringPtr("<target-resource-name>"),
-					},
-					TargetAvailabilitySetID: to.StringPtr("<target-availability-set-id>"),
-					TargetAvailabilityZone:  armresourcemover.TargetAvailabilityZoneTwo.ToPtr(),
-					TargetVMSize:            to.StringPtr("<target-vmsize>"),
+					ResourceType:            to.Ptr("Microsoft.Compute/virtualMachines"),
+					TargetResourceName:      to.Ptr("westusvm1"),
+					TargetAvailabilitySetID: to.Ptr("/subscriptions/subid/resourceGroups/eastusRG/providers/Microsoft.Compute/availabilitySets/avset1"),
+					TargetAvailabilityZone:  to.Ptr(armresourcemover.TargetAvailabilityZoneTwo),
 					UserManagedIdentities: []*string{
-						to.StringPtr("/subscriptions/subid/resourceGroups/eastusRG/providers/Microsoft.ManagedIdentity/userAssignedIdentities/umi1")},
+						to.Ptr("/subscriptions/subid/resourceGroups/eastusRG/providers/Microsoft.ManagedIdentity/userAssignedIdentities/umi1")},
 				},
-				SourceID: to.StringPtr("<source-id>"),
+				SourceID: to.Ptr("/subscriptions/subid/resourceGroups/eastusRG/providers/Microsoft.Compute/virtualMachines/eastusvm1"),
 			},
 		},
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("MoveResource.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Delete.json
 func ExampleMoveResourcesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresourcemover.NewMoveResourcesClient("<subscription-id>", cred, nil)
+	client, err := armresourcemover.NewMoveResourcesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<move-collection-name>",
-		"<move-resource-name>",
+		"rg1",
+		"movecollection1",
+		"moveresourcename1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("OperationStatus.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/MoveResources_Get.json
 func ExampleMoveResourcesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresourcemover.NewMoveResourcesClient("<subscription-id>", cred, nil)
+	client, err := armresourcemover.NewMoveResourcesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<move-collection-name>",
-		"<move-resource-name>",
+		"rg1",
+		"movecollection1",
+		"moveresourcename1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("MoveResource.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }

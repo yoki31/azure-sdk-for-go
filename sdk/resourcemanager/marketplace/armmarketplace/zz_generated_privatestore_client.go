@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type PrivateStoreClient struct {
 // NewPrivateStoreClient creates a new instance of PrivateStoreClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPrivateStoreClient(credential azcore.TokenCredential, options *arm.ClientOptions) *PrivateStoreClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPrivateStoreClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*PrivateStoreClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PrivateStoreClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // AcknowledgeOfferNotification - Acknowledge notification for offer
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // offerID - The offer ID to update or delete
 // options - PrivateStoreClientAcknowledgeOfferNotificationOptions contains the optional parameters for the PrivateStoreClient.AcknowledgeOfferNotification
@@ -64,7 +70,7 @@ func (client *PrivateStoreClient) AcknowledgeOfferNotification(ctx context.Conte
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PrivateStoreClientAcknowledgeOfferNotificationResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreClientAcknowledgeOfferNotificationResponse{RawResponse: resp}, nil
+	return PrivateStoreClientAcknowledgeOfferNotificationResponse{}, nil
 }
 
 // acknowledgeOfferNotificationCreateRequest creates the AcknowledgeOfferNotification request.
@@ -83,9 +89,9 @@ func (client *PrivateStoreClient) acknowledgeOfferNotificationCreateRequest(ctx 
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -94,6 +100,7 @@ func (client *PrivateStoreClient) acknowledgeOfferNotificationCreateRequest(ctx 
 
 // AdminRequestApprovalsList - Get list of admin request approvals
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientAdminRequestApprovalsListOptions contains the optional parameters for the PrivateStoreClient.AdminRequestApprovalsList
 // method.
@@ -124,15 +131,15 @@ func (client *PrivateStoreClient) adminRequestApprovalsListCreateRequest(ctx con
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // adminRequestApprovalsListHandleResponse handles the AdminRequestApprovalsList response.
 func (client *PrivateStoreClient) adminRequestApprovalsListHandleResponse(resp *http.Response) (PrivateStoreClientAdminRequestApprovalsListResponse, error) {
-	result := PrivateStoreClientAdminRequestApprovalsListResponse{RawResponse: resp}
+	result := PrivateStoreClientAdminRequestApprovalsListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AdminRequestApprovalsList); err != nil {
 		return PrivateStoreClientAdminRequestApprovalsListResponse{}, err
 	}
@@ -141,6 +148,7 @@ func (client *PrivateStoreClient) adminRequestApprovalsListHandleResponse(resp *
 
 // BillingAccounts - Tenant billing accounts names
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientBillingAccountsOptions contains the optional parameters for the PrivateStoreClient.BillingAccounts
 // method.
@@ -171,15 +179,15 @@ func (client *PrivateStoreClient) billingAccountsCreateRequest(ctx context.Conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // billingAccountsHandleResponse handles the BillingAccounts response.
 func (client *PrivateStoreClient) billingAccountsHandleResponse(resp *http.Response) (PrivateStoreClientBillingAccountsResponse, error) {
-	result := PrivateStoreClientBillingAccountsResponse{RawResponse: resp}
+	result := PrivateStoreClientBillingAccountsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BillingAccountsResponse); err != nil {
 		return PrivateStoreClientBillingAccountsResponse{}, err
 	}
@@ -188,6 +196,7 @@ func (client *PrivateStoreClient) billingAccountsHandleResponse(resp *http.Respo
 
 // BulkCollectionsAction - Perform an action on bulk collections
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientBulkCollectionsActionOptions contains the optional parameters for the PrivateStoreClient.BulkCollectionsAction
 // method.
@@ -218,9 +227,9 @@ func (client *PrivateStoreClient) bulkCollectionsActionCreateRequest(ctx context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -229,7 +238,7 @@ func (client *PrivateStoreClient) bulkCollectionsActionCreateRequest(ctx context
 
 // bulkCollectionsActionHandleResponse handles the BulkCollectionsAction response.
 func (client *PrivateStoreClient) bulkCollectionsActionHandleResponse(resp *http.Response) (PrivateStoreClientBulkCollectionsActionResponse, error) {
-	result := PrivateStoreClientBulkCollectionsActionResponse{RawResponse: resp}
+	result := PrivateStoreClientBulkCollectionsActionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BulkCollectionsResponse); err != nil {
 		return PrivateStoreClientBulkCollectionsActionResponse{}, err
 	}
@@ -239,6 +248,7 @@ func (client *PrivateStoreClient) bulkCollectionsActionHandleResponse(resp *http
 // CollectionsToSubscriptionsMapping - For a given subscriptions list, the API will return a map of collections and the related
 // subscriptions from the supplied list.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientCollectionsToSubscriptionsMappingOptions contains the optional parameters for the PrivateStoreClient.CollectionsToSubscriptionsMapping
 // method.
@@ -269,9 +279,9 @@ func (client *PrivateStoreClient) collectionsToSubscriptionsMappingCreateRequest
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -280,7 +290,7 @@ func (client *PrivateStoreClient) collectionsToSubscriptionsMappingCreateRequest
 
 // collectionsToSubscriptionsMappingHandleResponse handles the CollectionsToSubscriptionsMapping response.
 func (client *PrivateStoreClient) collectionsToSubscriptionsMappingHandleResponse(resp *http.Response) (PrivateStoreClientCollectionsToSubscriptionsMappingResponse, error) {
-	result := PrivateStoreClientCollectionsToSubscriptionsMappingResponse{RawResponse: resp}
+	result := PrivateStoreClientCollectionsToSubscriptionsMappingResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CollectionsToSubscriptionsMappingResponse); err != nil {
 		return PrivateStoreClientCollectionsToSubscriptionsMappingResponse{}, err
 	}
@@ -289,6 +299,7 @@ func (client *PrivateStoreClient) collectionsToSubscriptionsMappingHandleRespons
 
 // CreateApprovalRequest - Create approval request
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // requestApprovalID - The request approval ID to get create or update
 // options - PrivateStoreClientCreateApprovalRequestOptions contains the optional parameters for the PrivateStoreClient.CreateApprovalRequest
@@ -324,9 +335,9 @@ func (client *PrivateStoreClient) createApprovalRequestCreateRequest(ctx context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -335,7 +346,7 @@ func (client *PrivateStoreClient) createApprovalRequestCreateRequest(ctx context
 
 // createApprovalRequestHandleResponse handles the CreateApprovalRequest response.
 func (client *PrivateStoreClient) createApprovalRequestHandleResponse(resp *http.Response) (PrivateStoreClientCreateApprovalRequestResponse, error) {
-	result := PrivateStoreClientCreateApprovalRequestResponse{RawResponse: resp}
+	result := PrivateStoreClientCreateApprovalRequestResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RequestApprovalResource); err != nil {
 		return PrivateStoreClientCreateApprovalRequestResponse{}, err
 	}
@@ -344,6 +355,7 @@ func (client *PrivateStoreClient) createApprovalRequestHandleResponse(resp *http
 
 // CreateOrUpdate - Changes private store properties
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientCreateOrUpdateOptions contains the optional parameters for the PrivateStoreClient.CreateOrUpdate
 // method.
@@ -359,7 +371,7 @@ func (client *PrivateStoreClient) CreateOrUpdate(ctx context.Context, privateSto
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PrivateStoreClientCreateOrUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreClientCreateOrUpdateResponse{RawResponse: resp}, nil
+	return PrivateStoreClientCreateOrUpdateResponse{}, nil
 }
 
 // createOrUpdateCreateRequest creates the CreateOrUpdate request.
@@ -374,9 +386,9 @@ func (client *PrivateStoreClient) createOrUpdateCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -385,6 +397,7 @@ func (client *PrivateStoreClient) createOrUpdateCreateRequest(ctx context.Contex
 
 // Delete - Deletes the private store. All that is not saved will be lost.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientDeleteOptions contains the optional parameters for the PrivateStoreClient.Delete method.
 func (client *PrivateStoreClient) Delete(ctx context.Context, privateStoreID string, options *PrivateStoreClientDeleteOptions) (PrivateStoreClientDeleteResponse, error) {
@@ -399,7 +412,7 @@ func (client *PrivateStoreClient) Delete(ctx context.Context, privateStoreID str
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return PrivateStoreClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreClientDeleteResponse{RawResponse: resp}, nil
+	return PrivateStoreClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -414,14 +427,66 @@ func (client *PrivateStoreClient) deleteCreateRequest(ctx context.Context, priva
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
+}
+
+// FetchAllSubscriptionsInTenant - Fetch all subscriptions in tenant, only for marketplace admin
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
+// privateStoreID - The store ID - must use the tenant ID
+// options - PrivateStoreClientFetchAllSubscriptionsInTenantOptions contains the optional parameters for the PrivateStoreClient.FetchAllSubscriptionsInTenant
+// method.
+func (client *PrivateStoreClient) FetchAllSubscriptionsInTenant(ctx context.Context, privateStoreID string, options *PrivateStoreClientFetchAllSubscriptionsInTenantOptions) (PrivateStoreClientFetchAllSubscriptionsInTenantResponse, error) {
+	req, err := client.fetchAllSubscriptionsInTenantCreateRequest(ctx, privateStoreID, options)
+	if err != nil {
+		return PrivateStoreClientFetchAllSubscriptionsInTenantResponse{}, err
+	}
+	resp, err := client.pl.Do(req)
+	if err != nil {
+		return PrivateStoreClientFetchAllSubscriptionsInTenantResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return PrivateStoreClientFetchAllSubscriptionsInTenantResponse{}, runtime.NewResponseError(resp)
+	}
+	return client.fetchAllSubscriptionsInTenantHandleResponse(resp)
+}
+
+// fetchAllSubscriptionsInTenantCreateRequest creates the FetchAllSubscriptionsInTenant request.
+func (client *PrivateStoreClient) fetchAllSubscriptionsInTenantCreateRequest(ctx context.Context, privateStoreID string, options *PrivateStoreClientFetchAllSubscriptionsInTenantOptions) (*policy.Request, error) {
+	urlPath := "/providers/Microsoft.Marketplace/privateStores/{privateStoreId}/fetchAllSubscriptionsInTenant"
+	if privateStoreID == "" {
+		return nil, errors.New("parameter privateStoreID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{privateStoreId}", url.PathEscape(privateStoreID))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
+	if err != nil {
+		return nil, err
+	}
+	reqQP := req.Raw().URL.Query()
+	reqQP.Set("api-version", "2021-12-01")
+	req.Raw().URL.RawQuery = reqQP.Encode()
+	if options != nil && options.NextPageToken != nil {
+		req.Raw().Header["next-page-token"] = []string{*options.NextPageToken}
+	}
+	req.Raw().Header["Accept"] = []string{"application/json"}
+	return req, nil
+}
+
+// fetchAllSubscriptionsInTenantHandleResponse handles the FetchAllSubscriptionsInTenant response.
+func (client *PrivateStoreClient) fetchAllSubscriptionsInTenantHandleResponse(resp *http.Response) (PrivateStoreClientFetchAllSubscriptionsInTenantResponse, error) {
+	result := PrivateStoreClientFetchAllSubscriptionsInTenantResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.SubscriptionsResponse); err != nil {
+		return PrivateStoreClientFetchAllSubscriptionsInTenantResponse{}, err
+	}
+	return result, nil
 }
 
 // Get - Get information about the private store
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientGetOptions contains the optional parameters for the PrivateStoreClient.Get method.
 func (client *PrivateStoreClient) Get(ctx context.Context, privateStoreID string, options *PrivateStoreClientGetOptions) (PrivateStoreClientGetResponse, error) {
@@ -451,15 +516,15 @@ func (client *PrivateStoreClient) getCreateRequest(ctx context.Context, privateS
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *PrivateStoreClient) getHandleResponse(resp *http.Response) (PrivateStoreClientGetResponse, error) {
-	result := PrivateStoreClientGetResponse{RawResponse: resp}
+	result := PrivateStoreClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateStore); err != nil {
 		return PrivateStoreClientGetResponse{}, err
 	}
@@ -468,6 +533,7 @@ func (client *PrivateStoreClient) getHandleResponse(resp *http.Response) (Privat
 
 // GetAdminRequestApproval - Get open approval requests
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // adminRequestApprovalID - The admin request approval ID to get create or update
 // publisherID - The publisher id of this offer.
@@ -504,16 +570,16 @@ func (client *PrivateStoreClient) getAdminRequestApprovalCreateRequest(ctx conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	reqQP.Set("publisherId", publisherID)
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAdminRequestApprovalHandleResponse handles the GetAdminRequestApproval response.
 func (client *PrivateStoreClient) getAdminRequestApprovalHandleResponse(resp *http.Response) (PrivateStoreClientGetAdminRequestApprovalResponse, error) {
-	result := PrivateStoreClientGetAdminRequestApprovalResponse{RawResponse: resp}
+	result := PrivateStoreClientGetAdminRequestApprovalResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AdminRequestApprovalsResource); err != nil {
 		return PrivateStoreClientGetAdminRequestApprovalResponse{}, err
 	}
@@ -522,6 +588,7 @@ func (client *PrivateStoreClient) getAdminRequestApprovalHandleResponse(resp *ht
 
 // GetApprovalRequestsList - Get all open approval requests of current user
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientGetApprovalRequestsListOptions contains the optional parameters for the PrivateStoreClient.GetApprovalRequestsList
 // method.
@@ -552,15 +619,15 @@ func (client *PrivateStoreClient) getApprovalRequestsListCreateRequest(ctx conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getApprovalRequestsListHandleResponse handles the GetApprovalRequestsList response.
 func (client *PrivateStoreClient) getApprovalRequestsListHandleResponse(resp *http.Response) (PrivateStoreClientGetApprovalRequestsListResponse, error) {
-	result := PrivateStoreClientGetApprovalRequestsListResponse{RawResponse: resp}
+	result := PrivateStoreClientGetApprovalRequestsListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RequestApprovalsList); err != nil {
 		return PrivateStoreClientGetApprovalRequestsListResponse{}, err
 	}
@@ -569,6 +636,7 @@ func (client *PrivateStoreClient) getApprovalRequestsListHandleResponse(resp *ht
 
 // GetRequestApproval - Get open request approval details
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // requestApprovalID - The request approval ID to get create or update
 // options - PrivateStoreClientGetRequestApprovalOptions contains the optional parameters for the PrivateStoreClient.GetRequestApproval
@@ -604,34 +672,51 @@ func (client *PrivateStoreClient) getRequestApprovalCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getRequestApprovalHandleResponse handles the GetRequestApproval response.
 func (client *PrivateStoreClient) getRequestApprovalHandleResponse(resp *http.Response) (PrivateStoreClientGetRequestApprovalResponse, error) {
-	result := PrivateStoreClientGetRequestApprovalResponse{RawResponse: resp}
+	result := PrivateStoreClientGetRequestApprovalResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RequestApprovalResource); err != nil {
 		return PrivateStoreClientGetRequestApprovalResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets the list of available private stores.
+// NewListPager - Gets the list of available private stores.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // options - PrivateStoreClientListOptions contains the optional parameters for the PrivateStoreClient.List method.
-func (client *PrivateStoreClient) List(options *PrivateStoreClientListOptions) *PrivateStoreClientListPager {
-	return &PrivateStoreClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *PrivateStoreClient) NewListPager(options *PrivateStoreClientListOptions) *runtime.Pager[PrivateStoreClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[PrivateStoreClientListResponse]{
+		More: func(page PrivateStoreClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp PrivateStoreClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PrivateStoreList.NextLink)
+		Fetcher: func(ctx context.Context, page *PrivateStoreClientListResponse) (PrivateStoreClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return PrivateStoreClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return PrivateStoreClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return PrivateStoreClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -642,26 +727,174 @@ func (client *PrivateStoreClient) listCreateRequest(ctx context.Context, options
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	if options != nil && options.UseCache != nil {
 		reqQP.Set("use-cache", *options.UseCache)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *PrivateStoreClient) listHandleResponse(resp *http.Response) (PrivateStoreClientListResponse, error) {
-	result := PrivateStoreClientListResponse{RawResponse: resp}
+	result := PrivateStoreClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateStoreList); err != nil {
 		return PrivateStoreClientListResponse{}, err
 	}
 	return result, nil
 }
 
+// ListNewPlansNotifications - List new plans notifications
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
+// privateStoreID - The store ID - must use the tenant ID
+// options - PrivateStoreClientListNewPlansNotificationsOptions contains the optional parameters for the PrivateStoreClient.ListNewPlansNotifications
+// method.
+func (client *PrivateStoreClient) ListNewPlansNotifications(ctx context.Context, privateStoreID string, options *PrivateStoreClientListNewPlansNotificationsOptions) (PrivateStoreClientListNewPlansNotificationsResponse, error) {
+	req, err := client.listNewPlansNotificationsCreateRequest(ctx, privateStoreID, options)
+	if err != nil {
+		return PrivateStoreClientListNewPlansNotificationsResponse{}, err
+	}
+	resp, err := client.pl.Do(req)
+	if err != nil {
+		return PrivateStoreClientListNewPlansNotificationsResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return PrivateStoreClientListNewPlansNotificationsResponse{}, runtime.NewResponseError(resp)
+	}
+	return client.listNewPlansNotificationsHandleResponse(resp)
+}
+
+// listNewPlansNotificationsCreateRequest creates the ListNewPlansNotifications request.
+func (client *PrivateStoreClient) listNewPlansNotificationsCreateRequest(ctx context.Context, privateStoreID string, options *PrivateStoreClientListNewPlansNotificationsOptions) (*policy.Request, error) {
+	urlPath := "/providers/Microsoft.Marketplace/privateStores/{privateStoreId}/listNewPlansNotifications"
+	if privateStoreID == "" {
+		return nil, errors.New("parameter privateStoreID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{privateStoreId}", url.PathEscape(privateStoreID))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
+	if err != nil {
+		return nil, err
+	}
+	reqQP := req.Raw().URL.Query()
+	reqQP.Set("api-version", "2021-12-01")
+	req.Raw().URL.RawQuery = reqQP.Encode()
+	req.Raw().Header["Accept"] = []string{"application/json"}
+	return req, nil
+}
+
+// listNewPlansNotificationsHandleResponse handles the ListNewPlansNotifications response.
+func (client *PrivateStoreClient) listNewPlansNotificationsHandleResponse(resp *http.Response) (PrivateStoreClientListNewPlansNotificationsResponse, error) {
+	result := PrivateStoreClientListNewPlansNotificationsResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.NewPlansNotificationsList); err != nil {
+		return PrivateStoreClientListNewPlansNotificationsResponse{}, err
+	}
+	return result, nil
+}
+
+// ListStopSellOffersPlansNotifications - List stop sell notifications for both stop sell offers and stop sell plans
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
+// privateStoreID - The store ID - must use the tenant ID
+// options - PrivateStoreClientListStopSellOffersPlansNotificationsOptions contains the optional parameters for the PrivateStoreClient.ListStopSellOffersPlansNotifications
+// method.
+func (client *PrivateStoreClient) ListStopSellOffersPlansNotifications(ctx context.Context, privateStoreID string, options *PrivateStoreClientListStopSellOffersPlansNotificationsOptions) (PrivateStoreClientListStopSellOffersPlansNotificationsResponse, error) {
+	req, err := client.listStopSellOffersPlansNotificationsCreateRequest(ctx, privateStoreID, options)
+	if err != nil {
+		return PrivateStoreClientListStopSellOffersPlansNotificationsResponse{}, err
+	}
+	resp, err := client.pl.Do(req)
+	if err != nil {
+		return PrivateStoreClientListStopSellOffersPlansNotificationsResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return PrivateStoreClientListStopSellOffersPlansNotificationsResponse{}, runtime.NewResponseError(resp)
+	}
+	return client.listStopSellOffersPlansNotificationsHandleResponse(resp)
+}
+
+// listStopSellOffersPlansNotificationsCreateRequest creates the ListStopSellOffersPlansNotifications request.
+func (client *PrivateStoreClient) listStopSellOffersPlansNotificationsCreateRequest(ctx context.Context, privateStoreID string, options *PrivateStoreClientListStopSellOffersPlansNotificationsOptions) (*policy.Request, error) {
+	urlPath := "/providers/Microsoft.Marketplace/privateStores/{privateStoreId}/listStopSellOffersPlansNotifications"
+	if privateStoreID == "" {
+		return nil, errors.New("parameter privateStoreID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{privateStoreId}", url.PathEscape(privateStoreID))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
+	if err != nil {
+		return nil, err
+	}
+	reqQP := req.Raw().URL.Query()
+	reqQP.Set("api-version", "2021-12-01")
+	req.Raw().URL.RawQuery = reqQP.Encode()
+	req.Raw().Header["Accept"] = []string{"application/json"}
+	if options != nil && options.StopSellSubscriptions != nil {
+		return req, runtime.MarshalAsJSON(req, *options.StopSellSubscriptions)
+	}
+	return req, nil
+}
+
+// listStopSellOffersPlansNotificationsHandleResponse handles the ListStopSellOffersPlansNotifications response.
+func (client *PrivateStoreClient) listStopSellOffersPlansNotificationsHandleResponse(resp *http.Response) (PrivateStoreClientListStopSellOffersPlansNotificationsResponse, error) {
+	result := PrivateStoreClientListStopSellOffersPlansNotificationsResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.StopSellOffersPlansNotificationsList); err != nil {
+		return PrivateStoreClientListStopSellOffersPlansNotificationsResponse{}, err
+	}
+	return result, nil
+}
+
+// ListSubscriptionsContext - List all the subscriptions in the private store context
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
+// privateStoreID - The store ID - must use the tenant ID
+// options - PrivateStoreClientListSubscriptionsContextOptions contains the optional parameters for the PrivateStoreClient.ListSubscriptionsContext
+// method.
+func (client *PrivateStoreClient) ListSubscriptionsContext(ctx context.Context, privateStoreID string, options *PrivateStoreClientListSubscriptionsContextOptions) (PrivateStoreClientListSubscriptionsContextResponse, error) {
+	req, err := client.listSubscriptionsContextCreateRequest(ctx, privateStoreID, options)
+	if err != nil {
+		return PrivateStoreClientListSubscriptionsContextResponse{}, err
+	}
+	resp, err := client.pl.Do(req)
+	if err != nil {
+		return PrivateStoreClientListSubscriptionsContextResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return PrivateStoreClientListSubscriptionsContextResponse{}, runtime.NewResponseError(resp)
+	}
+	return client.listSubscriptionsContextHandleResponse(resp)
+}
+
+// listSubscriptionsContextCreateRequest creates the ListSubscriptionsContext request.
+func (client *PrivateStoreClient) listSubscriptionsContextCreateRequest(ctx context.Context, privateStoreID string, options *PrivateStoreClientListSubscriptionsContextOptions) (*policy.Request, error) {
+	urlPath := "/providers/Microsoft.Marketplace/privateStores/{privateStoreId}/listSubscriptionsContext"
+	if privateStoreID == "" {
+		return nil, errors.New("parameter privateStoreID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{privateStoreId}", url.PathEscape(privateStoreID))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
+	if err != nil {
+		return nil, err
+	}
+	reqQP := req.Raw().URL.Query()
+	reqQP.Set("api-version", "2021-12-01")
+	req.Raw().URL.RawQuery = reqQP.Encode()
+	req.Raw().Header["Accept"] = []string{"application/json"}
+	return req, nil
+}
+
+// listSubscriptionsContextHandleResponse handles the ListSubscriptionsContext response.
+func (client *PrivateStoreClient) listSubscriptionsContextHandleResponse(resp *http.Response) (PrivateStoreClientListSubscriptionsContextResponse, error) {
+	result := PrivateStoreClientListSubscriptionsContextResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.SubscriptionsContextList); err != nil {
+		return PrivateStoreClientListSubscriptionsContextResponse{}, err
+	}
+	return result, nil
+}
+
 // QueryApprovedPlans - Get map of plans and related approved subscriptions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientQueryApprovedPlansOptions contains the optional parameters for the PrivateStoreClient.QueryApprovedPlans
 // method.
@@ -692,9 +925,9 @@ func (client *PrivateStoreClient) queryApprovedPlansCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -703,7 +936,7 @@ func (client *PrivateStoreClient) queryApprovedPlansCreateRequest(ctx context.Co
 
 // queryApprovedPlansHandleResponse handles the QueryApprovedPlans response.
 func (client *PrivateStoreClient) queryApprovedPlansHandleResponse(resp *http.Response) (PrivateStoreClientQueryApprovedPlansResponse, error) {
-	result := PrivateStoreClientQueryApprovedPlansResponse{RawResponse: resp}
+	result := PrivateStoreClientQueryApprovedPlansResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.QueryApprovedPlansResponse); err != nil {
 		return PrivateStoreClientQueryApprovedPlansResponse{}, err
 	}
@@ -712,6 +945,7 @@ func (client *PrivateStoreClient) queryApprovedPlansHandleResponse(resp *http.Re
 
 // QueryNotificationsState - Get private store notifications state
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientQueryNotificationsStateOptions contains the optional parameters for the PrivateStoreClient.QueryNotificationsState
 // method.
@@ -742,15 +976,15 @@ func (client *PrivateStoreClient) queryNotificationsStateCreateRequest(ctx conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // queryNotificationsStateHandleResponse handles the QueryNotificationsState response.
 func (client *PrivateStoreClient) queryNotificationsStateHandleResponse(resp *http.Response) (PrivateStoreClientQueryNotificationsStateResponse, error) {
-	result := PrivateStoreClientQueryNotificationsStateResponse{RawResponse: resp}
+	result := PrivateStoreClientQueryNotificationsStateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PrivateStoreNotificationsState); err != nil {
 		return PrivateStoreClientQueryNotificationsStateResponse{}, err
 	}
@@ -759,6 +993,7 @@ func (client *PrivateStoreClient) queryNotificationsStateHandleResponse(resp *ht
 
 // QueryOffers - List of offers, regardless the collections
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreClientQueryOffersOptions contains the optional parameters for the PrivateStoreClient.QueryOffers
 // method.
@@ -789,15 +1024,15 @@ func (client *PrivateStoreClient) queryOffersCreateRequest(ctx context.Context, 
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // queryOffersHandleResponse handles the QueryOffers response.
 func (client *PrivateStoreClient) queryOffersHandleResponse(resp *http.Response) (PrivateStoreClientQueryOffersResponse, error) {
-	result := PrivateStoreClientQueryOffersResponse{RawResponse: resp}
+	result := PrivateStoreClientQueryOffersResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.QueryOffers); err != nil {
 		return PrivateStoreClientQueryOffersResponse{}, err
 	}
@@ -806,6 +1041,7 @@ func (client *PrivateStoreClient) queryOffersHandleResponse(resp *http.Response)
 
 // QueryRequestApproval - Get request statuses foreach plan, this api is used as a complex GET action.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // requestApprovalID - The request approval ID to get create or update
 // options - PrivateStoreClientQueryRequestApprovalOptions contains the optional parameters for the PrivateStoreClient.QueryRequestApproval
@@ -841,9 +1077,9 @@ func (client *PrivateStoreClient) queryRequestApprovalCreateRequest(ctx context.
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -852,7 +1088,7 @@ func (client *PrivateStoreClient) queryRequestApprovalCreateRequest(ctx context.
 
 // queryRequestApprovalHandleResponse handles the QueryRequestApproval response.
 func (client *PrivateStoreClient) queryRequestApprovalHandleResponse(resp *http.Response) (PrivateStoreClientQueryRequestApprovalResponse, error) {
-	result := PrivateStoreClientQueryRequestApprovalResponse{RawResponse: resp}
+	result := PrivateStoreClientQueryRequestApprovalResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.QueryRequestApproval); err != nil {
 		return PrivateStoreClientQueryRequestApprovalResponse{}, err
 	}
@@ -861,6 +1097,7 @@ func (client *PrivateStoreClient) queryRequestApprovalHandleResponse(resp *http.
 
 // UpdateAdminRequestApproval - Update the admin action, weather the request is approved or rejected and the approved plans
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // adminRequestApprovalID - The admin request approval ID to get create or update
 // options - PrivateStoreClientUpdateAdminRequestApprovalOptions contains the optional parameters for the PrivateStoreClient.UpdateAdminRequestApproval
@@ -896,9 +1133,9 @@ func (client *PrivateStoreClient) updateAdminRequestApprovalCreateRequest(ctx co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -907,7 +1144,7 @@ func (client *PrivateStoreClient) updateAdminRequestApprovalCreateRequest(ctx co
 
 // updateAdminRequestApprovalHandleResponse handles the UpdateAdminRequestApproval response.
 func (client *PrivateStoreClient) updateAdminRequestApprovalHandleResponse(resp *http.Response) (PrivateStoreClientUpdateAdminRequestApprovalResponse, error) {
-	result := PrivateStoreClientUpdateAdminRequestApprovalResponse{RawResponse: resp}
+	result := PrivateStoreClientUpdateAdminRequestApprovalResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AdminRequestApprovalsResource); err != nil {
 		return PrivateStoreClientUpdateAdminRequestApprovalResponse{}, err
 	}
@@ -916,6 +1153,7 @@ func (client *PrivateStoreClient) updateAdminRequestApprovalHandleResponse(resp 
 
 // WithdrawPlan - Withdraw a user request approval on specific plan
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // requestApprovalID - The request approval ID to get create or update
 // options - PrivateStoreClientWithdrawPlanOptions contains the optional parameters for the PrivateStoreClient.WithdrawPlan
@@ -932,7 +1170,7 @@ func (client *PrivateStoreClient) WithdrawPlan(ctx context.Context, privateStore
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PrivateStoreClientWithdrawPlanResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreClientWithdrawPlanResponse{RawResponse: resp}, nil
+	return PrivateStoreClientWithdrawPlanResponse{}, nil
 }
 
 // withdrawPlanCreateRequest creates the WithdrawPlan request.
@@ -951,9 +1189,9 @@ func (client *PrivateStoreClient) withdrawPlanCreateRequest(ctx context.Context,
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}

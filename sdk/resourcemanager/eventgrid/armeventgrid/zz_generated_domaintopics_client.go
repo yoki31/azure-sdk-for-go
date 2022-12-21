@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,49 +36,49 @@ type DomainTopicsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDomainTopicsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DomainTopicsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDomainTopicsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DomainTopicsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DomainTopicsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Asynchronously creates or updates a new domain topic with the specified parameters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 // resourceGroupName - The name of the resource group within the user's subscription.
 // domainName - Name of the domain.
 // domainTopicName - Name of the domain topic.
 // options - DomainTopicsClientBeginCreateOrUpdateOptions contains the optional parameters for the DomainTopicsClient.BeginCreateOrUpdate
 // method.
-func (client *DomainTopicsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginCreateOrUpdateOptions) (DomainTopicsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, domainName, domainTopicName, options)
-	if err != nil {
-		return DomainTopicsClientCreateOrUpdatePollerResponse{}, err
+func (client *DomainTopicsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginCreateOrUpdateOptions) (*runtime.Poller[DomainTopicsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, domainName, domainTopicName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DomainTopicsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DomainTopicsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DomainTopicsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DomainTopicsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return DomainTopicsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &DomainTopicsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Asynchronously creates or updates a new domain topic with the specified parameters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 func (client *DomainTopicsClient) createOrUpdate(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, domainName, domainTopicName, options)
 	if err != nil {
@@ -117,39 +118,35 @@ func (client *DomainTopicsClient) createOrUpdateCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-12-01")
+	reqQP.Set("api-version", "2022-06-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginDelete - Delete existing domain topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 // resourceGroupName - The name of the resource group within the user's subscription.
 // domainName - Name of the domain.
 // domainTopicName - Name of the domain topic.
 // options - DomainTopicsClientBeginDeleteOptions contains the optional parameters for the DomainTopicsClient.BeginDelete
 // method.
-func (client *DomainTopicsClient) BeginDelete(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginDeleteOptions) (DomainTopicsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, domainName, domainTopicName, options)
-	if err != nil {
-		return DomainTopicsClientDeletePollerResponse{}, err
+func (client *DomainTopicsClient) BeginDelete(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginDeleteOptions) (*runtime.Poller[DomainTopicsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, domainName, domainTopicName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DomainTopicsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DomainTopicsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DomainTopicsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DomainTopicsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return DomainTopicsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &DomainTopicsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete existing domain topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 func (client *DomainTopicsClient) deleteOperation(ctx context.Context, resourceGroupName string, domainName string, domainTopicName string, options *DomainTopicsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, domainName, domainTopicName, options)
 	if err != nil {
@@ -189,13 +186,14 @@ func (client *DomainTopicsClient) deleteCreateRequest(ctx context.Context, resou
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-12-01")
+	reqQP.Set("api-version", "2022-06-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	return req, nil
 }
 
 // Get - Get properties of a domain topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 // resourceGroupName - The name of the resource group within the user's subscription.
 // domainName - Name of the domain.
 // domainTopicName - Name of the topic.
@@ -239,37 +237,54 @@ func (client *DomainTopicsClient) getCreateRequest(ctx context.Context, resource
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-12-01")
+	reqQP.Set("api-version", "2022-06-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DomainTopicsClient) getHandleResponse(resp *http.Response) (DomainTopicsClientGetResponse, error) {
-	result := DomainTopicsClientGetResponse{RawResponse: resp}
+	result := DomainTopicsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DomainTopic); err != nil {
 		return DomainTopicsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByDomain - List all the topics in a domain.
+// NewListByDomainPager - List all the topics in a domain.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-06-15
 // resourceGroupName - The name of the resource group within the user's subscription.
 // domainName - Domain name.
 // options - DomainTopicsClientListByDomainOptions contains the optional parameters for the DomainTopicsClient.ListByDomain
 // method.
-func (client *DomainTopicsClient) ListByDomain(resourceGroupName string, domainName string, options *DomainTopicsClientListByDomainOptions) *DomainTopicsClientListByDomainPager {
-	return &DomainTopicsClientListByDomainPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByDomainCreateRequest(ctx, resourceGroupName, domainName, options)
+func (client *DomainTopicsClient) NewListByDomainPager(resourceGroupName string, domainName string, options *DomainTopicsClientListByDomainOptions) *runtime.Pager[DomainTopicsClientListByDomainResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DomainTopicsClientListByDomainResponse]{
+		More: func(page DomainTopicsClientListByDomainResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DomainTopicsClientListByDomainResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DomainTopicsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DomainTopicsClientListByDomainResponse) (DomainTopicsClientListByDomainResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByDomainCreateRequest(ctx, resourceGroupName, domainName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DomainTopicsClientListByDomainResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DomainTopicsClientListByDomainResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DomainTopicsClientListByDomainResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByDomainHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByDomainCreateRequest creates the ListByDomain request.
@@ -292,7 +307,7 @@ func (client *DomainTopicsClient) listByDomainCreateRequest(ctx context.Context,
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-12-01")
+	reqQP.Set("api-version", "2022-06-15")
 	if options != nil && options.Filter != nil {
 		reqQP.Set("$filter", *options.Filter)
 	}
@@ -300,13 +315,13 @@ func (client *DomainTopicsClient) listByDomainCreateRequest(ctx context.Context,
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByDomainHandleResponse handles the ListByDomain response.
 func (client *DomainTopicsClient) listByDomainHandleResponse(resp *http.Response) (DomainTopicsClientListByDomainResponse, error) {
-	result := DomainTopicsClientListByDomainResponse{RawResponse: resp}
+	result := DomainTopicsClientListByDomainResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DomainTopicsListResult); err != nil {
 		return DomainTopicsClientListByDomainResponse{}, err
 	}

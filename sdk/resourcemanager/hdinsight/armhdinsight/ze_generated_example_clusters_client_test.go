@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,29 +12,30 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/hdinsight/armhdinsight"
 )
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/CreateHDInsightClusterWithAutoscaleConfig.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/CreateHDInsightClusterWithAutoscaleConfig.json
 func ExampleClustersClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.ClusterCreateParametersExtended{
 			Properties: &armhdinsight.ClusterCreateProperties{
 				ClusterDefinition: &armhdinsight.ClusterDefinition{
 					ComponentVersion: map[string]*string{
-						"Hadoop": to.StringPtr("2.7"),
+						"Hadoop": to.Ptr("2.7"),
 					},
 					Configurations: map[string]interface{}{
 						"gateway": map[string]interface{}{
@@ -43,404 +44,444 @@ func ExampleClustersClient_BeginCreate() {
 							"restAuthCredential.username":  "admin",
 						},
 					},
-					Kind: to.StringPtr("<kind>"),
+					Kind: to.Ptr("hadoop"),
 				},
-				ClusterVersion: to.StringPtr("<cluster-version>"),
+				ClusterVersion: to.Ptr("3.6"),
 				ComputeProfile: &armhdinsight.ComputeProfile{
 					Roles: []*armhdinsight.Role{
 						{
-							Name: to.StringPtr("<name>"),
+							Name: to.Ptr("workernode"),
 							AutoscaleConfiguration: &armhdinsight.Autoscale{
 								Recurrence: &armhdinsight.AutoscaleRecurrence{
 									Schedule: []*armhdinsight.AutoscaleSchedule{
 										{
 											Days: []*armhdinsight.DaysOfWeek{
-												armhdinsight.DaysOfWeek("Monday").ToPtr(),
-												armhdinsight.DaysOfWeek("Tuesday").ToPtr(),
-												armhdinsight.DaysOfWeek("Wednesday").ToPtr(),
-												armhdinsight.DaysOfWeek("Thursday").ToPtr(),
-												armhdinsight.DaysOfWeek("Friday").ToPtr()},
+												to.Ptr(armhdinsight.DaysOfWeekMonday),
+												to.Ptr(armhdinsight.DaysOfWeekTuesday),
+												to.Ptr(armhdinsight.DaysOfWeekWednesday),
+												to.Ptr(armhdinsight.DaysOfWeekThursday),
+												to.Ptr(armhdinsight.DaysOfWeekFriday)},
 											TimeAndCapacity: &armhdinsight.AutoscaleTimeAndCapacity{
-												MaxInstanceCount: to.Int32Ptr(3),
-												MinInstanceCount: to.Int32Ptr(3),
-												Time:             to.StringPtr("<time>"),
+												MaxInstanceCount: to.Ptr[int32](3),
+												MinInstanceCount: to.Ptr[int32](3),
+												Time:             to.Ptr("09:00"),
 											},
 										},
 										{
 											Days: []*armhdinsight.DaysOfWeek{
-												armhdinsight.DaysOfWeek("Monday").ToPtr(),
-												armhdinsight.DaysOfWeek("Tuesday").ToPtr(),
-												armhdinsight.DaysOfWeek("Wednesday").ToPtr(),
-												armhdinsight.DaysOfWeek("Thursday").ToPtr(),
-												armhdinsight.DaysOfWeek("Friday").ToPtr()},
+												to.Ptr(armhdinsight.DaysOfWeekMonday),
+												to.Ptr(armhdinsight.DaysOfWeekTuesday),
+												to.Ptr(armhdinsight.DaysOfWeekWednesday),
+												to.Ptr(armhdinsight.DaysOfWeekThursday),
+												to.Ptr(armhdinsight.DaysOfWeekFriday)},
 											TimeAndCapacity: &armhdinsight.AutoscaleTimeAndCapacity{
-												MaxInstanceCount: to.Int32Ptr(6),
-												MinInstanceCount: to.Int32Ptr(6),
-												Time:             to.StringPtr("<time>"),
+												MaxInstanceCount: to.Ptr[int32](6),
+												MinInstanceCount: to.Ptr[int32](6),
+												Time:             to.Ptr("18:00"),
 											},
 										},
 										{
 											Days: []*armhdinsight.DaysOfWeek{
-												armhdinsight.DaysOfWeek("Saturday").ToPtr(),
-												armhdinsight.DaysOfWeek("Sunday").ToPtr()},
+												to.Ptr(armhdinsight.DaysOfWeekSaturday),
+												to.Ptr(armhdinsight.DaysOfWeekSunday)},
 											TimeAndCapacity: &armhdinsight.AutoscaleTimeAndCapacity{
-												MaxInstanceCount: to.Int32Ptr(2),
-												MinInstanceCount: to.Int32Ptr(2),
-												Time:             to.StringPtr("<time>"),
+												MaxInstanceCount: to.Ptr[int32](2),
+												MinInstanceCount: to.Ptr[int32](2),
+												Time:             to.Ptr("09:00"),
 											},
 										},
 										{
 											Days: []*armhdinsight.DaysOfWeek{
-												armhdinsight.DaysOfWeek("Saturday").ToPtr(),
-												armhdinsight.DaysOfWeek("Sunday").ToPtr()},
+												to.Ptr(armhdinsight.DaysOfWeekSaturday),
+												to.Ptr(armhdinsight.DaysOfWeekSunday)},
 											TimeAndCapacity: &armhdinsight.AutoscaleTimeAndCapacity{
-												MaxInstanceCount: to.Int32Ptr(4),
-												MinInstanceCount: to.Int32Ptr(4),
-												Time:             to.StringPtr("<time>"),
+												MaxInstanceCount: to.Ptr[int32](4),
+												MinInstanceCount: to.Ptr[int32](4),
+												Time:             to.Ptr("18:00"),
 											},
 										}},
-									TimeZone: to.StringPtr("<time-zone>"),
+									TimeZone: to.Ptr("China Standard Time"),
 								},
 							},
 							HardwareProfile: &armhdinsight.HardwareProfile{
-								VMSize: to.StringPtr("<vmsize>"),
+								VMSize: to.Ptr("Standard_D4_V2"),
 							},
 							OSProfile: &armhdinsight.OsProfile{
 								LinuxOperatingSystemProfile: &armhdinsight.LinuxOperatingSystemProfile{
-									Password: to.StringPtr("<password>"),
-									Username: to.StringPtr("<username>"),
+									Password: to.Ptr("**********"),
+									Username: to.Ptr("sshuser"),
 								},
 							},
 							ScriptActions:       []*armhdinsight.ScriptAction{},
-							TargetInstanceCount: to.Int32Ptr(4),
+							TargetInstanceCount: to.Ptr[int32](4),
 						}},
 				},
-				OSType: armhdinsight.OSType("Linux").ToPtr(),
+				OSType: to.Ptr(armhdinsight.OSTypeLinux),
 				StorageProfile: &armhdinsight.StorageProfile{
 					Storageaccounts: []*armhdinsight.StorageAccount{
 						{
-							Name:      to.StringPtr("<name>"),
-							Container: to.StringPtr("<container>"),
-							IsDefault: to.BoolPtr(true),
-							Key:       to.StringPtr("<key>"),
+							Name:      to.Ptr("mystorage.blob.core.windows.net"),
+							Container: to.Ptr("hdinsight-autoscale-tes-2019-06-18t05-49-16-591z"),
+							IsDefault: to.Ptr(true),
+							Key:       to.Ptr("storagekey"),
 						}},
 				},
-				Tier: armhdinsight.Tier("Standard").ToPtr(),
+				Tier: to.Ptr(armhdinsight.TierStandard),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClustersClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/PatchLinuxHadoopCluster.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/PatchLinuxHadoopCluster.json
 func ExampleClustersClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.ClusterPatchParameters{
 			Tags: map[string]*string{
-				"key1": to.StringPtr("val1"),
-				"key2": to.StringPtr("val2"),
+				"key1": to.Ptr("val1"),
+				"key2": to.Ptr("val2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClustersClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DeleteLinuxHadoopCluster.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DeleteLinuxHadoopCluster.json
 func ExampleClustersClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopCluster.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopCluster.json
 func ExampleClustersClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClustersClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopAllClustersInResourceGroup.json
-func ExampleClustersClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopAllClustersInResourceGroup.json
+func ExampleClustersClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroup("<resource-group-name>",
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupPager("rg1",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/ResizeLinuxHadoopCluster.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/ResizeLinuxHadoopCluster.json
 func ExampleClustersClient_BeginResize() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginResize(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		armhdinsight.RoleName("workernode"),
+		"rg1",
+		"cluster1",
+		armhdinsight.RoleNameWorkernode,
 		armhdinsight.ClusterResizeParameters{
-			TargetInstanceCount: to.Int32Ptr(10),
+			TargetInstanceCount: to.Ptr[int32](10),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DisableClusterAutoScale.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/DisableClusterAutoScale.json
 func ExampleClustersClient_BeginUpdateAutoScaleConfiguration() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdateAutoScaleConfiguration(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		armhdinsight.RoleName("workernode"),
+		"rg1",
+		"cluster1",
+		armhdinsight.RoleNameWorkernode,
 		armhdinsight.AutoscaleConfigurationUpdateParameter{},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopAllClusters.json
-func ExampleClustersClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetLinuxHadoopAllClusters.json
+func ExampleClustersClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
-	pager := client.List(nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/RotateLinuxHadoopClusterDiskEncryptionKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/RotateLinuxHadoopClusterDiskEncryptionKey.json
 func ExampleClustersClient_BeginRotateDiskEncryptionKey() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginRotateDiskEncryptionKey(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.ClusterDiskEncryptionParameters{
-			KeyName:    to.StringPtr("<key-name>"),
-			KeyVersion: to.StringPtr("<key-version>"),
-			VaultURI:   to.StringPtr("<vault-uri>"),
+			KeyName:    to.Ptr("newkeyname"),
+			KeyVersion: to.Ptr("newkeyversion"),
+			VaultURI:   to.Ptr("https://newkeyvault.vault.azure.net/"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_GetGatewaySettings.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_GetGatewaySettings.json
 func ExampleClustersClient_GetGatewaySettings() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetGatewaySettings(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClustersClientGetGatewaySettingsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_UpdateGatewaySettings_Enable.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_UpdateGatewaySettings_Enable.json
 func ExampleClustersClient_BeginUpdateGatewaySettings() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdateGatewaySettings(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.UpdateGatewaySettingsParameters{
-			IsCredentialEnabled: to.BoolPtr(true),
-			Password:            to.StringPtr("<password>"),
-			UserName:            to.StringPtr("<user-name>"),
+			IsCredentialEnabled: to.Ptr(true),
+			Password:            to.Ptr("**********"),
+			UserName:            to.Ptr("hadoop"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetClusterCreatingAsyncOperationStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/GetClusterCreatingAsyncOperationStatus.json
 func ExampleClustersClient_GetAzureAsyncOperationStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAzureAsyncOperationStatus(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
-		"<operation-id>",
+		"rg1",
+		"cluster1",
+		"CF938302-6B4D-44A0-A6D2-C0D67E847AEC",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClustersClientGetAzureAsyncOperationStatusResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_UpdateClusterIdentityCertificate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/HDI_Clusters_UpdateClusterIdentityCertificate.json
 func ExampleClustersClient_BeginUpdateIdentityCertificate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdateIdentityCertificate(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.UpdateClusterIdentityCertificateParameters{
-			ApplicationID:       to.StringPtr("<application-id>"),
-			Certificate:         to.StringPtr("<certificate>"),
-			CertificatePassword: to.StringPtr("<certificate-password>"),
+			ApplicationID:       to.Ptr("applicationId"),
+			Certificate:         to.Ptr("base64encodedcertificate"),
+			CertificatePassword: to.Ptr("**********"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/PostExecuteScriptAction.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/hdinsight/resource-manager/Microsoft.HDInsight/stable/2021-06-01/examples/PostExecuteScriptAction.json
 func ExampleClustersClient_BeginExecuteScriptActions() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armhdinsight.NewClustersClient("<subscription-id>", cred, nil)
+	client, err := armhdinsight.NewClustersClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginExecuteScriptActions(ctx,
-		"<resource-group-name>",
-		"<cluster-name>",
+		"rg1",
+		"cluster1",
 		armhdinsight.ExecuteScriptActionParameters{
-			PersistOnSuccess: to.BoolPtr(false),
+			PersistOnSuccess: to.Ptr(false),
 			ScriptActions: []*armhdinsight.RuntimeScriptAction{
 				{
-					Name:       to.StringPtr("<name>"),
-					Parameters: to.StringPtr("<parameters>"),
+					Name:       to.Ptr("Test"),
+					Parameters: to.Ptr(""),
 					Roles: []*string{
-						to.StringPtr("headnode"),
-						to.StringPtr("workernode")},
-					URI: to.StringPtr("<uri>"),
+						to.Ptr("headnode"),
+						to.Ptr("workernode")},
+					URI: to.Ptr("http://testurl.com/install.ssh"),
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

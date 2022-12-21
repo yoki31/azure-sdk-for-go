@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,26 +34,31 @@ type ManagementLocksClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewManagementLocksClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ManagementLocksClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewManagementLocksClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ManagementLocksClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ManagementLocksClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdateAtResourceGroupLevel - When you apply a lock at a parent scope, all child resources inherit the same lock.
 // To create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/*
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group to lock.
 // lockName - The lock name. The lock name can be a maximum of 260 characters. It cannot contain %, &, :, \, ?, /, or any
 // control characters.
@@ -96,13 +102,13 @@ func (client *ManagementLocksClient) createOrUpdateAtResourceGroupLevelCreateReq
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateAtResourceGroupLevelHandleResponse handles the CreateOrUpdateAtResourceGroupLevel response.
 func (client *ManagementLocksClient) createOrUpdateAtResourceGroupLevelHandleResponse(resp *http.Response) (ManagementLocksClientCreateOrUpdateAtResourceGroupLevelResponse, error) {
-	result := ManagementLocksClientCreateOrUpdateAtResourceGroupLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientCreateOrUpdateAtResourceGroupLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientCreateOrUpdateAtResourceGroupLevelResponse{}, err
 	}
@@ -113,6 +119,7 @@ func (client *ManagementLocksClient) createOrUpdateAtResourceGroupLevelHandleRes
 // create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/*
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group containing the resource to lock.
 // resourceProviderNamespace - The resource provider namespace of the resource to lock.
 // parentResourcePath - The parent resource identity.
@@ -170,13 +177,13 @@ func (client *ManagementLocksClient) createOrUpdateAtResourceLevelCreateRequest(
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateAtResourceLevelHandleResponse handles the CreateOrUpdateAtResourceLevel response.
 func (client *ManagementLocksClient) createOrUpdateAtResourceLevelHandleResponse(resp *http.Response) (ManagementLocksClientCreateOrUpdateAtResourceLevelResponse, error) {
-	result := ManagementLocksClientCreateOrUpdateAtResourceLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientCreateOrUpdateAtResourceLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientCreateOrUpdateAtResourceLevelResponse{}, err
 	}
@@ -187,6 +194,7 @@ func (client *ManagementLocksClient) createOrUpdateAtResourceLevelHandleResponse
 // To create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/*
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // lockName - The name of lock. The lock name can be a maximum of 260 characters. It cannot contain %, &, :, \, ?, /, or any
 // control characters.
 // parameters - The management lock parameters.
@@ -225,13 +233,13 @@ func (client *ManagementLocksClient) createOrUpdateAtSubscriptionLevelCreateRequ
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateAtSubscriptionLevelHandleResponse handles the CreateOrUpdateAtSubscriptionLevel response.
 func (client *ManagementLocksClient) createOrUpdateAtSubscriptionLevelHandleResponse(resp *http.Response) (ManagementLocksClientCreateOrUpdateAtSubscriptionLevelResponse, error) {
-	result := ManagementLocksClientCreateOrUpdateAtSubscriptionLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientCreateOrUpdateAtSubscriptionLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientCreateOrUpdateAtSubscriptionLevelResponse{}, err
 	}
@@ -240,6 +248,7 @@ func (client *ManagementLocksClient) createOrUpdateAtSubscriptionLevelHandleResp
 
 // CreateOrUpdateByScope - Create or update a management lock by scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // scope - The scope for the lock. When providing a scope for the assignment, use '/subscriptions/{subscriptionId}' for subscriptions,
 // '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}' for
 // resource groups, and '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{parentResourcePathIfPresent}/{resourceType}/{resourceName}'
@@ -282,13 +291,13 @@ func (client *ManagementLocksClient) createOrUpdateByScopeCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateByScopeHandleResponse handles the CreateOrUpdateByScope response.
 func (client *ManagementLocksClient) createOrUpdateByScopeHandleResponse(resp *http.Response) (ManagementLocksClientCreateOrUpdateByScopeResponse, error) {
-	result := ManagementLocksClientCreateOrUpdateByScopeResponse{RawResponse: resp}
+	result := ManagementLocksClientCreateOrUpdateByScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientCreateOrUpdateByScopeResponse{}, err
 	}
@@ -299,6 +308,7 @@ func (client *ManagementLocksClient) createOrUpdateByScopeHandleResponse(resp *h
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted
 // those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group containing the lock.
 // lockName - The name of lock to delete.
 // options - ManagementLocksClientDeleteAtResourceGroupLevelOptions contains the optional parameters for the ManagementLocksClient.DeleteAtResourceGroupLevel
@@ -315,7 +325,7 @@ func (client *ManagementLocksClient) DeleteAtResourceGroupLevel(ctx context.Cont
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ManagementLocksClientDeleteAtResourceGroupLevelResponse{}, runtime.NewResponseError(resp)
 	}
-	return ManagementLocksClientDeleteAtResourceGroupLevelResponse{RawResponse: resp}, nil
+	return ManagementLocksClientDeleteAtResourceGroupLevelResponse{}, nil
 }
 
 // deleteAtResourceGroupLevelCreateRequest creates the DeleteAtResourceGroupLevel request.
@@ -340,7 +350,7 @@ func (client *ManagementLocksClient) deleteAtResourceGroupLevelCreateRequest(ctx
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
@@ -348,6 +358,7 @@ func (client *ManagementLocksClient) deleteAtResourceGroupLevelCreateRequest(ctx
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted
 // those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group containing the resource with the lock to delete.
 // resourceProviderNamespace - The resource provider namespace of the resource with the lock to delete.
 // parentResourcePath - The parent resource identity.
@@ -368,7 +379,7 @@ func (client *ManagementLocksClient) DeleteAtResourceLevel(ctx context.Context, 
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ManagementLocksClientDeleteAtResourceLevelResponse{}, runtime.NewResponseError(resp)
 	}
-	return ManagementLocksClientDeleteAtResourceLevelResponse{RawResponse: resp}, nil
+	return ManagementLocksClientDeleteAtResourceLevelResponse{}, nil
 }
 
 // deleteAtResourceLevelCreateRequest creates the DeleteAtResourceLevel request.
@@ -403,7 +414,7 @@ func (client *ManagementLocksClient) deleteAtResourceLevelCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
@@ -411,6 +422,7 @@ func (client *ManagementLocksClient) deleteAtResourceLevelCreateRequest(ctx cont
 // actions. Of the built-in roles, only Owner and User Access Administrator are granted
 // those actions.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // lockName - The name of lock to delete.
 // options - ManagementLocksClientDeleteAtSubscriptionLevelOptions contains the optional parameters for the ManagementLocksClient.DeleteAtSubscriptionLevel
 // method.
@@ -426,7 +438,7 @@ func (client *ManagementLocksClient) DeleteAtSubscriptionLevel(ctx context.Conte
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ManagementLocksClientDeleteAtSubscriptionLevelResponse{}, runtime.NewResponseError(resp)
 	}
-	return ManagementLocksClientDeleteAtSubscriptionLevelResponse{RawResponse: resp}, nil
+	return ManagementLocksClientDeleteAtSubscriptionLevelResponse{}, nil
 }
 
 // deleteAtSubscriptionLevelCreateRequest creates the DeleteAtSubscriptionLevel request.
@@ -447,12 +459,13 @@ func (client *ManagementLocksClient) deleteAtSubscriptionLevelCreateRequest(ctx 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // DeleteByScope - Delete a management lock by scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // scope - The scope for the lock.
 // lockName - The name of lock.
 // options - ManagementLocksClientDeleteByScopeOptions contains the optional parameters for the ManagementLocksClient.DeleteByScope
@@ -469,7 +482,7 @@ func (client *ManagementLocksClient) DeleteByScope(ctx context.Context, scope st
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ManagementLocksClientDeleteByScopeResponse{}, runtime.NewResponseError(resp)
 	}
-	return ManagementLocksClientDeleteByScopeResponse{RawResponse: resp}, nil
+	return ManagementLocksClientDeleteByScopeResponse{}, nil
 }
 
 // deleteByScopeCreateRequest creates the DeleteByScope request.
@@ -490,12 +503,13 @@ func (client *ManagementLocksClient) deleteByScopeCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // GetAtResourceGroupLevel - Gets a management lock at the resource group level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the locked resource group.
 // lockName - The name of the lock to get.
 // options - ManagementLocksClientGetAtResourceGroupLevelOptions contains the optional parameters for the ManagementLocksClient.GetAtResourceGroupLevel
@@ -537,13 +551,13 @@ func (client *ManagementLocksClient) getAtResourceGroupLevelCreateRequest(ctx co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtResourceGroupLevelHandleResponse handles the GetAtResourceGroupLevel response.
 func (client *ManagementLocksClient) getAtResourceGroupLevelHandleResponse(resp *http.Response) (ManagementLocksClientGetAtResourceGroupLevelResponse, error) {
-	result := ManagementLocksClientGetAtResourceGroupLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientGetAtResourceGroupLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientGetAtResourceGroupLevelResponse{}, err
 	}
@@ -552,6 +566,7 @@ func (client *ManagementLocksClient) getAtResourceGroupLevelHandleResponse(resp 
 
 // GetAtResourceLevel - Get the management lock of a resource or any level below resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group.
 // resourceProviderNamespace - The namespace of the resource provider.
 // parentResourcePath - An extra path parameter needed in some services, like SQL Databases.
@@ -607,13 +622,13 @@ func (client *ManagementLocksClient) getAtResourceLevelCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtResourceLevelHandleResponse handles the GetAtResourceLevel response.
 func (client *ManagementLocksClient) getAtResourceLevelHandleResponse(resp *http.Response) (ManagementLocksClientGetAtResourceLevelResponse, error) {
-	result := ManagementLocksClientGetAtResourceLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientGetAtResourceLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientGetAtResourceLevelResponse{}, err
 	}
@@ -622,6 +637,7 @@ func (client *ManagementLocksClient) getAtResourceLevelHandleResponse(resp *http
 
 // GetAtSubscriptionLevel - Gets a management lock at the subscription level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // lockName - The name of the lock to get.
 // options - ManagementLocksClientGetAtSubscriptionLevelOptions contains the optional parameters for the ManagementLocksClient.GetAtSubscriptionLevel
 // method.
@@ -658,13 +674,13 @@ func (client *ManagementLocksClient) getAtSubscriptionLevelCreateRequest(ctx con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtSubscriptionLevelHandleResponse handles the GetAtSubscriptionLevel response.
 func (client *ManagementLocksClient) getAtSubscriptionLevelHandleResponse(resp *http.Response) (ManagementLocksClientGetAtSubscriptionLevelResponse, error) {
-	result := ManagementLocksClientGetAtSubscriptionLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientGetAtSubscriptionLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientGetAtSubscriptionLevelResponse{}, err
 	}
@@ -673,6 +689,7 @@ func (client *ManagementLocksClient) getAtSubscriptionLevelHandleResponse(resp *
 
 // GetByScope - Get a management lock by scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // scope - The scope for the lock.
 // lockName - The name of lock.
 // options - ManagementLocksClientGetByScopeOptions contains the optional parameters for the ManagementLocksClient.GetByScope
@@ -710,34 +727,51 @@ func (client *ManagementLocksClient) getByScopeCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByScopeHandleResponse handles the GetByScope response.
 func (client *ManagementLocksClient) getByScopeHandleResponse(resp *http.Response) (ManagementLocksClientGetByScopeResponse, error) {
-	result := ManagementLocksClientGetByScopeResponse{RawResponse: resp}
+	result := ManagementLocksClientGetByScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockObject); err != nil {
 		return ManagementLocksClientGetByScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtResourceGroupLevel - Gets all the management locks for a resource group.
+// NewListAtResourceGroupLevelPager - Gets all the management locks for a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group containing the locks to get.
 // options - ManagementLocksClientListAtResourceGroupLevelOptions contains the optional parameters for the ManagementLocksClient.ListAtResourceGroupLevel
 // method.
-func (client *ManagementLocksClient) ListAtResourceGroupLevel(resourceGroupName string, options *ManagementLocksClientListAtResourceGroupLevelOptions) *ManagementLocksClientListAtResourceGroupLevelPager {
-	return &ManagementLocksClientListAtResourceGroupLevelPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtResourceGroupLevelCreateRequest(ctx, resourceGroupName, options)
+func (client *ManagementLocksClient) NewListAtResourceGroupLevelPager(resourceGroupName string, options *ManagementLocksClientListAtResourceGroupLevelOptions) *runtime.Pager[ManagementLocksClientListAtResourceGroupLevelResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagementLocksClientListAtResourceGroupLevelResponse]{
+		More: func(page ManagementLocksClientListAtResourceGroupLevelResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagementLocksClientListAtResourceGroupLevelResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagementLockListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagementLocksClientListAtResourceGroupLevelResponse) (ManagementLocksClientListAtResourceGroupLevelResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtResourceGroupLevelCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagementLocksClientListAtResourceGroupLevelResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagementLocksClientListAtResourceGroupLevelResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagementLocksClientListAtResourceGroupLevelResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtResourceGroupLevelHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtResourceGroupLevelCreateRequest creates the ListAtResourceGroupLevel request.
@@ -761,21 +795,22 @@ func (client *ManagementLocksClient) listAtResourceGroupLevelCreateRequest(ctx c
 	}
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtResourceGroupLevelHandleResponse handles the ListAtResourceGroupLevel response.
 func (client *ManagementLocksClient) listAtResourceGroupLevelHandleResponse(resp *http.Response) (ManagementLocksClientListAtResourceGroupLevelResponse, error) {
-	result := ManagementLocksClientListAtResourceGroupLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientListAtResourceGroupLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockListResult); err != nil {
 		return ManagementLocksClientListAtResourceGroupLevelResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtResourceLevel - Gets all the management locks for a resource or any level below resource.
+// NewListAtResourceLevelPager - Gets all the management locks for a resource or any level below resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // resourceGroupName - The name of the resource group containing the locked resource. The name is case insensitive.
 // resourceProviderNamespace - The namespace of the resource provider.
 // parentResourcePath - The parent resource identity.
@@ -783,16 +818,32 @@ func (client *ManagementLocksClient) listAtResourceGroupLevelHandleResponse(resp
 // resourceName - The name of the locked resource.
 // options - ManagementLocksClientListAtResourceLevelOptions contains the optional parameters for the ManagementLocksClient.ListAtResourceLevel
 // method.
-func (client *ManagementLocksClient) ListAtResourceLevel(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, options *ManagementLocksClientListAtResourceLevelOptions) *ManagementLocksClientListAtResourceLevelPager {
-	return &ManagementLocksClientListAtResourceLevelPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtResourceLevelCreateRequest(ctx, resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, options)
+func (client *ManagementLocksClient) NewListAtResourceLevelPager(resourceGroupName string, resourceProviderNamespace string, parentResourcePath string, resourceType string, resourceName string, options *ManagementLocksClientListAtResourceLevelOptions) *runtime.Pager[ManagementLocksClientListAtResourceLevelResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagementLocksClientListAtResourceLevelResponse]{
+		More: func(page ManagementLocksClientListAtResourceLevelResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagementLocksClientListAtResourceLevelResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagementLockListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagementLocksClientListAtResourceLevelResponse) (ManagementLocksClientListAtResourceLevelResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtResourceLevelCreateRequest(ctx, resourceGroupName, resourceProviderNamespace, parentResourcePath, resourceType, resourceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagementLocksClientListAtResourceLevelResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagementLocksClientListAtResourceLevelResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagementLocksClientListAtResourceLevelResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtResourceLevelHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtResourceLevelCreateRequest creates the ListAtResourceLevel request.
@@ -826,33 +877,50 @@ func (client *ManagementLocksClient) listAtResourceLevelCreateRequest(ctx contex
 	}
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtResourceLevelHandleResponse handles the ListAtResourceLevel response.
 func (client *ManagementLocksClient) listAtResourceLevelHandleResponse(resp *http.Response) (ManagementLocksClientListAtResourceLevelResponse, error) {
-	result := ManagementLocksClientListAtResourceLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientListAtResourceLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockListResult); err != nil {
 		return ManagementLocksClientListAtResourceLevelResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAtSubscriptionLevel - Gets all the management locks for a subscription.
+// NewListAtSubscriptionLevelPager - Gets all the management locks for a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // options - ManagementLocksClientListAtSubscriptionLevelOptions contains the optional parameters for the ManagementLocksClient.ListAtSubscriptionLevel
 // method.
-func (client *ManagementLocksClient) ListAtSubscriptionLevel(options *ManagementLocksClientListAtSubscriptionLevelOptions) *ManagementLocksClientListAtSubscriptionLevelPager {
-	return &ManagementLocksClientListAtSubscriptionLevelPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAtSubscriptionLevelCreateRequest(ctx, options)
+func (client *ManagementLocksClient) NewListAtSubscriptionLevelPager(options *ManagementLocksClientListAtSubscriptionLevelOptions) *runtime.Pager[ManagementLocksClientListAtSubscriptionLevelResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagementLocksClientListAtSubscriptionLevelResponse]{
+		More: func(page ManagementLocksClientListAtSubscriptionLevelResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagementLocksClientListAtSubscriptionLevelResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagementLockListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagementLocksClientListAtSubscriptionLevelResponse) (ManagementLocksClientListAtSubscriptionLevelResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAtSubscriptionLevelCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagementLocksClientListAtSubscriptionLevelResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagementLocksClientListAtSubscriptionLevelResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagementLocksClientListAtSubscriptionLevelResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAtSubscriptionLevelHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAtSubscriptionLevelCreateRequest creates the ListAtSubscriptionLevel request.
@@ -872,21 +940,22 @@ func (client *ManagementLocksClient) listAtSubscriptionLevelCreateRequest(ctx co
 	}
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAtSubscriptionLevelHandleResponse handles the ListAtSubscriptionLevel response.
 func (client *ManagementLocksClient) listAtSubscriptionLevelHandleResponse(resp *http.Response) (ManagementLocksClientListAtSubscriptionLevelResponse, error) {
-	result := ManagementLocksClientListAtSubscriptionLevelResponse{RawResponse: resp}
+	result := ManagementLocksClientListAtSubscriptionLevelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockListResult); err != nil {
 		return ManagementLocksClientListAtSubscriptionLevelResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByScope - Gets all the management locks for a scope.
+// NewListByScopePager - Gets all the management locks for a scope.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // scope - The scope for the lock. When providing a scope for the assignment, use '/subscriptions/{subscriptionId}' for subscriptions,
 // '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}' for
 // resource groups, and '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{parentResourcePathIfPresent}/{resourceType}/{resourceName}'
@@ -894,16 +963,32 @@ func (client *ManagementLocksClient) listAtSubscriptionLevelHandleResponse(resp 
 // resources.
 // options - ManagementLocksClientListByScopeOptions contains the optional parameters for the ManagementLocksClient.ListByScope
 // method.
-func (client *ManagementLocksClient) ListByScope(scope string, options *ManagementLocksClientListByScopeOptions) *ManagementLocksClientListByScopePager {
-	return &ManagementLocksClientListByScopePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByScopeCreateRequest(ctx, scope, options)
+func (client *ManagementLocksClient) NewListByScopePager(scope string, options *ManagementLocksClientListByScopeOptions) *runtime.Pager[ManagementLocksClientListByScopeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ManagementLocksClientListByScopeResponse]{
+		More: func(page ManagementLocksClientListByScopeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ManagementLocksClientListByScopeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ManagementLockListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ManagementLocksClientListByScopeResponse) (ManagementLocksClientListByScopeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByScopeCreateRequest(ctx, scope, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ManagementLocksClientListByScopeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ManagementLocksClientListByScopeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ManagementLocksClientListByScopeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByScopeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByScopeCreateRequest creates the ListByScope request.
@@ -923,13 +1008,13 @@ func (client *ManagementLocksClient) listByScopeCreateRequest(ctx context.Contex
 	}
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByScopeHandleResponse handles the ListByScope response.
 func (client *ManagementLocksClient) listByScopeHandleResponse(resp *http.Response) (ManagementLocksClientListByScopeResponse, error) {
-	result := ManagementLocksClientListByScopeResponse{RawResponse: resp}
+	result := ManagementLocksClientListByScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementLockListResult); err != nil {
 		return ManagementLocksClientListByScopeResponse{}, err
 	}

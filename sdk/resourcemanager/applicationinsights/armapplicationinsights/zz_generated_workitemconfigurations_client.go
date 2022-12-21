@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type WorkItemConfigurationsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewWorkItemConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *WorkItemConfigurationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewWorkItemConfigurationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*WorkItemConfigurationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &WorkItemConfigurationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Create a work item configuration for an Application Insights component.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // workItemConfigurationProperties - Properties that need to be specified to create a work item configuration of a Application
@@ -94,13 +100,13 @@ func (client *WorkItemConfigurationsClient) createCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, workItemConfigurationProperties)
 }
 
 // createHandleResponse handles the Create response.
 func (client *WorkItemConfigurationsClient) createHandleResponse(resp *http.Response) (WorkItemConfigurationsClientCreateResponse, error) {
-	result := WorkItemConfigurationsClientCreateResponse{RawResponse: resp}
+	result := WorkItemConfigurationsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkItemConfiguration); err != nil {
 		return WorkItemConfigurationsClientCreateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *WorkItemConfigurationsClient) createHandleResponse(resp *http.Resp
 
 // Delete - Delete a work item configuration of an Application Insights component.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // workItemConfigID - The unique work item configuration Id. This can be either friendly name of connector as defined in connector
@@ -127,7 +134,7 @@ func (client *WorkItemConfigurationsClient) Delete(ctx context.Context, resource
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkItemConfigurationsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkItemConfigurationsClientDeleteResponse{RawResponse: resp}, nil
+	return WorkItemConfigurationsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -161,6 +168,7 @@ func (client *WorkItemConfigurationsClient) deleteCreateRequest(ctx context.Cont
 
 // GetDefault - Gets default work item configurations that exist for the application
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // options - WorkItemConfigurationsClientGetDefaultOptions contains the optional parameters for the WorkItemConfigurationsClient.GetDefault
@@ -202,13 +210,13 @@ func (client *WorkItemConfigurationsClient) getDefaultCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getDefaultHandleResponse handles the GetDefault response.
 func (client *WorkItemConfigurationsClient) getDefaultHandleResponse(resp *http.Response) (WorkItemConfigurationsClientGetDefaultResponse, error) {
-	result := WorkItemConfigurationsClientGetDefaultResponse{RawResponse: resp}
+	result := WorkItemConfigurationsClientGetDefaultResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkItemConfiguration); err != nil {
 		return WorkItemConfigurationsClientGetDefaultResponse{}, err
 	}
@@ -217,6 +225,7 @@ func (client *WorkItemConfigurationsClient) getDefaultHandleResponse(resp *http.
 
 // GetItem - Gets specified work item configuration for an Application Insights component.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // workItemConfigID - The unique work item configuration Id. This can be either friendly name of connector as defined in connector
@@ -264,38 +273,46 @@ func (client *WorkItemConfigurationsClient) getItemCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getItemHandleResponse handles the GetItem response.
 func (client *WorkItemConfigurationsClient) getItemHandleResponse(resp *http.Response) (WorkItemConfigurationsClientGetItemResponse, error) {
-	result := WorkItemConfigurationsClientGetItemResponse{RawResponse: resp}
+	result := WorkItemConfigurationsClientGetItemResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkItemConfiguration); err != nil {
 		return WorkItemConfigurationsClientGetItemResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets the list work item configurations that exist for the application
+// NewListPager - Gets the list work item configurations that exist for the application
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // options - WorkItemConfigurationsClientListOptions contains the optional parameters for the WorkItemConfigurationsClient.List
 // method.
-func (client *WorkItemConfigurationsClient) List(ctx context.Context, resourceGroupName string, resourceName string, options *WorkItemConfigurationsClientListOptions) (WorkItemConfigurationsClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, resourceGroupName, resourceName, options)
-	if err != nil {
-		return WorkItemConfigurationsClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return WorkItemConfigurationsClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return WorkItemConfigurationsClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *WorkItemConfigurationsClient) NewListPager(resourceGroupName string, resourceName string, options *WorkItemConfigurationsClientListOptions) *runtime.Pager[WorkItemConfigurationsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkItemConfigurationsClientListResponse]{
+		More: func(page WorkItemConfigurationsClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *WorkItemConfigurationsClientListResponse) (WorkItemConfigurationsClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, resourceGroupName, resourceName, options)
+			if err != nil {
+				return WorkItemConfigurationsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkItemConfigurationsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkItemConfigurationsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -320,13 +337,13 @@ func (client *WorkItemConfigurationsClient) listCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *WorkItemConfigurationsClient) listHandleResponse(resp *http.Response) (WorkItemConfigurationsClientListResponse, error) {
-	result := WorkItemConfigurationsClientListResponse{RawResponse: resp}
+	result := WorkItemConfigurationsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkItemConfigurationsListResult); err != nil {
 		return WorkItemConfigurationsClientListResponse{}, err
 	}
@@ -335,6 +352,7 @@ func (client *WorkItemConfigurationsClient) listHandleResponse(resp *http.Respon
 
 // UpdateItem - Update a work item configuration for an Application Insights component.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2015-05-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // resourceName - The name of the Application Insights component resource.
 // workItemConfigID - The unique work item configuration Id. This can be either friendly name of connector as defined in connector
@@ -384,13 +402,13 @@ func (client *WorkItemConfigurationsClient) updateItemCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2015-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, workItemConfigurationProperties)
 }
 
 // updateItemHandleResponse handles the UpdateItem response.
 func (client *WorkItemConfigurationsClient) updateItemHandleResponse(resp *http.Response) (WorkItemConfigurationsClientUpdateItemResponse, error) {
-	result := WorkItemConfigurationsClientUpdateItemResponse{RawResponse: resp}
+	result := WorkItemConfigurationsClientUpdateItemResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkItemConfiguration); err != nil {
 		return WorkItemConfigurationsClientUpdateItemResponse{}, err
 	}

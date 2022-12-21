@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type DefinitionsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDefinitionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DefinitionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDefinitionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DefinitionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DefinitionsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - This operation creates or updates a policy definition in the given subscription with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to create.
 // parameters - The policy definition properties.
 // options - DefinitionsClientCreateOrUpdateOptions contains the optional parameters for the DefinitionsClient.CreateOrUpdate
@@ -89,13 +95,13 @@ func (client *DefinitionsClient) createOrUpdateCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *DefinitionsClient) createOrUpdateHandleResponse(resp *http.Response) (DefinitionsClientCreateOrUpdateResponse, error) {
-	result := DefinitionsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := DefinitionsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Definition); err != nil {
 		return DefinitionsClientCreateOrUpdateResponse{}, err
 	}
@@ -105,6 +111,7 @@ func (client *DefinitionsClient) createOrUpdateHandleResponse(resp *http.Respons
 // CreateOrUpdateAtManagementGroup - This operation creates or updates a policy definition in the given management group with
 // the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to create.
 // managementGroupID - The ID of the management group.
 // parameters - The policy definition properties.
@@ -143,13 +150,13 @@ func (client *DefinitionsClient) createOrUpdateAtManagementGroupCreateRequest(ct
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateAtManagementGroupHandleResponse handles the CreateOrUpdateAtManagementGroup response.
 func (client *DefinitionsClient) createOrUpdateAtManagementGroupHandleResponse(resp *http.Response) (DefinitionsClientCreateOrUpdateAtManagementGroupResponse, error) {
-	result := DefinitionsClientCreateOrUpdateAtManagementGroupResponse{RawResponse: resp}
+	result := DefinitionsClientCreateOrUpdateAtManagementGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Definition); err != nil {
 		return DefinitionsClientCreateOrUpdateAtManagementGroupResponse{}, err
 	}
@@ -158,6 +165,7 @@ func (client *DefinitionsClient) createOrUpdateAtManagementGroupHandleResponse(r
 
 // Delete - This operation deletes the policy definition in the given subscription with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to delete.
 // options - DefinitionsClientDeleteOptions contains the optional parameters for the DefinitionsClient.Delete method.
 func (client *DefinitionsClient) Delete(ctx context.Context, policyDefinitionName string, options *DefinitionsClientDeleteOptions) (DefinitionsClientDeleteResponse, error) {
@@ -172,7 +180,7 @@ func (client *DefinitionsClient) Delete(ctx context.Context, policyDefinitionNam
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return DefinitionsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return DefinitionsClientDeleteResponse{RawResponse: resp}, nil
+	return DefinitionsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -193,12 +201,13 @@ func (client *DefinitionsClient) deleteCreateRequest(ctx context.Context, policy
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // DeleteAtManagementGroup - This operation deletes the policy definition in the given management group with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to delete.
 // managementGroupID - The ID of the management group.
 // options - DefinitionsClientDeleteAtManagementGroupOptions contains the optional parameters for the DefinitionsClient.DeleteAtManagementGroup
@@ -215,7 +224,7 @@ func (client *DefinitionsClient) DeleteAtManagementGroup(ctx context.Context, po
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return DefinitionsClientDeleteAtManagementGroupResponse{}, runtime.NewResponseError(resp)
 	}
-	return DefinitionsClientDeleteAtManagementGroupResponse{RawResponse: resp}, nil
+	return DefinitionsClientDeleteAtManagementGroupResponse{}, nil
 }
 
 // deleteAtManagementGroupCreateRequest creates the DeleteAtManagementGroup request.
@@ -236,12 +245,13 @@ func (client *DefinitionsClient) deleteAtManagementGroupCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - This operation retrieves the policy definition in the given subscription with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to get.
 // options - DefinitionsClientGetOptions contains the optional parameters for the DefinitionsClient.Get method.
 func (client *DefinitionsClient) Get(ctx context.Context, policyDefinitionName string, options *DefinitionsClientGetOptions) (DefinitionsClientGetResponse, error) {
@@ -277,13 +287,13 @@ func (client *DefinitionsClient) getCreateRequest(ctx context.Context, policyDef
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DefinitionsClient) getHandleResponse(resp *http.Response) (DefinitionsClientGetResponse, error) {
-	result := DefinitionsClientGetResponse{RawResponse: resp}
+	result := DefinitionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Definition); err != nil {
 		return DefinitionsClientGetResponse{}, err
 	}
@@ -292,6 +302,7 @@ func (client *DefinitionsClient) getHandleResponse(resp *http.Response) (Definit
 
 // GetAtManagementGroup - This operation retrieves the policy definition in the given management group with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the policy definition to get.
 // managementGroupID - The ID of the management group.
 // options - DefinitionsClientGetAtManagementGroupOptions contains the optional parameters for the DefinitionsClient.GetAtManagementGroup
@@ -329,13 +340,13 @@ func (client *DefinitionsClient) getAtManagementGroupCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtManagementGroupHandleResponse handles the GetAtManagementGroup response.
 func (client *DefinitionsClient) getAtManagementGroupHandleResponse(resp *http.Response) (DefinitionsClientGetAtManagementGroupResponse, error) {
-	result := DefinitionsClientGetAtManagementGroupResponse{RawResponse: resp}
+	result := DefinitionsClientGetAtManagementGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Definition); err != nil {
 		return DefinitionsClientGetAtManagementGroupResponse{}, err
 	}
@@ -344,6 +355,7 @@ func (client *DefinitionsClient) getAtManagementGroupHandleResponse(resp *http.R
 
 // GetBuiltIn - This operation retrieves the built-in policy definition with the given name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // policyDefinitionName - The name of the built-in policy definition to get.
 // options - DefinitionsClientGetBuiltInOptions contains the optional parameters for the DefinitionsClient.GetBuiltIn method.
 func (client *DefinitionsClient) GetBuiltIn(ctx context.Context, policyDefinitionName string, options *DefinitionsClientGetBuiltInOptions) (DefinitionsClientGetBuiltInResponse, error) {
@@ -375,22 +387,22 @@ func (client *DefinitionsClient) getBuiltInCreateRequest(ctx context.Context, po
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getBuiltInHandleResponse handles the GetBuiltIn response.
 func (client *DefinitionsClient) getBuiltInHandleResponse(resp *http.Response) (DefinitionsClientGetBuiltInResponse, error) {
-	result := DefinitionsClientGetBuiltInResponse{RawResponse: resp}
+	result := DefinitionsClientGetBuiltInResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Definition); err != nil {
 		return DefinitionsClientGetBuiltInResponse{}, err
 	}
 	return result, nil
 }
 
-// List - This operation retrieves a list of all the policy definitions in a given subscription that match the optional given
-// $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or
-// 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy definitions associated with
+// NewListPager - This operation retrieves a list of all the policy definitions in a given subscription that match the optional
+// given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or
+// 'category eq '{value}”. If $filter is not provided, the unfiltered list includes all policy definitions associated with
 // the subscription, including those that apply directly or from management groups
 // that contain the given subscription. If $filter=atExactScope() is provided, the returned list only includes all policy
 // definitions that at the given subscription. If $filter='policyType -eq {value}'
@@ -398,17 +410,34 @@ func (client *DefinitionsClient) getBuiltInHandleResponse(resp *http.Response) (
 // are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq
 // {value}' is provided, the returned list only includes all policy definitions whose category match the {value}.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // options - DefinitionsClientListOptions contains the optional parameters for the DefinitionsClient.List method.
-func (client *DefinitionsClient) List(options *DefinitionsClientListOptions) *DefinitionsClientListPager {
-	return &DefinitionsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *DefinitionsClient) NewListPager(options *DefinitionsClientListOptions) *runtime.Pager[DefinitionsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DefinitionsClientListResponse]{
+		More: func(page DefinitionsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DefinitionsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DefinitionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DefinitionsClientListResponse) (DefinitionsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DefinitionsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DefinitionsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DefinitionsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -433,36 +462,53 @@ func (client *DefinitionsClient) listCreateRequest(ctx context.Context, options 
 		unencodedParams = append(unencodedParams, "$filter="+*options.Filter)
 	}
 	req.Raw().URL.RawQuery = strings.Join(unencodedParams, "&")
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *DefinitionsClient) listHandleResponse(resp *http.Response) (DefinitionsClientListResponse, error) {
-	result := DefinitionsClientListResponse{RawResponse: resp}
+	result := DefinitionsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DefinitionListResult); err != nil {
 		return DefinitionsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBuiltIn - This operation retrieves a list of all the built-in policy definitions that match the optional given $filter.
-// If $filter='policyType -eq {value}' is provided, the returned list only includes all
+// NewListBuiltInPager - This operation retrieves a list of all the built-in policy definitions that match the optional given
+// $filter. If $filter='policyType -eq {value}' is provided, the returned list only includes all
 // built-in policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom,
 // and Static. If $filter='category -eq {value}' is provided, the returned list
 // only includes all built-in policy definitions whose category match the {value}.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // options - DefinitionsClientListBuiltInOptions contains the optional parameters for the DefinitionsClient.ListBuiltIn method.
-func (client *DefinitionsClient) ListBuiltIn(options *DefinitionsClientListBuiltInOptions) *DefinitionsClientListBuiltInPager {
-	return &DefinitionsClientListBuiltInPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBuiltInCreateRequest(ctx, options)
+func (client *DefinitionsClient) NewListBuiltInPager(options *DefinitionsClientListBuiltInOptions) *runtime.Pager[DefinitionsClientListBuiltInResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DefinitionsClientListBuiltInResponse]{
+		More: func(page DefinitionsClientListBuiltInResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DefinitionsClientListBuiltInResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DefinitionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DefinitionsClientListBuiltInResponse) (DefinitionsClientListBuiltInResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBuiltInCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DefinitionsClientListBuiltInResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DefinitionsClientListBuiltInResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DefinitionsClientListBuiltInResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBuiltInHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBuiltInCreateRequest creates the ListBuiltIn request.
@@ -483,22 +529,22 @@ func (client *DefinitionsClient) listBuiltInCreateRequest(ctx context.Context, o
 		unencodedParams = append(unencodedParams, "$filter="+*options.Filter)
 	}
 	req.Raw().URL.RawQuery = strings.Join(unencodedParams, "&")
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBuiltInHandleResponse handles the ListBuiltIn response.
 func (client *DefinitionsClient) listBuiltInHandleResponse(resp *http.Response) (DefinitionsClientListBuiltInResponse, error) {
-	result := DefinitionsClientListBuiltInResponse{RawResponse: resp}
+	result := DefinitionsClientListBuiltInResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DefinitionListResult); err != nil {
 		return DefinitionsClientListBuiltInResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByManagementGroup - This operation retrieves a list of all the policy definitions in a given management group that
-// match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq
-// {value}' or 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy definitions associated
+// NewListByManagementGroupPager - This operation retrieves a list of all the policy definitions in a given management group
+// that match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq
+// {value}' or 'category eq '{value}”. If $filter is not provided, the unfiltered list includes all policy definitions associated
 // with the management group, including those that apply directly or from
 // management groups that contain the given management group. If $filter=atExactScope() is provided, the returned list only
 // includes all policy definitions that at the given management group. If
@@ -507,19 +553,36 @@ func (client *DefinitionsClient) listBuiltInHandleResponse(resp *http.Response) 
 // Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category
 // match the {value}.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // managementGroupID - The ID of the management group.
 // options - DefinitionsClientListByManagementGroupOptions contains the optional parameters for the DefinitionsClient.ListByManagementGroup
 // method.
-func (client *DefinitionsClient) ListByManagementGroup(managementGroupID string, options *DefinitionsClientListByManagementGroupOptions) *DefinitionsClientListByManagementGroupPager {
-	return &DefinitionsClientListByManagementGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByManagementGroupCreateRequest(ctx, managementGroupID, options)
+func (client *DefinitionsClient) NewListByManagementGroupPager(managementGroupID string, options *DefinitionsClientListByManagementGroupOptions) *runtime.Pager[DefinitionsClientListByManagementGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DefinitionsClientListByManagementGroupResponse]{
+		More: func(page DefinitionsClientListByManagementGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DefinitionsClientListByManagementGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DefinitionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *DefinitionsClientListByManagementGroupResponse) (DefinitionsClientListByManagementGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByManagementGroupCreateRequest(ctx, managementGroupID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DefinitionsClientListByManagementGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DefinitionsClientListByManagementGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DefinitionsClientListByManagementGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByManagementGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByManagementGroupCreateRequest creates the ListByManagementGroup request.
@@ -544,13 +607,13 @@ func (client *DefinitionsClient) listByManagementGroupCreateRequest(ctx context.
 		unencodedParams = append(unencodedParams, "$filter="+*options.Filter)
 	}
 	req.Raw().URL.RawQuery = strings.Join(unencodedParams, "&")
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByManagementGroupHandleResponse handles the ListByManagementGroup response.
 func (client *DefinitionsClient) listByManagementGroupHandleResponse(resp *http.Response) (DefinitionsClientListByManagementGroupResponse, error) {
-	result := DefinitionsClientListByManagementGroupResponse{RawResponse: resp}
+	result := DefinitionsClientListByManagementGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DefinitionListResult); err != nil {
 		return DefinitionsClientListByManagementGroupResponse{}, err
 	}

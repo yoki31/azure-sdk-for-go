@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armresourcemover
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -25,39 +25,72 @@ import (
 // UnresolvedDependenciesClient contains the methods for the UnresolvedDependencies group.
 // Don't use this type directly, use NewUnresolvedDependenciesClient() instead.
 type UnresolvedDependenciesClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewUnresolvedDependenciesClient creates a new instance of UnresolvedDependenciesClient with the specified values.
-func NewUnresolvedDependenciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *UnresolvedDependenciesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The Subscription ID.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewUnresolvedDependenciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*UnresolvedDependenciesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &UnresolvedDependenciesClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &UnresolvedDependenciesClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
-// Get - Gets a list of unresolved dependencies.
-// If the operation fails it returns the *CloudError error type.
-func (client *UnresolvedDependenciesClient) Get(resourceGroupName string, moveCollectionName string, options *UnresolvedDependenciesGetOptions) *UnresolvedDependenciesGetPager {
-	return &UnresolvedDependenciesGetPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.getCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
+// NewGetPager - Gets a list of unresolved dependencies.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
+// resourceGroupName - The Resource Group Name.
+// moveCollectionName - The Move Collection Name.
+// options - UnresolvedDependenciesClientGetOptions contains the optional parameters for the UnresolvedDependenciesClient.Get
+// method.
+func (client *UnresolvedDependenciesClient) NewGetPager(resourceGroupName string, moveCollectionName string, options *UnresolvedDependenciesClientGetOptions) *runtime.Pager[UnresolvedDependenciesClientGetResponse] {
+	return runtime.NewPager(runtime.PagingHandler[UnresolvedDependenciesClientGetResponse]{
+		More: func(page UnresolvedDependenciesClientGetResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp UnresolvedDependenciesGetResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.UnresolvedDependencyCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *UnresolvedDependenciesClientGetResponse) (UnresolvedDependenciesClientGetResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.getCreateRequest(ctx, resourceGroupName, moveCollectionName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return UnresolvedDependenciesClientGetResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return UnresolvedDependenciesClientGetResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return UnresolvedDependenciesClientGetResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.getHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // getCreateRequest creates the Get request.
-func (client *UnresolvedDependenciesClient) getCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *UnresolvedDependenciesGetOptions) (*policy.Request, error) {
+func (client *UnresolvedDependenciesClient) getCreateRequest(ctx context.Context, resourceGroupName string, moveCollectionName string, options *UnresolvedDependenciesClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Migrate/moveCollections/{moveCollectionName}/unresolvedDependencies"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -71,7 +104,7 @@ func (client *UnresolvedDependenciesClient) getCreateRequest(ctx context.Context
 		return nil, errors.New("parameter moveCollectionName cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{moveCollectionName}", url.PathEscape(moveCollectionName))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
@@ -87,28 +120,15 @@ func (client *UnresolvedDependenciesClient) getCreateRequest(ctx context.Context
 		reqQP.Set("$filter", *options.Filter)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *UnresolvedDependenciesClient) getHandleResponse(resp *http.Response) (UnresolvedDependenciesGetResponse, error) {
-	result := UnresolvedDependenciesGetResponse{RawResponse: resp}
+func (client *UnresolvedDependenciesClient) getHandleResponse(resp *http.Response) (UnresolvedDependenciesClientGetResponse, error) {
+	result := UnresolvedDependenciesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.UnresolvedDependencyCollection); err != nil {
-		return UnresolvedDependenciesGetResponse{}, runtime.NewResponseError(err, resp)
+		return UnresolvedDependenciesClientGetResponse{}, err
 	}
 	return result, nil
-}
-
-// getHandleError handles the Get error response.
-func (client *UnresolvedDependenciesClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := CloudError{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

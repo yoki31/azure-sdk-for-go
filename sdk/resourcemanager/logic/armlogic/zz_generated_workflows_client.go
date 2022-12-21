@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type WorkflowsClient struct {
 // subscriptionID - The subscription id.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewWorkflowsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *WorkflowsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewWorkflowsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*WorkflowsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &WorkflowsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // workflow - The workflow.
@@ -94,13 +100,13 @@ func (client *WorkflowsClient) createOrUpdateCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, workflow)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *WorkflowsClient) createOrUpdateHandleResponse(resp *http.Response) (WorkflowsClientCreateOrUpdateResponse, error) {
-	result := WorkflowsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := WorkflowsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Workflow); err != nil {
 		return WorkflowsClientCreateOrUpdateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *WorkflowsClient) createOrUpdateHandleResponse(resp *http.Response)
 
 // Delete - Deletes a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientDeleteOptions contains the optional parameters for the WorkflowsClient.Delete method.
@@ -124,7 +131,7 @@ func (client *WorkflowsClient) Delete(ctx context.Context, resourceGroupName str
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return WorkflowsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientDeleteResponse{RawResponse: resp}, nil
+	return WorkflowsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -149,12 +156,13 @@ func (client *WorkflowsClient) deleteCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Disable - Disables a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientDisableOptions contains the optional parameters for the WorkflowsClient.Disable method.
@@ -170,7 +178,7 @@ func (client *WorkflowsClient) Disable(ctx context.Context, resourceGroupName st
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkflowsClientDisableResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientDisableResponse{RawResponse: resp}, nil
+	return WorkflowsClientDisableResponse{}, nil
 }
 
 // disableCreateRequest creates the Disable request.
@@ -195,12 +203,13 @@ func (client *WorkflowsClient) disableCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Enable - Enables a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientEnableOptions contains the optional parameters for the WorkflowsClient.Enable method.
@@ -216,7 +225,7 @@ func (client *WorkflowsClient) Enable(ctx context.Context, resourceGroupName str
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkflowsClientEnableResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientEnableResponse{RawResponse: resp}, nil
+	return WorkflowsClientEnableResponse{}, nil
 }
 
 // enableCreateRequest creates the Enable request.
@@ -241,12 +250,13 @@ func (client *WorkflowsClient) enableCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // GenerateUpgradedDefinition - Generates the upgraded definition for a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // parameters - Parameters for generating an upgraded definition.
@@ -289,14 +299,14 @@ func (client *WorkflowsClient) generateUpgradedDefinitionCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // generateUpgradedDefinitionHandleResponse handles the GenerateUpgradedDefinition response.
 func (client *WorkflowsClient) generateUpgradedDefinitionHandleResponse(resp *http.Response) (WorkflowsClientGenerateUpgradedDefinitionResponse, error) {
-	result := WorkflowsClientGenerateUpgradedDefinitionResponse{RawResponse: resp}
-	if err := runtime.UnmarshalAsJSON(resp, &result.Object); err != nil {
+	result := WorkflowsClientGenerateUpgradedDefinitionResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.Interface); err != nil {
 		return WorkflowsClientGenerateUpgradedDefinitionResponse{}, err
 	}
 	return result, nil
@@ -304,6 +314,7 @@ func (client *WorkflowsClient) generateUpgradedDefinitionHandleResponse(resp *ht
 
 // Get - Gets a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientGetOptions contains the optional parameters for the WorkflowsClient.Get method.
@@ -344,34 +355,51 @@ func (client *WorkflowsClient) getCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *WorkflowsClient) getHandleResponse(resp *http.Response) (WorkflowsClientGetResponse, error) {
-	result := WorkflowsClientGetResponse{RawResponse: resp}
+	result := WorkflowsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Workflow); err != nil {
 		return WorkflowsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets a list of workflows by resource group.
+// NewListByResourceGroupPager - Gets a list of workflows by resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // options - WorkflowsClientListByResourceGroupOptions contains the optional parameters for the WorkflowsClient.ListByResourceGroup
 // method.
-func (client *WorkflowsClient) ListByResourceGroup(resourceGroupName string, options *WorkflowsClientListByResourceGroupOptions) *WorkflowsClientListByResourceGroupPager {
-	return &WorkflowsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *WorkflowsClient) NewListByResourceGroupPager(resourceGroupName string, options *WorkflowsClientListByResourceGroupOptions) *runtime.Pager[WorkflowsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkflowsClientListByResourceGroupResponse]{
+		More: func(page WorkflowsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp WorkflowsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.WorkflowListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *WorkflowsClientListByResourceGroupResponse) (WorkflowsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return WorkflowsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkflowsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkflowsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -398,33 +426,50 @@ func (client *WorkflowsClient) listByResourceGroupCreateRequest(ctx context.Cont
 		reqQP.Set("$filter", *options.Filter)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *WorkflowsClient) listByResourceGroupHandleResponse(resp *http.Response) (WorkflowsClientListByResourceGroupResponse, error) {
-	result := WorkflowsClientListByResourceGroupResponse{RawResponse: resp}
+	result := WorkflowsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkflowListResult); err != nil {
 		return WorkflowsClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Gets a list of workflows by subscription.
+// NewListBySubscriptionPager - Gets a list of workflows by subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // options - WorkflowsClientListBySubscriptionOptions contains the optional parameters for the WorkflowsClient.ListBySubscription
 // method.
-func (client *WorkflowsClient) ListBySubscription(options *WorkflowsClientListBySubscriptionOptions) *WorkflowsClientListBySubscriptionPager {
-	return &WorkflowsClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *WorkflowsClient) NewListBySubscriptionPager(options *WorkflowsClientListBySubscriptionOptions) *runtime.Pager[WorkflowsClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkflowsClientListBySubscriptionResponse]{
+		More: func(page WorkflowsClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp WorkflowsClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.WorkflowListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *WorkflowsClientListBySubscriptionResponse) (WorkflowsClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return WorkflowsClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkflowsClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkflowsClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -447,13 +492,13 @@ func (client *WorkflowsClient) listBySubscriptionCreateRequest(ctx context.Conte
 		reqQP.Set("$filter", *options.Filter)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *WorkflowsClient) listBySubscriptionHandleResponse(resp *http.Response) (WorkflowsClientListBySubscriptionResponse, error) {
-	result := WorkflowsClientListBySubscriptionResponse{RawResponse: resp}
+	result := WorkflowsClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkflowListResult); err != nil {
 		return WorkflowsClientListBySubscriptionResponse{}, err
 	}
@@ -462,6 +507,7 @@ func (client *WorkflowsClient) listBySubscriptionHandleResponse(resp *http.Respo
 
 // ListCallbackURL - Get the workflow callback Url.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // listCallbackURL - Which callback url to list.
@@ -504,13 +550,13 @@ func (client *WorkflowsClient) listCallbackURLCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, listCallbackURL)
 }
 
 // listCallbackURLHandleResponse handles the ListCallbackURL response.
 func (client *WorkflowsClient) listCallbackURLHandleResponse(resp *http.Response) (WorkflowsClientListCallbackURLResponse, error) {
-	result := WorkflowsClientListCallbackURLResponse{RawResponse: resp}
+	result := WorkflowsClientListCallbackURLResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkflowTriggerCallbackURL); err != nil {
 		return WorkflowsClientListCallbackURLResponse{}, err
 	}
@@ -519,6 +565,7 @@ func (client *WorkflowsClient) listCallbackURLHandleResponse(resp *http.Response
 
 // ListSwagger - Gets an OpenAPI definition for the workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientListSwaggerOptions contains the optional parameters for the WorkflowsClient.ListSwagger method.
@@ -559,14 +606,14 @@ func (client *WorkflowsClient) listSwaggerCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSwaggerHandleResponse handles the ListSwagger response.
 func (client *WorkflowsClient) listSwaggerHandleResponse(resp *http.Response) (WorkflowsClientListSwaggerResponse, error) {
-	result := WorkflowsClientListSwaggerResponse{RawResponse: resp}
-	if err := runtime.UnmarshalAsJSON(resp, &result.Object); err != nil {
+	result := WorkflowsClientListSwaggerResponse{}
+	if err := runtime.UnmarshalAsJSON(resp, &result.Interface); err != nil {
 		return WorkflowsClientListSwaggerResponse{}, err
 	}
 	return result, nil
@@ -574,30 +621,26 @@ func (client *WorkflowsClient) listSwaggerHandleResponse(resp *http.Response) (W
 
 // BeginMove - Moves an existing workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // move - The workflow to move.
 // options - WorkflowsClientBeginMoveOptions contains the optional parameters for the WorkflowsClient.BeginMove method.
-func (client *WorkflowsClient) BeginMove(ctx context.Context, resourceGroupName string, workflowName string, move WorkflowReference, options *WorkflowsClientBeginMoveOptions) (WorkflowsClientMovePollerResponse, error) {
-	resp, err := client.move(ctx, resourceGroupName, workflowName, move, options)
-	if err != nil {
-		return WorkflowsClientMovePollerResponse{}, err
+func (client *WorkflowsClient) BeginMove(ctx context.Context, resourceGroupName string, workflowName string, move WorkflowReference, options *WorkflowsClientBeginMoveOptions) (*runtime.Poller[WorkflowsClientMoveResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.move(ctx, resourceGroupName, workflowName, move, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[WorkflowsClientMoveResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkflowsClientMoveResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkflowsClientMovePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkflowsClient.Move", "", resp, client.pl)
-	if err != nil {
-		return WorkflowsClientMovePollerResponse{}, err
-	}
-	result.Poller = &WorkflowsClientMovePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Move - Moves an existing workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 func (client *WorkflowsClient) move(ctx context.Context, resourceGroupName string, workflowName string, move WorkflowReference, options *WorkflowsClientBeginMoveOptions) (*http.Response, error) {
 	req, err := client.moveCreateRequest(ctx, resourceGroupName, workflowName, move, options)
 	if err != nil {
@@ -635,12 +678,13 @@ func (client *WorkflowsClient) moveCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, move)
 }
 
 // RegenerateAccessKey - Regenerates the callback URL access key for request triggers.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // keyType - The access key type.
@@ -658,7 +702,7 @@ func (client *WorkflowsClient) RegenerateAccessKey(ctx context.Context, resource
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkflowsClientRegenerateAccessKeyResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientRegenerateAccessKeyResponse{RawResponse: resp}, nil
+	return WorkflowsClientRegenerateAccessKeyResponse{}, nil
 }
 
 // regenerateAccessKeyCreateRequest creates the RegenerateAccessKey request.
@@ -683,12 +727,13 @@ func (client *WorkflowsClient) regenerateAccessKeyCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, keyType)
 }
 
 // Update - Updates a workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // options - WorkflowsClientUpdateOptions contains the optional parameters for the WorkflowsClient.Update method.
@@ -729,13 +774,13 @@ func (client *WorkflowsClient) updateCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // updateHandleResponse handles the Update response.
 func (client *WorkflowsClient) updateHandleResponse(resp *http.Response) (WorkflowsClientUpdateResponse, error) {
-	result := WorkflowsClientUpdateResponse{RawResponse: resp}
+	result := WorkflowsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Workflow); err != nil {
 		return WorkflowsClientUpdateResponse{}, err
 	}
@@ -744,6 +789,7 @@ func (client *WorkflowsClient) updateHandleResponse(resp *http.Response) (Workfl
 
 // ValidateByLocation - Validates the workflow definition.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // location - The workflow location.
 // workflowName - The workflow name.
@@ -762,7 +808,7 @@ func (client *WorkflowsClient) ValidateByLocation(ctx context.Context, resourceG
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkflowsClientValidateByLocationResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientValidateByLocationResponse{RawResponse: resp}, nil
+	return WorkflowsClientValidateByLocationResponse{}, nil
 }
 
 // validateByLocationCreateRequest creates the ValidateByLocation request.
@@ -791,12 +837,13 @@ func (client *WorkflowsClient) validateByLocationCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, validate)
 }
 
 // ValidateByResourceGroup - Validates the workflow.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // workflowName - The workflow name.
 // validate - The workflow.
@@ -814,7 +861,7 @@ func (client *WorkflowsClient) ValidateByResourceGroup(ctx context.Context, reso
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return WorkflowsClientValidateByResourceGroupResponse{}, runtime.NewResponseError(resp)
 	}
-	return WorkflowsClientValidateByResourceGroupResponse{RawResponse: resp}, nil
+	return WorkflowsClientValidateByResourceGroupResponse{}, nil
 }
 
 // validateByResourceGroupCreateRequest creates the ValidateByResourceGroup request.
@@ -839,6 +886,6 @@ func (client *WorkflowsClient) validateByResourceGroupCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, validate)
 }

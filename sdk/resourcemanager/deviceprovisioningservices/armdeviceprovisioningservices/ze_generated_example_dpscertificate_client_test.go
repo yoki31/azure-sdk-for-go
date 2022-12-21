@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,60 +17,73 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/deviceprovisioningservices/armdeviceprovisioningservices"
 )
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSGetCertificate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSGetCertificate.json
 func ExampleDpsCertificateClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<certificate-name>",
-		"<resource-group-name>",
-		"<provisioning-service-name>",
+		"cert",
+		"myResourceGroup",
+		"myFirstProvisioningService",
 		&armdeviceprovisioningservices.DpsCertificateClientGetOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DpsCertificateClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSCertificateCreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSCertificateCreateOrUpdate.json
 func ExampleDpsCertificateClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<provisioning-service-name>",
-		"<certificate-name>",
-		armdeviceprovisioningservices.CertificateBodyDescription{
-			Certificate: to.StringPtr("<certificate>"),
+		"myResourceGroup",
+		"myFirstProvisioningService",
+		"cert",
+		armdeviceprovisioningservices.CertificateResponse{
+			Properties: &armdeviceprovisioningservices.CertificateProperties{
+				Certificate: []byte("############################################"),
+			},
 		},
 		&armdeviceprovisioningservices.DpsCertificateClientCreateOrUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DpsCertificateClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSDeleteCertificate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSDeleteCertificate.json
 func ExampleDpsCertificateClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<if-match>",
-		"<provisioning-service-name>",
-		"<certificate-name>",
+		"myResourceGroup",
+		"AAAAAAAADGk=",
+		"myFirstProvisioningService",
+		"cert",
 		&armdeviceprovisioningservices.DpsCertificateClientDeleteOptions{CertificateName1: nil,
 			CertificateIsVerified:    nil,
 			CertificatePurpose:       nil,
@@ -80,41 +93,48 @@ func ExampleDpsCertificateClient_Delete() {
 			CertificateNonce:         nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSGetCertificates.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSGetCertificates.json
 func ExampleDpsCertificateClient_List() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.List(ctx,
-		"<resource-group-name>",
-		"<provisioning-service-name>",
+		"myResourceGroup",
+		"myFirstProvisioningService",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DpsCertificateClientListResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSGenerateVerificationCode.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSGenerateVerificationCode.json
 func ExampleDpsCertificateClient_GenerateVerificationCode() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GenerateVerificationCode(ctx,
-		"<certificate-name>",
-		"<if-match>",
-		"<resource-group-name>",
-		"<provisioning-service-name>",
+		"cert",
+		"AAAAAAAADGk=",
+		"myResourceGroup",
+		"myFirstProvisioningService",
 		&armdeviceprovisioningservices.DpsCertificateClientGenerateVerificationCodeOptions{CertificateName1: nil,
 			CertificateIsVerified:    nil,
 			CertificatePurpose:       nil,
@@ -124,26 +144,30 @@ func ExampleDpsCertificateClient_GenerateVerificationCode() {
 			CertificateNonce:         nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DpsCertificateClientGenerateVerificationCodeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2020-03-01/examples/DPSVerifyCertificate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/deviceprovisioningservices/resource-manager/Microsoft.Devices/stable/2022-02-05/examples/DPSVerifyCertificate.json
 func ExampleDpsCertificateClient_VerifyCertificate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdeviceprovisioningservices.NewDpsCertificateClient("<subscription-id>", cred, nil)
+	client, err := armdeviceprovisioningservices.NewDpsCertificateClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.VerifyCertificate(ctx,
-		"<certificate-name>",
-		"<if-match>",
-		"<resource-group-name>",
-		"<provisioning-service-name>",
+		"cert",
+		"AAAAAAAADGk=",
+		"myResourceGroup",
+		"myFirstProvisioningService",
 		armdeviceprovisioningservices.VerificationCodeRequest{
-			Certificate: to.StringPtr("<certificate>"),
+			Certificate: to.Ptr("#####################################"),
 		},
 		&armdeviceprovisioningservices.DpsCertificateClientVerifyCertificateOptions{CertificateName1: nil,
 			CertificateIsVerified:    nil,
@@ -154,7 +178,8 @@ func ExampleDpsCertificateClient_VerifyCertificate() {
 			CertificateNonce:         nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DpsCertificateClientVerifyCertificateResult)
+	// TODO: use response item
+	_ = res
 }

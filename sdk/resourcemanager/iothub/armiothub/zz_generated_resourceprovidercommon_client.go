@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ResourceProviderCommonClient struct {
 // subscriptionID - The subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewResourceProviderCommonClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ResourceProviderCommonClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewResourceProviderCommonClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ResourceProviderCommonClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ResourceProviderCommonClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // GetSubscriptionQuota - Get the number of free and paid iot hubs in the subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-02
 // options - ResourceProviderCommonClientGetSubscriptionQuotaOptions contains the optional parameters for the ResourceProviderCommonClient.GetSubscriptionQuota
 // method.
 func (client *ResourceProviderCommonClient) GetSubscriptionQuota(ctx context.Context, options *ResourceProviderCommonClientGetSubscriptionQuotaOptions) (ResourceProviderCommonClientGetSubscriptionQuotaResponse, error) {
@@ -80,15 +86,15 @@ func (client *ResourceProviderCommonClient) getSubscriptionQuotaCreateRequest(ct
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-07-01-preview")
+	reqQP.Set("api-version", "2021-07-02")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getSubscriptionQuotaHandleResponse handles the GetSubscriptionQuota response.
 func (client *ResourceProviderCommonClient) getSubscriptionQuotaHandleResponse(resp *http.Response) (ResourceProviderCommonClientGetSubscriptionQuotaResponse, error) {
-	result := ResourceProviderCommonClientGetSubscriptionQuotaResponse{RawResponse: resp}
+	result := ResourceProviderCommonClientGetSubscriptionQuotaResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.UserSubscriptionQuotaListResult); err != nil {
 		return ResourceProviderCommonClientGetSubscriptionQuotaResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,50 +35,52 @@ type BigDataPoolsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewBigDataPoolsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *BigDataPoolsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewBigDataPoolsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*BigDataPoolsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &BigDataPoolsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create a new Big Data pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // bigDataPoolName - Big Data pool name
 // bigDataPoolInfo - The Big Data pool to create.
 // options - BigDataPoolsClientBeginCreateOrUpdateOptions contains the optional parameters for the BigDataPoolsClient.BeginCreateOrUpdate
 // method.
-func (client *BigDataPoolsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, bigDataPoolInfo BigDataPoolResourceInfo, options *BigDataPoolsClientBeginCreateOrUpdateOptions) (BigDataPoolsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, bigDataPoolName, bigDataPoolInfo, options)
-	if err != nil {
-		return BigDataPoolsClientCreateOrUpdatePollerResponse{}, err
+func (client *BigDataPoolsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, bigDataPoolInfo BigDataPoolResourceInfo, options *BigDataPoolsClientBeginCreateOrUpdateOptions) (*runtime.Poller[BigDataPoolsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, bigDataPoolName, bigDataPoolInfo, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[BigDataPoolsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[BigDataPoolsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := BigDataPoolsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("BigDataPoolsClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return BigDataPoolsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &BigDataPoolsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create a new Big Data pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 func (client *BigDataPoolsClient) createOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, bigDataPoolInfo BigDataPoolResourceInfo, options *BigDataPoolsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, workspaceName, bigDataPoolName, bigDataPoolInfo, options)
 	if err != nil {
@@ -122,37 +125,35 @@ func (client *BigDataPoolsClient) createOrUpdateCreateRequest(ctx context.Contex
 		reqQP.Set("force", strconv.FormatBool(*options.Force))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, bigDataPoolInfo)
 }
 
 // BeginDelete - Delete a Big Data pool from the workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // bigDataPoolName - Big Data pool name
 // options - BigDataPoolsClientBeginDeleteOptions contains the optional parameters for the BigDataPoolsClient.BeginDelete
 // method.
-func (client *BigDataPoolsClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, options *BigDataPoolsClientBeginDeleteOptions) (BigDataPoolsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, bigDataPoolName, options)
-	if err != nil {
-		return BigDataPoolsClientDeletePollerResponse{}, err
+func (client *BigDataPoolsClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, options *BigDataPoolsClientBeginDeleteOptions) (*runtime.Poller[BigDataPoolsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, bigDataPoolName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[BigDataPoolsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[BigDataPoolsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := BigDataPoolsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("BigDataPoolsClient.Delete", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return BigDataPoolsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &BigDataPoolsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a Big Data pool from the workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 func (client *BigDataPoolsClient) deleteOperation(ctx context.Context, resourceGroupName string, workspaceName string, bigDataPoolName string, options *BigDataPoolsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, workspaceName, bigDataPoolName, options)
 	if err != nil {
@@ -194,12 +195,13 @@ func (client *BigDataPoolsClient) deleteCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a Big Data pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // bigDataPoolName - Big Data pool name
@@ -245,35 +247,52 @@ func (client *BigDataPoolsClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *BigDataPoolsClient) getHandleResponse(resp *http.Response) (BigDataPoolsClientGetResponse, error) {
-	result := BigDataPoolsClientGetResponse{RawResponse: resp}
+	result := BigDataPoolsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BigDataPoolResourceInfo); err != nil {
 		return BigDataPoolsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByWorkspace - List Big Data pools in a workspace.
+// NewListByWorkspacePager - List Big Data pools in a workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // options - BigDataPoolsClientListByWorkspaceOptions contains the optional parameters for the BigDataPoolsClient.ListByWorkspace
 // method.
-func (client *BigDataPoolsClient) ListByWorkspace(resourceGroupName string, workspaceName string, options *BigDataPoolsClientListByWorkspaceOptions) *BigDataPoolsClientListByWorkspacePager {
-	return &BigDataPoolsClientListByWorkspacePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByWorkspaceCreateRequest(ctx, resourceGroupName, workspaceName, options)
+func (client *BigDataPoolsClient) NewListByWorkspacePager(resourceGroupName string, workspaceName string, options *BigDataPoolsClientListByWorkspaceOptions) *runtime.Pager[BigDataPoolsClientListByWorkspaceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[BigDataPoolsClientListByWorkspaceResponse]{
+		More: func(page BigDataPoolsClientListByWorkspaceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp BigDataPoolsClientListByWorkspaceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.BigDataPoolResourceInfoListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *BigDataPoolsClientListByWorkspaceResponse) (BigDataPoolsClientListByWorkspaceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByWorkspaceCreateRequest(ctx, resourceGroupName, workspaceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return BigDataPoolsClientListByWorkspaceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return BigDataPoolsClientListByWorkspaceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return BigDataPoolsClientListByWorkspaceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByWorkspaceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByWorkspaceCreateRequest creates the ListByWorkspace request.
@@ -298,13 +317,13 @@ func (client *BigDataPoolsClient) listByWorkspaceCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByWorkspaceHandleResponse handles the ListByWorkspace response.
 func (client *BigDataPoolsClient) listByWorkspaceHandleResponse(resp *http.Response) (BigDataPoolsClientListByWorkspaceResponse, error) {
-	result := BigDataPoolsClientListByWorkspaceResponse{RawResponse: resp}
+	result := BigDataPoolsClientListByWorkspaceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BigDataPoolResourceInfoListResult); err != nil {
 		return BigDataPoolsClientListByWorkspaceResponse{}, err
 	}
@@ -313,6 +332,7 @@ func (client *BigDataPoolsClient) listByWorkspaceHandleResponse(resp *http.Respo
 
 // Update - Patch a Big Data pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // bigDataPoolName - Big Data pool name
@@ -359,13 +379,13 @@ func (client *BigDataPoolsClient) updateCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, bigDataPoolPatchInfo)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *BigDataPoolsClient) updateHandleResponse(resp *http.Response) (BigDataPoolsClientUpdateResponse, error) {
-	result := BigDataPoolsClientUpdateResponse{RawResponse: resp}
+	result := BigDataPoolsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BigDataPoolResourceInfo); err != nil {
 		return BigDataPoolsClientUpdateResponse{}, err
 	}

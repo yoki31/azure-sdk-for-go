@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,53 +17,59 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/recoveryservices/armrecoveryservicesbackup"
 )
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/Provision_Ilr.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/Provision_Ilr.json
 func ExampleItemLevelRecoveryConnectionsClient_Provision() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewItemLevelRecoveryConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewItemLevelRecoveryConnectionsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Provision(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<protected-item-name>",
-		"<recovery-point-id>",
+		"PySDKBackupTestRsVault",
+		"PythonSDKBackupTestRg",
+		"Azure",
+		"iaasvmcontainer;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
+		"vm;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
+		"1",
 		armrecoveryservicesbackup.ILRRequestResource{
 			Properties: &armrecoveryservicesbackup.IaasVMILRRegistrationRequest{
-				ObjectType:                to.StringPtr("<object-type>"),
-				InitiatorName:             to.StringPtr("<initiator-name>"),
-				RecoveryPointID:           to.StringPtr("<recovery-point-id>"),
-				RenewExistingRegistration: to.BoolPtr(true),
-				VirtualMachineID:          to.StringPtr("<virtual-machine-id>"),
+				ObjectType:                to.Ptr("IaasVMILRRegistrationRequest"),
+				InitiatorName:             to.Ptr("Hello World"),
+				RecoveryPointID:           to.Ptr("38823086363464"),
+				RenewExistingRegistration: to.Ptr(true),
+				VirtualMachineID:          to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/pysdktestrg/providers/Microsoft.Compute/virtualMachines/pysdktestv2vm1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/Revoke_Ilr.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/Revoke_Ilr.json
 func ExampleItemLevelRecoveryConnectionsClient_Revoke() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewItemLevelRecoveryConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewItemLevelRecoveryConnectionsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Revoke(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<protected-item-name>",
-		"<recovery-point-id>",
+		"PySDKBackupTestRsVault",
+		"PythonSDKBackupTestRg",
+		"Azure",
+		"iaasvmcontainer;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
+		"vm;iaasvmcontainerv2;pysdktestrg;pysdktestv2vm1",
+		"1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

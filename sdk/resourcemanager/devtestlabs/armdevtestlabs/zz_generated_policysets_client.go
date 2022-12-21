@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type PolicySetsClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPolicySetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *PolicySetsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPolicySetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*PolicySetsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PolicySetsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // EvaluatePolicies - Evaluates lab policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the policy set.
@@ -98,13 +104,13 @@ func (client *PolicySetsClient) evaluatePoliciesCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, evaluatePoliciesRequest)
 }
 
 // evaluatePoliciesHandleResponse handles the EvaluatePolicies response.
 func (client *PolicySetsClient) evaluatePoliciesHandleResponse(resp *http.Response) (PolicySetsClientEvaluatePoliciesResponse, error) {
-	result := PolicySetsClientEvaluatePoliciesResponse{RawResponse: resp}
+	result := PolicySetsClientEvaluatePoliciesResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.EvaluatePoliciesResponse); err != nil {
 		return PolicySetsClientEvaluatePoliciesResponse{}, err
 	}

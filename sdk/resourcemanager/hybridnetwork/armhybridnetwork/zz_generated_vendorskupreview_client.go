@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,52 @@ type VendorSKUPreviewClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewVendorSKUPreviewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *VendorSKUPreviewClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewVendorSKUPreviewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*VendorSKUPreviewClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &VendorSKUPreviewClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // vendorName - The name of the vendor.
 // skuName - The name of the vendor sku.
 // previewSubscription - Preview subscription ID.
 // parameters - Parameters supplied to the create or update vendor preview subscription operation.
 // options - VendorSKUPreviewClientBeginCreateOrUpdateOptions contains the optional parameters for the VendorSKUPreviewClient.BeginCreateOrUpdate
 // method.
-func (client *VendorSKUPreviewClient) BeginCreateOrUpdate(ctx context.Context, vendorName string, skuName string, previewSubscription string, parameters PreviewSubscription, options *VendorSKUPreviewClientBeginCreateOrUpdateOptions) (VendorSKUPreviewClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, vendorName, skuName, previewSubscription, parameters, options)
-	if err != nil {
-		return VendorSKUPreviewClientCreateOrUpdatePollerResponse{}, err
+func (client *VendorSKUPreviewClient) BeginCreateOrUpdate(ctx context.Context, vendorName string, skuName string, previewSubscription string, parameters PreviewSubscription, options *VendorSKUPreviewClientBeginCreateOrUpdateOptions) (*runtime.Poller[VendorSKUPreviewClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, vendorName, skuName, previewSubscription, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[VendorSKUPreviewClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[VendorSKUPreviewClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := VendorSKUPreviewClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("VendorSKUPreviewClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return VendorSKUPreviewClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &VendorSKUPreviewClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 func (client *VendorSKUPreviewClient) createOrUpdate(ctx context.Context, vendorName string, skuName string, previewSubscription string, parameters PreviewSubscription, options *VendorSKUPreviewClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, vendorName, skuName, previewSubscription, parameters, options)
 	if err != nil {
@@ -116,39 +119,37 @@ func (client *VendorSKUPreviewClient) createOrUpdateCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes the preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // vendorName - The name of the vendor.
 // skuName - The name of the vendor sku.
 // previewSubscription - Preview subscription ID.
 // options - VendorSKUPreviewClientBeginDeleteOptions contains the optional parameters for the VendorSKUPreviewClient.BeginDelete
 // method.
-func (client *VendorSKUPreviewClient) BeginDelete(ctx context.Context, vendorName string, skuName string, previewSubscription string, options *VendorSKUPreviewClientBeginDeleteOptions) (VendorSKUPreviewClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, vendorName, skuName, previewSubscription, options)
-	if err != nil {
-		return VendorSKUPreviewClientDeletePollerResponse{}, err
+func (client *VendorSKUPreviewClient) BeginDelete(ctx context.Context, vendorName string, skuName string, previewSubscription string, options *VendorSKUPreviewClientBeginDeleteOptions) (*runtime.Poller[VendorSKUPreviewClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, vendorName, skuName, previewSubscription, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[VendorSKUPreviewClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[VendorSKUPreviewClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := VendorSKUPreviewClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("VendorSKUPreviewClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return VendorSKUPreviewClientDeletePollerResponse{}, err
-	}
-	result.Poller = &VendorSKUPreviewClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 func (client *VendorSKUPreviewClient) deleteOperation(ctx context.Context, vendorName string, skuName string, previewSubscription string, options *VendorSKUPreviewClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, vendorName, skuName, previewSubscription, options)
 	if err != nil {
@@ -188,14 +189,15 @@ func (client *VendorSKUPreviewClient) deleteCreateRequest(ctx context.Context, v
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // vendorName - The name of the vendor.
 // skuName - The name of the vendor sku.
 // previewSubscription - Preview subscription ID.
@@ -239,36 +241,53 @@ func (client *VendorSKUPreviewClient) getCreateRequest(ctx context.Context, vend
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *VendorSKUPreviewClient) getHandleResponse(resp *http.Response) (VendorSKUPreviewClientGetResponse, error) {
-	result := VendorSKUPreviewClientGetResponse{RawResponse: resp}
+	result := VendorSKUPreviewClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PreviewSubscription); err != nil {
 		return VendorSKUPreviewClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Lists all the preview information of a vendor sku.
+// NewListPager - Lists all the preview information of a vendor sku.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // vendorName - The name of the vendor.
 // skuName - The name of the sku.
 // options - VendorSKUPreviewClientListOptions contains the optional parameters for the VendorSKUPreviewClient.List method.
-func (client *VendorSKUPreviewClient) List(vendorName string, skuName string, options *VendorSKUPreviewClientListOptions) *VendorSKUPreviewClientListPager {
-	return &VendorSKUPreviewClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, vendorName, skuName, options)
+func (client *VendorSKUPreviewClient) NewListPager(vendorName string, skuName string, options *VendorSKUPreviewClientListOptions) *runtime.Pager[VendorSKUPreviewClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[VendorSKUPreviewClientListResponse]{
+		More: func(page VendorSKUPreviewClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp VendorSKUPreviewClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.PreviewSubscriptionsList.NextLink)
+		Fetcher: func(ctx context.Context, page *VendorSKUPreviewClientListResponse) (VendorSKUPreviewClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, vendorName, skuName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return VendorSKUPreviewClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return VendorSKUPreviewClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return VendorSKUPreviewClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -291,15 +310,15 @@ func (client *VendorSKUPreviewClient) listCreateRequest(ctx context.Context, ven
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *VendorSKUPreviewClient) listHandleResponse(resp *http.Response) (VendorSKUPreviewClientListResponse, error) {
-	result := VendorSKUPreviewClientListResponse{RawResponse: resp}
+	result := VendorSKUPreviewClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PreviewSubscriptionsList); err != nil {
 		return VendorSKUPreviewClientListResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,90 +12,97 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ServerBlobAuditingGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-11-01-preview/examples/ServerAuditingSettingsList.json
+func ExampleServerBlobAuditingPoliciesClient_NewListByServerPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewServerBlobAuditingPoliciesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServerPager("blobauditingtest-4799",
+		"blobauditingtest-6440",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-11-01-preview/examples/ServerBlobAuditingGet.json
 func ExampleServerBlobAuditingPoliciesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewServerBlobAuditingPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewServerBlobAuditingPoliciesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"blobauditingtest-4799",
+		"blobauditingtest-6440",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServerBlobAuditingPoliciesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ServerBlobAuditingCreateMax.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-11-01-preview/examples/ServerBlobAuditingCreateMax.json
 func ExampleServerBlobAuditingPoliciesClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewServerBlobAuditingPoliciesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewServerBlobAuditingPoliciesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"blobauditingtest-4799",
+		"blobauditingtest-6440",
 		armsql.ServerBlobAuditingPolicy{
 			Properties: &armsql.ServerBlobAuditingPolicyProperties{
 				AuditActionsAndGroups: []*string{
-					to.StringPtr("SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP"),
-					to.StringPtr("FAILED_DATABASE_AUTHENTICATION_GROUP"),
-					to.StringPtr("BATCH_COMPLETED_GROUP")},
-				IsAzureMonitorTargetEnabled:  to.BoolPtr(true),
-				IsStorageSecondaryKeyInUse:   to.BoolPtr(false),
-				QueueDelayMs:                 to.Int32Ptr(4000),
-				RetentionDays:                to.Int32Ptr(6),
-				State:                        armsql.BlobAuditingPolicyStateEnabled.ToPtr(),
-				StorageAccountAccessKey:      to.StringPtr("<storage-account-access-key>"),
-				StorageAccountSubscriptionID: to.StringPtr("<storage-account-subscription-id>"),
-				StorageEndpoint:              to.StringPtr("<storage-endpoint>"),
+					to.Ptr("SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP"),
+					to.Ptr("FAILED_DATABASE_AUTHENTICATION_GROUP"),
+					to.Ptr("BATCH_COMPLETED_GROUP")},
+				IsAzureMonitorTargetEnabled:  to.Ptr(true),
+				IsStorageSecondaryKeyInUse:   to.Ptr(false),
+				QueueDelayMs:                 to.Ptr[int32](4000),
+				RetentionDays:                to.Ptr[int32](6),
+				State:                        to.Ptr(armsql.BlobAuditingPolicyStateEnabled),
+				StorageAccountAccessKey:      to.Ptr("sdlfkjabc+sdlfkjsdlkfsjdfLDKFTERLKFDFKLjsdfksjdflsdkfD2342309432849328476458/3RSD=="),
+				StorageAccountSubscriptionID: to.Ptr("00000000-1234-0000-5678-000000000000"),
+				StorageEndpoint:              to.Ptr("https://mystorage.blob.core.windows.net"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ServerBlobAuditingPoliciesClientCreateOrUpdateResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ServerAuditingSettingsList.json
-func ExampleServerBlobAuditingPoliciesClient_ListByServer() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewServerBlobAuditingPoliciesClient("<subscription-id>", cred, nil)
-	pager := client.ListByServer("<resource-group-name>",
-		"<server-name>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
+	// TODO: use response item
+	_ = res
 }

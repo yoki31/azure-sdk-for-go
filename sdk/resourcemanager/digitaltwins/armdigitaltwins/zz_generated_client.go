@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type Client struct {
 // subscriptionID - The subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *Client {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*Client, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &Client{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Check if a DigitalTwinsInstance name is available.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // location - Location of DigitalTwinsInstance.
 // digitalTwinsInstanceCheckName - Set the name parameter in the DigitalTwinsInstanceCheckName structure to the name of the
 // DigitalTwinsInstance to check.
@@ -86,15 +92,15 @@ func (client *Client) checkNameAvailabilityCreateRequest(ctx context.Context, lo
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, digitalTwinsInstanceCheckName)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *Client) checkNameAvailabilityHandleResponse(resp *http.Response) (ClientCheckNameAvailabilityResponse, error) {
-	result := ClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := ClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CheckNameResult); err != nil {
 		return ClientCheckNameAvailabilityResponse{}, err
 	}
@@ -105,32 +111,28 @@ func (client *Client) checkNameAvailabilityHandleResponse(resp *http.Response) (
 // to retrieve the DigitalTwinsInstance and security metadata, and then combine them with the modified
 // values in a new body to update the DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // resourceGroupName - The name of the resource group that contains the DigitalTwinsInstance.
 // resourceName - The name of the DigitalTwinsInstance.
 // digitalTwinsCreate - The DigitalTwinsInstance and security metadata.
 // options - ClientBeginCreateOrUpdateOptions contains the optional parameters for the Client.BeginCreateOrUpdate method.
-func (client *Client) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsCreate Description, options *ClientBeginCreateOrUpdateOptions) (ClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, resourceName, digitalTwinsCreate, options)
-	if err != nil {
-		return ClientCreateOrUpdatePollerResponse{}, err
+func (client *Client) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsCreate Description, options *ClientBeginCreateOrUpdateOptions) (*runtime.Poller[ClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, resourceName, digitalTwinsCreate, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("Client.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return ClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &ClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or update the metadata of a DigitalTwinsInstance. The usual pattern to modify a property is to
 // retrieve the DigitalTwinsInstance and security metadata, and then combine them with the modified
 // values in a new body to update the DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 func (client *Client) createOrUpdate(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsCreate Description, options *ClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, resourceName, digitalTwinsCreate, options)
 	if err != nil {
@@ -166,37 +168,33 @@ func (client *Client) createOrUpdateCreateRequest(ctx context.Context, resourceG
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, digitalTwinsCreate)
 }
 
 // BeginDelete - Delete a DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // resourceGroupName - The name of the resource group that contains the DigitalTwinsInstance.
 // resourceName - The name of the DigitalTwinsInstance.
 // options - ClientBeginDeleteOptions contains the optional parameters for the Client.BeginDelete method.
-func (client *Client) BeginDelete(ctx context.Context, resourceGroupName string, resourceName string, options *ClientBeginDeleteOptions) (ClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, resourceName, options)
-	if err != nil {
-		return ClientDeletePollerResponse{}, err
+func (client *Client) BeginDelete(ctx context.Context, resourceGroupName string, resourceName string, options *ClientBeginDeleteOptions) (*runtime.Poller[ClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, resourceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("Client.Delete", "", resp, client.pl)
-	if err != nil {
-		return ClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 func (client *Client) deleteOperation(ctx context.Context, resourceGroupName string, resourceName string, options *ClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, resourceName, options)
 	if err != nil {
@@ -232,14 +230,15 @@ func (client *Client) deleteCreateRequest(ctx context.Context, resourceGroupName
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get DigitalTwinsInstances resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // resourceGroupName - The name of the resource group that contains the DigitalTwinsInstance.
 // resourceName - The name of the DigitalTwinsInstance.
 // options - ClientGetOptions contains the optional parameters for the Client.Get method.
@@ -278,34 +277,51 @@ func (client *Client) getCreateRequest(ctx context.Context, resourceGroupName st
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *Client) getHandleResponse(resp *http.Response) (ClientGetResponse, error) {
-	result := ClientGetResponse{RawResponse: resp}
+	result := ClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Description); err != nil {
 		return ClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Get all the DigitalTwinsInstances in a subscription.
+// NewListPager - Get all the DigitalTwinsInstances in a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // options - ClientListOptions contains the optional parameters for the Client.List method.
-func (client *Client) List(options *ClientListOptions) *ClientListPager {
-	return &ClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *Client) NewListPager(options *ClientListOptions) *runtime.Pager[ClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListResponse]{
+		More: func(page ClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListResponse) (ClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -320,35 +336,52 @@ func (client *Client) listCreateRequest(ctx context.Context, options *ClientList
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *Client) listHandleResponse(resp *http.Response) (ClientListResponse, error) {
-	result := ClientListResponse{RawResponse: resp}
+	result := ClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DescriptionListResult); err != nil {
 		return ClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Get all the DigitalTwinsInstances in a resource group.
+// NewListByResourceGroupPager - Get all the DigitalTwinsInstances in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // resourceGroupName - The name of the resource group that contains the DigitalTwinsInstance.
 // options - ClientListByResourceGroupOptions contains the optional parameters for the Client.ListByResourceGroup method.
-func (client *Client) ListByResourceGroup(resourceGroupName string, options *ClientListByResourceGroupOptions) *ClientListByResourceGroupPager {
-	return &ClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *Client) NewListByResourceGroupPager(resourceGroupName string, options *ClientListByResourceGroupOptions) *runtime.Pager[ClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ClientListByResourceGroupResponse]{
+		More: func(page ClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ClientListByResourceGroupResponse) (ClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -367,15 +400,15 @@ func (client *Client) listByResourceGroupCreateRequest(ctx context.Context, reso
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *Client) listByResourceGroupHandleResponse(resp *http.Response) (ClientListByResourceGroupResponse, error) {
-	result := ClientListByResourceGroupResponse{RawResponse: resp}
+	result := ClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DescriptionListResult); err != nil {
 		return ClientListByResourceGroupResponse{}, err
 	}
@@ -384,30 +417,26 @@ func (client *Client) listByResourceGroupHandleResponse(resp *http.Response) (Cl
 
 // BeginUpdate - Update metadata of DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 // resourceGroupName - The name of the resource group that contains the DigitalTwinsInstance.
 // resourceName - The name of the DigitalTwinsInstance.
 // digitalTwinsPatchDescription - The DigitalTwinsInstance and security metadata.
 // options - ClientBeginUpdateOptions contains the optional parameters for the Client.BeginUpdate method.
-func (client *Client) BeginUpdate(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsPatchDescription PatchDescription, options *ClientBeginUpdateOptions) (ClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, resourceName, digitalTwinsPatchDescription, options)
-	if err != nil {
-		return ClientUpdatePollerResponse{}, err
+func (client *Client) BeginUpdate(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsPatchDescription PatchDescription, options *ClientBeginUpdateOptions) (*runtime.Poller[ClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, resourceName, digitalTwinsPatchDescription, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("Client.Update", "", resp, client.pl)
-	if err != nil {
-		return ClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &ClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Update metadata of DigitalTwinsInstance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-31
 func (client *Client) update(ctx context.Context, resourceGroupName string, resourceName string, digitalTwinsPatchDescription PatchDescription, options *ClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, resourceName, digitalTwinsPatchDescription, options)
 	if err != nil {
@@ -443,8 +472,8 @@ func (client *Client) updateCreateRequest(ctx context.Context, resourceGroupName
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2020-12-01")
+	reqQP.Set("api-version", "2022-05-31")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, digitalTwinsPatchDescription)
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -19,95 +19,106 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ListJobExecutionsByAgentWithFilter.json
-func ExampleJobExecutionsClient_ListByAgent() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ListJobExecutionsByAgentWithFilter.json
+func ExampleJobExecutionsClient_NewListByAgentPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
-	pager := client.ListByAgent("<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		&armsql.JobExecutionsClientListByAgentOptions{CreateTimeMin: to.TimePtr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:00:00Z"); return t }()),
-			CreateTimeMax: to.TimePtr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:05:00Z"); return t }()),
-			EndTimeMin:    to.TimePtr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:20:00Z"); return t }()),
-			EndTimeMax:    to.TimePtr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:25:00Z"); return t }()),
-			IsActive:      to.BoolPtr(false),
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByAgentPager("group1",
+		"server1",
+		"agent1",
+		&armsql.JobExecutionsClientListByAgentOptions{CreateTimeMin: to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:00:00Z"); return t }()),
+			CreateTimeMax: to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:05:00Z"); return t }()),
+			EndTimeMin:    to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:20:00Z"); return t }()),
+			EndTimeMax:    to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2017-03-21T19:25:00Z"); return t }()),
+			IsActive:      to.Ptr(false),
 			Skip:          nil,
 			Top:           nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CancelJobExecution.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CancelJobExecution.json
 func ExampleJobExecutionsClient_Cancel() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Cancel(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		"<job-name>",
-		"<job-execution-id>",
+		"group1",
+		"server1",
+		"agent1",
+		"job1",
+		"5A86BF65-43AC-F258-2524-9E92992F97CA",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateJobExecution.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateJobExecution.json
 func ExampleJobExecutionsClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		"<job-name>",
+		"group1",
+		"server1",
+		"agent1",
+		"job1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.JobExecutionsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ListJobExecutionsByJob.json
-func ExampleJobExecutionsClient_ListByJob() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/ListJobExecutionsByJob.json
+func ExampleJobExecutionsClient_NewListByJobPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
-	pager := client.ListByJob("<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		"<job-name>",
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByJobPager("group1",
+		"server1",
+		"agent1",
+		"job1",
 		&armsql.JobExecutionsClientListByJobOptions{CreateTimeMin: nil,
 			CreateTimeMax: nil,
 			EndTimeMin:    nil,
@@ -116,62 +127,68 @@ func ExampleJobExecutionsClient_ListByJob() {
 			Skip:          nil,
 			Top:           nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetJobExecution.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/GetJobExecution.json
 func ExampleJobExecutionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		"<job-name>",
-		"<job-execution-id>",
+		"group1",
+		"server1",
+		"agent1",
+		"job1",
+		"5A86BF65-43AC-F258-2524-9E92992F97CA",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.JobExecutionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateOrUpdateJobExecution.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/CreateOrUpdateJobExecution.json
 func ExampleJobExecutionsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewJobExecutionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewJobExecutionsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<job-agent-name>",
-		"<job-name>",
-		"<job-execution-id>",
+		"group1",
+		"server1",
+		"agent1",
+		"job1",
+		"5A86BF65-43AC-F258-2524-9E92992F97CA",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.JobExecutionsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type APIIssueAttachmentClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPIIssueAttachmentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *APIIssueAttachmentClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPIIssueAttachmentClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*APIIssueAttachmentClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APIIssueAttachmentClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates a new Attachment for the Issue in an API or updates an existing one.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -111,15 +117,15 @@ func (client *APIIssueAttachmentClient) createOrUpdateCreateRequest(ctx context.
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *APIIssueAttachmentClient) createOrUpdateHandleResponse(resp *http.Response) (APIIssueAttachmentClientCreateOrUpdateResponse, error) {
-	result := APIIssueAttachmentClientCreateOrUpdateResponse{RawResponse: resp}
+	result := APIIssueAttachmentClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -131,6 +137,7 @@ func (client *APIIssueAttachmentClient) createOrUpdateHandleResponse(resp *http.
 
 // Delete - Deletes the specified comment from an Issue.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -152,7 +159,7 @@ func (client *APIIssueAttachmentClient) Delete(ctx context.Context, resourceGrou
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return APIIssueAttachmentClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return APIIssueAttachmentClientDeleteResponse{RawResponse: resp}, nil
+	return APIIssueAttachmentClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -189,13 +196,14 @@ func (client *APIIssueAttachmentClient) deleteCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the issue Attachment for an API specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -251,13 +259,13 @@ func (client *APIIssueAttachmentClient) getCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *APIIssueAttachmentClient) getHandleResponse(resp *http.Response) (APIIssueAttachmentClientGetResponse, error) {
-	result := APIIssueAttachmentClientGetResponse{RawResponse: resp}
+	result := APIIssueAttachmentClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -268,6 +276,7 @@ func (client *APIIssueAttachmentClient) getHandleResponse(resp *http.Response) (
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the issue Attachment for an API specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
@@ -283,6 +292,9 @@ func (client *APIIssueAttachmentClient) GetEntityTag(ctx context.Context, resour
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return APIIssueAttachmentClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return APIIssueAttachmentClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -321,40 +333,55 @@ func (client *APIIssueAttachmentClient) getEntityTagCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *APIIssueAttachmentClient) getEntityTagHandleResponse(resp *http.Response) (APIIssueAttachmentClientGetEntityTagResponse, error) {
-	result := APIIssueAttachmentClientGetEntityTagResponse{RawResponse: resp}
+	result := APIIssueAttachmentClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists all attachments for the Issue associated with the specified API.
+// NewListByServicePager - Lists all attachments for the Issue associated with the specified API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // apiID - API identifier. Must be unique in the current API Management service instance.
 // issueID - Issue identifier. Must be unique in the current API Management service instance.
 // options - APIIssueAttachmentClientListByServiceOptions contains the optional parameters for the APIIssueAttachmentClient.ListByService
 // method.
-func (client *APIIssueAttachmentClient) ListByService(resourceGroupName string, serviceName string, apiID string, issueID string, options *APIIssueAttachmentClientListByServiceOptions) *APIIssueAttachmentClientListByServicePager {
-	return &APIIssueAttachmentClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, issueID, options)
+func (client *APIIssueAttachmentClient) NewListByServicePager(resourceGroupName string, serviceName string, apiID string, issueID string, options *APIIssueAttachmentClientListByServiceOptions) *runtime.Pager[APIIssueAttachmentClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[APIIssueAttachmentClientListByServiceResponse]{
+		More: func(page APIIssueAttachmentClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp APIIssueAttachmentClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.IssueAttachmentCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *APIIssueAttachmentClientListByServiceResponse) (APIIssueAttachmentClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, apiID, issueID, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return APIIssueAttachmentClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return APIIssueAttachmentClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return APIIssueAttachmentClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -396,13 +423,13 @@ func (client *APIIssueAttachmentClient) listByServiceCreateRequest(ctx context.C
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *APIIssueAttachmentClient) listByServiceHandleResponse(resp *http.Response) (APIIssueAttachmentClientListByServiceResponse, error) {
-	result := APIIssueAttachmentClientListByServiceResponse{RawResponse: resp}
+	result := APIIssueAttachmentClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IssueAttachmentCollection); err != nil {
 		return APIIssueAttachmentClientListByServiceResponse{}, err
 	}

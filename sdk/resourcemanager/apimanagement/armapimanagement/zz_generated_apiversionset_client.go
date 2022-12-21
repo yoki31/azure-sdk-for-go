@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type APIVersionSetClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAPIVersionSetClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *APIVersionSetClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAPIVersionSetClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*APIVersionSetClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &APIVersionSetClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or Updates a Api Version Set.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // versionSetID - Api Version Set identifier. Must be unique in the current API Management service instance.
@@ -101,15 +107,15 @@ func (client *APIVersionSetClient) createOrUpdateCreateRequest(ctx context.Conte
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *APIVersionSetClient) createOrUpdateHandleResponse(resp *http.Response) (APIVersionSetClientCreateOrUpdateResponse, error) {
-	result := APIVersionSetClientCreateOrUpdateResponse{RawResponse: resp}
+	result := APIVersionSetClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -121,6 +127,7 @@ func (client *APIVersionSetClient) createOrUpdateHandleResponse(resp *http.Respo
 
 // Delete - Deletes specific Api Version Set.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // versionSetID - Api Version Set identifier. Must be unique in the current API Management service instance.
@@ -139,7 +146,7 @@ func (client *APIVersionSetClient) Delete(ctx context.Context, resourceGroupName
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return APIVersionSetClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return APIVersionSetClientDeleteResponse{RawResponse: resp}, nil
+	return APIVersionSetClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -168,13 +175,14 @@ func (client *APIVersionSetClient) deleteCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the Api Version Set specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // versionSetID - Api Version Set identifier. Must be unique in the current API Management service instance.
@@ -220,13 +228,13 @@ func (client *APIVersionSetClient) getCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *APIVersionSetClient) getHandleResponse(resp *http.Response) (APIVersionSetClientGetResponse, error) {
-	result := APIVersionSetClientGetResponse{RawResponse: resp}
+	result := APIVersionSetClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -237,6 +245,7 @@ func (client *APIVersionSetClient) getHandleResponse(resp *http.Response) (APIVe
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the Api Version Set specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // versionSetID - Api Version Set identifier. Must be unique in the current API Management service instance.
@@ -250,6 +259,9 @@ func (client *APIVersionSetClient) GetEntityTag(ctx context.Context, resourceGro
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return APIVersionSetClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return APIVersionSetClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -280,38 +292,53 @@ func (client *APIVersionSetClient) getEntityTagCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *APIVersionSetClient) getEntityTagHandleResponse(resp *http.Response) (APIVersionSetClientGetEntityTagResponse, error) {
-	result := APIVersionSetClientGetEntityTagResponse{RawResponse: resp}
+	result := APIVersionSetClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of API Version Sets in the specified service instance.
+// NewListByServicePager - Lists a collection of API Version Sets in the specified service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - APIVersionSetClientListByServiceOptions contains the optional parameters for the APIVersionSetClient.ListByService
 // method.
-func (client *APIVersionSetClient) ListByService(resourceGroupName string, serviceName string, options *APIVersionSetClientListByServiceOptions) *APIVersionSetClientListByServicePager {
-	return &APIVersionSetClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *APIVersionSetClient) NewListByServicePager(resourceGroupName string, serviceName string, options *APIVersionSetClientListByServiceOptions) *runtime.Pager[APIVersionSetClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[APIVersionSetClientListByServiceResponse]{
+		More: func(page APIVersionSetClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp APIVersionSetClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.APIVersionSetCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *APIVersionSetClientListByServiceResponse) (APIVersionSetClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return APIVersionSetClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return APIVersionSetClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return APIVersionSetClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -345,13 +372,13 @@ func (client *APIVersionSetClient) listByServiceCreateRequest(ctx context.Contex
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *APIVersionSetClient) listByServiceHandleResponse(resp *http.Response) (APIVersionSetClientListByServiceResponse, error) {
-	result := APIVersionSetClientListByServiceResponse{RawResponse: resp}
+	result := APIVersionSetClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.APIVersionSetCollection); err != nil {
 		return APIVersionSetClientListByServiceResponse{}, err
 	}
@@ -360,6 +387,7 @@ func (client *APIVersionSetClient) listByServiceHandleResponse(resp *http.Respon
 
 // Update - Updates the details of the Api VersionSet specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // versionSetID - Api Version Set identifier. Must be unique in the current API Management service instance.
@@ -408,14 +436,14 @@ func (client *APIVersionSetClient) updateCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *APIVersionSetClient) updateHandleResponse(resp *http.Response) (APIVersionSetClientUpdateResponse, error) {
-	result := APIVersionSetClientUpdateResponse{RawResponse: resp}
+	result := APIVersionSetClientUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}

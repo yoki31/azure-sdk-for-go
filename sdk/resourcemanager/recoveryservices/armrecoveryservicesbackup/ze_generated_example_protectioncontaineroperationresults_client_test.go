@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -16,23 +16,27 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/recoveryservices/armrecoveryservicesbackup"
 )
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureStorage/ProtectionContainers_Inquire_Result.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureStorage/ProtectionContainers_Inquire_Result.json
 func ExampleProtectionContainerOperationResultsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectionContainerOperationResultsClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectionContainerOperationResultsClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<container-name>",
-		"<operation-id>",
+		"testvault",
+		"test-rg",
+		"Azure",
+		"VMAppContainer;Compute;testRG;testSQL",
+		"00000000-0000-0000-0000-000000000000",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectionContainerOperationResultsClientGetResult)
+	// TODO: use response item
+	_ = res
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type JobTargetGroupsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewJobTargetGroupsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *JobTargetGroupsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewJobTargetGroupsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*JobTargetGroupsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &JobTargetGroupsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates a target group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -104,13 +110,13 @@ func (client *JobTargetGroupsClient) createOrUpdateCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *JobTargetGroupsClient) createOrUpdateHandleResponse(resp *http.Response) (JobTargetGroupsClientCreateOrUpdateResponse, error) {
-	result := JobTargetGroupsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := JobTargetGroupsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JobTargetGroup); err != nil {
 		return JobTargetGroupsClientCreateOrUpdateResponse{}, err
 	}
@@ -119,6 +125,7 @@ func (client *JobTargetGroupsClient) createOrUpdateHandleResponse(resp *http.Res
 
 // Delete - Deletes a target group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -137,7 +144,7 @@ func (client *JobTargetGroupsClient) Delete(ctx context.Context, resourceGroupNa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return JobTargetGroupsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return JobTargetGroupsClientDeleteResponse{RawResponse: resp}, nil
+	return JobTargetGroupsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -175,6 +182,7 @@ func (client *JobTargetGroupsClient) deleteCreateRequest(ctx context.Context, re
 
 // Get - Gets a target group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -226,37 +234,54 @@ func (client *JobTargetGroupsClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *JobTargetGroupsClient) getHandleResponse(resp *http.Response) (JobTargetGroupsClientGetResponse, error) {
-	result := JobTargetGroupsClientGetResponse{RawResponse: resp}
+	result := JobTargetGroupsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JobTargetGroup); err != nil {
 		return JobTargetGroupsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByAgent - Gets all target groups in an agent.
+// NewListByAgentPager - Gets all target groups in an agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // jobAgentName - The name of the job agent.
 // options - JobTargetGroupsClientListByAgentOptions contains the optional parameters for the JobTargetGroupsClient.ListByAgent
 // method.
-func (client *JobTargetGroupsClient) ListByAgent(resourceGroupName string, serverName string, jobAgentName string, options *JobTargetGroupsClientListByAgentOptions) *JobTargetGroupsClientListByAgentPager {
-	return &JobTargetGroupsClientListByAgentPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByAgentCreateRequest(ctx, resourceGroupName, serverName, jobAgentName, options)
+func (client *JobTargetGroupsClient) NewListByAgentPager(resourceGroupName string, serverName string, jobAgentName string, options *JobTargetGroupsClientListByAgentOptions) *runtime.Pager[JobTargetGroupsClientListByAgentResponse] {
+	return runtime.NewPager(runtime.PagingHandler[JobTargetGroupsClientListByAgentResponse]{
+		More: func(page JobTargetGroupsClientListByAgentResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp JobTargetGroupsClientListByAgentResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.JobTargetGroupListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *JobTargetGroupsClientListByAgentResponse) (JobTargetGroupsClientListByAgentResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByAgentCreateRequest(ctx, resourceGroupName, serverName, jobAgentName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return JobTargetGroupsClientListByAgentResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return JobTargetGroupsClientListByAgentResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return JobTargetGroupsClientListByAgentResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByAgentHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByAgentCreateRequest creates the ListByAgent request.
@@ -285,13 +310,13 @@ func (client *JobTargetGroupsClient) listByAgentCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByAgentHandleResponse handles the ListByAgent response.
 func (client *JobTargetGroupsClient) listByAgentHandleResponse(resp *http.Response) (JobTargetGroupsClientListByAgentResponse, error) {
-	result := JobTargetGroupsClientListByAgentResponse{RawResponse: resp}
+	result := JobTargetGroupsClientListByAgentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JobTargetGroupListResult); err != nil {
 		return JobTargetGroupsClientListByAgentResponse{}, err
 	}

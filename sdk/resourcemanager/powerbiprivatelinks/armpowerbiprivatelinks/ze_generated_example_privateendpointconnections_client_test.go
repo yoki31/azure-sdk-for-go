@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,109 +12,119 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/powerbiprivatelinks/armpowerbiprivatelinks"
 )
 
-// x-ms-original-file: specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_ListByResource.json
-func ExamplePrivateEndpointConnectionsClient_ListByResource() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_ListByResource.json
+func ExamplePrivateEndpointConnectionsClient_NewListByResourcePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("<subscription-id>",
+	client, err := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("a0020869-4d28-422a-89f4-c2413130d73c",
 		"<resource-group-name>",
 		"<azure-resource-name>",
 		"<private-endpoint-name>", cred, nil)
-	pager := client.ListByResource("<resource-group-name>",
-		"<azure-resource-name>",
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourcePager("resourceGroup",
+		"azureResourceName",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Get.json
 func ExamplePrivateEndpointConnectionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("<subscription-id>",
-		"<resource-group-name>",
-		"<azure-resource-name>",
-		"<private-endpoint-name>", cred, nil)
+	client, err := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("a0020869-4d28-422a-89f4-c2413130d73c",
+		"resourceGroup",
+		"azureResourceName",
+		"myPrivateEndpointName", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Create.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Create.json
 func ExamplePrivateEndpointConnectionsClient_Create() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("<subscription-id>",
-		"<resource-group-name>",
-		"<azure-resource-name>",
-		"<private-endpoint-name>", cred, nil)
+	client, err := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("a0020869-4d28-422a-89f4-c2413130d73c",
+		"resourceGroup",
+		"azureResourceName",
+		"myPrivateEndpointName", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Create(ctx,
 		armpowerbiprivatelinks.PrivateEndpointConnection{
 			Properties: &armpowerbiprivatelinks.PrivateEndpointConnectionProperties{
 				PrivateEndpoint: &armpowerbiprivatelinks.PrivateEndpoint{
-					ID: to.StringPtr("<id>"),
+					ID: to.Ptr("/subscriptions/a0020869-4d28-422a-89f4-c2413130d73c/resourceGroups/resourceGroup/providers/Microsoft.Network/privateEndpoints/myPrivateEndpointName"),
 				},
 				PrivateLinkServiceConnectionState: &armpowerbiprivatelinks.ConnectionState{
-					Description:     to.StringPtr("<description>"),
-					ActionsRequired: to.StringPtr("<actions-required>"),
-					Status:          armpowerbiprivatelinks.PersistedConnectionStatus("Approved ").ToPtr(),
+					Description:     to.Ptr(""),
+					ActionsRequired: to.Ptr("None"),
+					Status:          to.Ptr(armpowerbiprivatelinks.PersistedConnectionStatus("Approved ")),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/powerbiprivatelinks/resource-manager/Microsoft.PowerBI/stable/2020-06-01/examples/PrivateEndpointConnections_Delete.json
 func ExamplePrivateEndpointConnectionsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("<subscription-id>",
-		"<resource-group-name>",
-		"<azure-resource-name>",
-		"<private-endpoint-name>", cred, nil)
+	client, err := armpowerbiprivatelinks.NewPrivateEndpointConnectionsClient("a0020869-4d28-422a-89f4-c2413130d73c",
+		"resourceGroup",
+		"azureResourceName",
+		"myPrivateEndpointName", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type IntegrationAccountsClient struct {
 // subscriptionID - The subscription id.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewIntegrationAccountsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *IntegrationAccountsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewIntegrationAccountsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*IntegrationAccountsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &IntegrationAccountsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates an integration account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // integrationAccount - The integration account.
@@ -94,13 +100,13 @@ func (client *IntegrationAccountsClient) createOrUpdateCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, integrationAccount)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *IntegrationAccountsClient) createOrUpdateHandleResponse(resp *http.Response) (IntegrationAccountsClientCreateOrUpdateResponse, error) {
-	result := IntegrationAccountsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := IntegrationAccountsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccount); err != nil {
 		return IntegrationAccountsClientCreateOrUpdateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *IntegrationAccountsClient) createOrUpdateHandleResponse(resp *http
 
 // Delete - Deletes an integration account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // options - IntegrationAccountsClientDeleteOptions contains the optional parameters for the IntegrationAccountsClient.Delete
@@ -125,7 +132,7 @@ func (client *IntegrationAccountsClient) Delete(ctx context.Context, resourceGro
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return IntegrationAccountsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return IntegrationAccountsClientDeleteResponse{RawResponse: resp}, nil
+	return IntegrationAccountsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -150,12 +157,13 @@ func (client *IntegrationAccountsClient) deleteCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets an integration account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // options - IntegrationAccountsClientGetOptions contains the optional parameters for the IntegrationAccountsClient.Get method.
@@ -196,34 +204,51 @@ func (client *IntegrationAccountsClient) getCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *IntegrationAccountsClient) getHandleResponse(resp *http.Response) (IntegrationAccountsClientGetResponse, error) {
-	result := IntegrationAccountsClientGetResponse{RawResponse: resp}
+	result := IntegrationAccountsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccount); err != nil {
 		return IntegrationAccountsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets a list of integration accounts by resource group.
+// NewListByResourceGroupPager - Gets a list of integration accounts by resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // options - IntegrationAccountsClientListByResourceGroupOptions contains the optional parameters for the IntegrationAccountsClient.ListByResourceGroup
 // method.
-func (client *IntegrationAccountsClient) ListByResourceGroup(resourceGroupName string, options *IntegrationAccountsClientListByResourceGroupOptions) *IntegrationAccountsClientListByResourceGroupPager {
-	return &IntegrationAccountsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *IntegrationAccountsClient) NewListByResourceGroupPager(resourceGroupName string, options *IntegrationAccountsClientListByResourceGroupOptions) *runtime.Pager[IntegrationAccountsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[IntegrationAccountsClientListByResourceGroupResponse]{
+		More: func(page IntegrationAccountsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp IntegrationAccountsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.IntegrationAccountListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *IntegrationAccountsClientListByResourceGroupResponse) (IntegrationAccountsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return IntegrationAccountsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return IntegrationAccountsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return IntegrationAccountsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -247,33 +272,50 @@ func (client *IntegrationAccountsClient) listByResourceGroupCreateRequest(ctx co
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *IntegrationAccountsClient) listByResourceGroupHandleResponse(resp *http.Response) (IntegrationAccountsClientListByResourceGroupResponse, error) {
-	result := IntegrationAccountsClientListByResourceGroupResponse{RawResponse: resp}
+	result := IntegrationAccountsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccountListResult); err != nil {
 		return IntegrationAccountsClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Gets a list of integration accounts by subscription.
+// NewListBySubscriptionPager - Gets a list of integration accounts by subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // options - IntegrationAccountsClientListBySubscriptionOptions contains the optional parameters for the IntegrationAccountsClient.ListBySubscription
 // method.
-func (client *IntegrationAccountsClient) ListBySubscription(options *IntegrationAccountsClientListBySubscriptionOptions) *IntegrationAccountsClientListBySubscriptionPager {
-	return &IntegrationAccountsClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *IntegrationAccountsClient) NewListBySubscriptionPager(options *IntegrationAccountsClientListBySubscriptionOptions) *runtime.Pager[IntegrationAccountsClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[IntegrationAccountsClientListBySubscriptionResponse]{
+		More: func(page IntegrationAccountsClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp IntegrationAccountsClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.IntegrationAccountListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *IntegrationAccountsClientListBySubscriptionResponse) (IntegrationAccountsClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return IntegrationAccountsClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return IntegrationAccountsClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return IntegrationAccountsClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -293,13 +335,13 @@ func (client *IntegrationAccountsClient) listBySubscriptionCreateRequest(ctx con
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *IntegrationAccountsClient) listBySubscriptionHandleResponse(resp *http.Response) (IntegrationAccountsClientListBySubscriptionResponse, error) {
-	result := IntegrationAccountsClientListBySubscriptionResponse{RawResponse: resp}
+	result := IntegrationAccountsClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccountListResult); err != nil {
 		return IntegrationAccountsClientListBySubscriptionResponse{}, err
 	}
@@ -308,6 +350,7 @@ func (client *IntegrationAccountsClient) listBySubscriptionHandleResponse(resp *
 
 // ListCallbackURL - Gets the integration account callback URL.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // parameters - The callback URL parameters.
@@ -350,39 +393,47 @@ func (client *IntegrationAccountsClient) listCallbackURLCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // listCallbackURLHandleResponse handles the ListCallbackURL response.
 func (client *IntegrationAccountsClient) listCallbackURLHandleResponse(resp *http.Response) (IntegrationAccountsClientListCallbackURLResponse, error) {
-	result := IntegrationAccountsClientListCallbackURLResponse{RawResponse: resp}
+	result := IntegrationAccountsClientListCallbackURLResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CallbackURL); err != nil {
 		return IntegrationAccountsClientListCallbackURLResponse{}, err
 	}
 	return result, nil
 }
 
-// ListKeyVaultKeys - Gets the integration account's Key Vault keys.
+// NewListKeyVaultKeysPager - Gets the integration account's Key Vault keys.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // listKeyVaultKeys - The key vault parameters.
 // options - IntegrationAccountsClientListKeyVaultKeysOptions contains the optional parameters for the IntegrationAccountsClient.ListKeyVaultKeys
 // method.
-func (client *IntegrationAccountsClient) ListKeyVaultKeys(ctx context.Context, resourceGroupName string, integrationAccountName string, listKeyVaultKeys ListKeyVaultKeysDefinition, options *IntegrationAccountsClientListKeyVaultKeysOptions) (IntegrationAccountsClientListKeyVaultKeysResponse, error) {
-	req, err := client.listKeyVaultKeysCreateRequest(ctx, resourceGroupName, integrationAccountName, listKeyVaultKeys, options)
-	if err != nil {
-		return IntegrationAccountsClientListKeyVaultKeysResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return IntegrationAccountsClientListKeyVaultKeysResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return IntegrationAccountsClientListKeyVaultKeysResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listKeyVaultKeysHandleResponse(resp)
+func (client *IntegrationAccountsClient) NewListKeyVaultKeysPager(resourceGroupName string, integrationAccountName string, listKeyVaultKeys ListKeyVaultKeysDefinition, options *IntegrationAccountsClientListKeyVaultKeysOptions) *runtime.Pager[IntegrationAccountsClientListKeyVaultKeysResponse] {
+	return runtime.NewPager(runtime.PagingHandler[IntegrationAccountsClientListKeyVaultKeysResponse]{
+		More: func(page IntegrationAccountsClientListKeyVaultKeysResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *IntegrationAccountsClientListKeyVaultKeysResponse) (IntegrationAccountsClientListKeyVaultKeysResponse, error) {
+			req, err := client.listKeyVaultKeysCreateRequest(ctx, resourceGroupName, integrationAccountName, listKeyVaultKeys, options)
+			if err != nil {
+				return IntegrationAccountsClientListKeyVaultKeysResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return IntegrationAccountsClientListKeyVaultKeysResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return IntegrationAccountsClientListKeyVaultKeysResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listKeyVaultKeysHandleResponse(resp)
+		},
+	})
 }
 
 // listKeyVaultKeysCreateRequest creates the ListKeyVaultKeys request.
@@ -407,13 +458,13 @@ func (client *IntegrationAccountsClient) listKeyVaultKeysCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, listKeyVaultKeys)
 }
 
 // listKeyVaultKeysHandleResponse handles the ListKeyVaultKeys response.
 func (client *IntegrationAccountsClient) listKeyVaultKeysHandleResponse(resp *http.Response) (IntegrationAccountsClientListKeyVaultKeysResponse, error) {
-	result := IntegrationAccountsClientListKeyVaultKeysResponse{RawResponse: resp}
+	result := IntegrationAccountsClientListKeyVaultKeysResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.KeyVaultKeyCollection); err != nil {
 		return IntegrationAccountsClientListKeyVaultKeysResponse{}, err
 	}
@@ -422,6 +473,7 @@ func (client *IntegrationAccountsClient) listKeyVaultKeysHandleResponse(resp *ht
 
 // LogTrackingEvents - Logs the integration account's tracking events.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // logTrackingEvents - The callback URL parameters.
@@ -439,7 +491,7 @@ func (client *IntegrationAccountsClient) LogTrackingEvents(ctx context.Context, 
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return IntegrationAccountsClientLogTrackingEventsResponse{}, runtime.NewResponseError(resp)
 	}
-	return IntegrationAccountsClientLogTrackingEventsResponse{RawResponse: resp}, nil
+	return IntegrationAccountsClientLogTrackingEventsResponse{}, nil
 }
 
 // logTrackingEventsCreateRequest creates the LogTrackingEvents request.
@@ -464,12 +516,13 @@ func (client *IntegrationAccountsClient) logTrackingEventsCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, logTrackingEvents)
 }
 
 // RegenerateAccessKey - Regenerates the integration account access key.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // regenerateAccessKey - The access key type.
@@ -512,13 +565,13 @@ func (client *IntegrationAccountsClient) regenerateAccessKeyCreateRequest(ctx co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, regenerateAccessKey)
 }
 
 // regenerateAccessKeyHandleResponse handles the RegenerateAccessKey response.
 func (client *IntegrationAccountsClient) regenerateAccessKeyHandleResponse(resp *http.Response) (IntegrationAccountsClientRegenerateAccessKeyResponse, error) {
-	result := IntegrationAccountsClientRegenerateAccessKeyResponse{RawResponse: resp}
+	result := IntegrationAccountsClientRegenerateAccessKeyResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccount); err != nil {
 		return IntegrationAccountsClientRegenerateAccessKeyResponse{}, err
 	}
@@ -527,6 +580,7 @@ func (client *IntegrationAccountsClient) regenerateAccessKeyHandleResponse(resp 
 
 // Update - Updates an integration account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-05-01
 // resourceGroupName - The resource group name.
 // integrationAccountName - The integration account name.
 // integrationAccount - The integration account.
@@ -569,13 +623,13 @@ func (client *IntegrationAccountsClient) updateCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, integrationAccount)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *IntegrationAccountsClient) updateHandleResponse(resp *http.Response) (IntegrationAccountsClientUpdateResponse, error) {
-	result := IntegrationAccountsClientUpdateResponse{RawResponse: resp}
+	result := IntegrationAccountsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationAccount); err != nil {
 		return IntegrationAccountsClientUpdateResponse{}, err
 	}

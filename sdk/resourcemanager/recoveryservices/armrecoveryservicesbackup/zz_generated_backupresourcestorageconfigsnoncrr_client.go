@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type BackupResourceStorageConfigsNonCRRClient struct {
 // subscriptionID - The subscription Id.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewBackupResourceStorageConfigsNonCRRClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *BackupResourceStorageConfigsNonCRRClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewBackupResourceStorageConfigsNonCRRClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*BackupResourceStorageConfigsNonCRRClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &BackupResourceStorageConfigsNonCRRClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Fetches resource storage config.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // options - BackupResourceStorageConfigsNonCRRClientGetOptions contains the optional parameters for the BackupResourceStorageConfigsNonCRRClient.Get
@@ -90,15 +96,15 @@ func (client *BackupResourceStorageConfigsNonCRRClient) getCreateRequest(ctx con
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *BackupResourceStorageConfigsNonCRRClient) getHandleResponse(resp *http.Response) (BackupResourceStorageConfigsNonCRRClientGetResponse, error) {
-	result := BackupResourceStorageConfigsNonCRRClientGetResponse{RawResponse: resp}
+	result := BackupResourceStorageConfigsNonCRRClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BackupResourceConfigResource); err != nil {
 		return BackupResourceStorageConfigsNonCRRClientGetResponse{}, err
 	}
@@ -107,6 +113,7 @@ func (client *BackupResourceStorageConfigsNonCRRClient) getHandleResponse(resp *
 
 // Patch - Updates vault storage model type.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // parameters - Vault storage config request
@@ -124,7 +131,7 @@ func (client *BackupResourceStorageConfigsNonCRRClient) Patch(ctx context.Contex
 	if !runtime.HasStatusCode(resp, http.StatusNoContent) {
 		return BackupResourceStorageConfigsNonCRRClientPatchResponse{}, runtime.NewResponseError(resp)
 	}
-	return BackupResourceStorageConfigsNonCRRClientPatchResponse{RawResponse: resp}, nil
+	return BackupResourceStorageConfigsNonCRRClientPatchResponse{}, nil
 }
 
 // patchCreateRequest creates the Patch request.
@@ -147,14 +154,15 @@ func (client *BackupResourceStorageConfigsNonCRRClient) patchCreateRequest(ctx c
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Update - Updates vault storage model type.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-01
 // vaultName - The name of the recovery services vault.
 // resourceGroupName - The name of the resource group where the recovery services vault is present.
 // parameters - Vault storage config request
@@ -195,15 +203,15 @@ func (client *BackupResourceStorageConfigsNonCRRClient) updateCreateRequest(ctx 
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-10-01")
+	reqQP.Set("api-version", "2022-02-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *BackupResourceStorageConfigsNonCRRClient) updateHandleResponse(resp *http.Response) (BackupResourceStorageConfigsNonCRRClientUpdateResponse, error) {
-	result := BackupResourceStorageConfigsNonCRRClientUpdateResponse{RawResponse: resp}
+	result := BackupResourceStorageConfigsNonCRRClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.BackupResourceConfigResource); err != nil {
 		return BackupResourceStorageConfigsNonCRRClientUpdateResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,150 +12,165 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/GetBigDataPool.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/GetBigDataPool.json
 func ExampleBigDataPoolsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewBigDataPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewBigDataPoolsClient("01234567-89ab-4def-0123-456789abcdef", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<big-data-pool-name>",
+		"ExampleResourceGroup",
+		"ExampleWorkspace",
+		"ExamplePool",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BigDataPoolsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/UpdateBigDataPool.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/UpdateBigDataPool.json
 func ExampleBigDataPoolsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewBigDataPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewBigDataPoolsClient("01234567-89ab-4def-0123-456789abcdef", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<big-data-pool-name>",
+		"ExampleResourceGroup",
+		"ExampleWorkspace",
+		"ExamplePool",
 		armsynapse.BigDataPoolPatchInfo{
 			Tags: map[string]*string{
-				"key": to.StringPtr("value"),
+				"key": to.Ptr("value"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BigDataPoolsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/CreateOrUpdateBigDataPool.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/CreateOrUpdateBigDataPool.json
 func ExampleBigDataPoolsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewBigDataPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewBigDataPoolsClient("01234567-89ab-4def-0123-456789abcdef", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<big-data-pool-name>",
+		"ExampleResourceGroup",
+		"ExampleWorkspace",
+		"ExamplePool",
 		armsynapse.BigDataPoolResourceInfo{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("West US 2"),
 			Tags: map[string]*string{
-				"key": to.StringPtr("value"),
+				"key": to.Ptr("value"),
 			},
 			Properties: &armsynapse.BigDataPoolResourceProperties{
 				AutoPause: &armsynapse.AutoPauseProperties{
-					DelayInMinutes: to.Int32Ptr(15),
-					Enabled:        to.BoolPtr(true),
+					DelayInMinutes: to.Ptr[int32](15),
+					Enabled:        to.Ptr(true),
 				},
 				AutoScale: &armsynapse.AutoScaleProperties{
-					Enabled:      to.BoolPtr(true),
-					MaxNodeCount: to.Int32Ptr(50),
-					MinNodeCount: to.Int32Ptr(3),
+					Enabled:      to.Ptr(true),
+					MaxNodeCount: to.Ptr[int32](50),
+					MinNodeCount: to.Ptr[int32](3),
 				},
-				DefaultSparkLogFolder: to.StringPtr("<default-spark-log-folder>"),
+				DefaultSparkLogFolder: to.Ptr("/logs"),
 				LibraryRequirements: &armsynapse.LibraryRequirements{
-					Content:  to.StringPtr("<content>"),
-					Filename: to.StringPtr("<filename>"),
+					Content:  to.Ptr(""),
+					Filename: to.Ptr("requirements.txt"),
 				},
-				NodeCount:         to.Int32Ptr(4),
-				NodeSize:          armsynapse.NodeSize("Medium").ToPtr(),
-				NodeSizeFamily:    armsynapse.NodeSizeFamily("MemoryOptimized").ToPtr(),
-				SparkEventsFolder: to.StringPtr("<spark-events-folder>"),
-				SparkVersion:      to.StringPtr("<spark-version>"),
+				NodeCount:         to.Ptr[int32](4),
+				NodeSize:          to.Ptr(armsynapse.NodeSizeMedium),
+				NodeSizeFamily:    to.Ptr(armsynapse.NodeSizeFamilyMemoryOptimized),
+				SparkEventsFolder: to.Ptr("/events"),
+				SparkVersion:      to.Ptr("2.4"),
 			},
 		},
 		&armsynapse.BigDataPoolsClientBeginCreateOrUpdateOptions{Force: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BigDataPoolsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/DeleteBigDataPool.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/DeleteBigDataPool.json
 func ExampleBigDataPoolsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewBigDataPoolsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewBigDataPoolsClient("01234567-89ab-4def-0123-456789abcdef", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<big-data-pool-name>",
+		"ExampleResourceGroup",
+		"ExampleWorkspace",
+		"ExamplePool",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BigDataPoolsClientDeleteResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/ListBigDataPoolsInWorkspace.json
-func ExampleBigDataPoolsClient_ListByWorkspace() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/ListBigDataPoolsInWorkspace.json
+func ExampleBigDataPoolsClient_NewListByWorkspacePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewBigDataPoolsClient("<subscription-id>", cred, nil)
-	pager := client.ListByWorkspace("<resource-group-name>",
-		"<workspace-name>",
+	client, err := armsynapse.NewBigDataPoolsClient("01234567-89ab-4def-0123-456789abcdef", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByWorkspacePager("ExampleResourceGroup",
+		"ExampleWorkspace",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

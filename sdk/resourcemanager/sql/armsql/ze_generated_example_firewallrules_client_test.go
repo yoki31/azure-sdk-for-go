@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,117 +17,133 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleGet.json
 func ExampleFirewallRulesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewFirewallRulesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewFirewallRulesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<firewall-rule-name>",
+		"firewallrulecrudtest-12",
+		"firewallrulecrudtest-6285",
+		"firewallrulecrudtest-2304",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FirewallRulesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleCreate.json
 func ExampleFirewallRulesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewFirewallRulesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewFirewallRulesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<firewall-rule-name>",
+		"firewallrulecrudtest-12",
+		"firewallrulecrudtest-6285",
+		"firewallrulecrudtest-5370",
 		armsql.FirewallRule{
 			Properties: &armsql.ServerFirewallRuleProperties{
-				EndIPAddress:   to.StringPtr("<end-ipaddress>"),
-				StartIPAddress: to.StringPtr("<start-ipaddress>"),
+				EndIPAddress:   to.Ptr("0.0.0.3"),
+				StartIPAddress: to.Ptr("0.0.0.3"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FirewallRulesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleDelete.json
 func ExampleFirewallRulesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewFirewallRulesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewFirewallRulesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<firewall-rule-name>",
+		"firewallrulecrudtest-9886",
+		"firewallrulecrudtest-2368",
+		"firewallrulecrudtest-7011",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleList.json
-func ExampleFirewallRulesClient_ListByServer() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleList.json
+func ExampleFirewallRulesClient_NewListByServerPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewFirewallRulesClient("<subscription-id>", cred, nil)
-	pager := client.ListByServer("<resource-group-name>",
-		"<server-name>",
+	client, err := armsql.NewFirewallRulesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServerPager("firewallrulecrudtest-12",
+		"firewallrulecrudtest-6285",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleReplace.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2020-11-01-preview/examples/FirewallRuleReplace.json
 func ExampleFirewallRulesClient_Replace() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewFirewallRulesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewFirewallRulesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Replace(ctx,
-		"<resource-group-name>",
-		"<server-name>",
+		"firewallrulecrudtest-12",
+		"firewallrulecrudtest-6285",
 		armsql.FirewallRuleList{
 			Values: []*armsql.FirewallRule{
 				{
-					Name: to.StringPtr("<name>"),
+					Name: to.Ptr("firewallrulecrudtest-5370 "),
 					Properties: &armsql.ServerFirewallRuleProperties{
-						EndIPAddress:   to.StringPtr("<end-ipaddress>"),
-						StartIPAddress: to.StringPtr("<start-ipaddress>"),
+						EndIPAddress:   to.Ptr("100.0.0.0"),
+						StartIPAddress: to.Ptr("0.0.0.0"),
 					},
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FirewallRulesClientReplaceResult)
+	// TODO: use response item
+	_ = res
 }

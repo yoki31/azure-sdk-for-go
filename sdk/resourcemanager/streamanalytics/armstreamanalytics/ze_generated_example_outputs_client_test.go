@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,36 +12,37 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/streamanalytics/armstreamanalytics"
 )
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Create_DocumentDB.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Create_DocumentDB.json
 func ExampleOutputsClient_CreateOrReplace() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrReplace(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<output-name>",
+		"sjrg7983",
+		"sj2331",
+		"output3022",
 		armstreamanalytics.Output{
 			Properties: &armstreamanalytics.OutputProperties{
 				Datasource: &armstreamanalytics.DocumentDbOutputDataSource{
-					Type: to.StringPtr("<type>"),
+					Type: to.Ptr("Microsoft.Storage/DocumentDB"),
 					Properties: &armstreamanalytics.DocumentDbOutputDataSourceProperties{
-						AccountID:             to.StringPtr("<account-id>"),
-						AccountKey:            to.StringPtr("<account-key>"),
-						CollectionNamePattern: to.StringPtr("<collection-name-pattern>"),
-						Database:              to.StringPtr("<database>"),
-						DocumentID:            to.StringPtr("<document-id>"),
-						PartitionKey:          to.StringPtr("<partition-key>"),
+						AccountID:             to.Ptr("someAccountId"),
+						AccountKey:            to.Ptr("accountKey=="),
+						CollectionNamePattern: to.Ptr("collection"),
+						Database:              to.Ptr("db01"),
+						DocumentID:            to.Ptr("documentId"),
+						PartitionKey:          to.Ptr("key"),
 					},
 				},
 			},
@@ -50,121 +51,138 @@ func ExampleOutputsClient_CreateOrReplace() {
 			IfNoneMatch: nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.OutputsClientCreateOrReplaceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Update_DocumentDB.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Update_DocumentDB.json
 func ExampleOutputsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<output-name>",
+		"sjrg7983",
+		"sj2331",
+		"output3022",
 		armstreamanalytics.Output{
 			Properties: &armstreamanalytics.OutputProperties{
 				Datasource: &armstreamanalytics.DocumentDbOutputDataSource{
-					Type: to.StringPtr("<type>"),
+					Type: to.Ptr("Microsoft.Storage/DocumentDB"),
 					Properties: &armstreamanalytics.DocumentDbOutputDataSourceProperties{
-						PartitionKey: to.StringPtr("<partition-key>"),
+						PartitionKey: to.Ptr("differentPartitionKey"),
 					},
 				},
 			},
 		},
 		&armstreamanalytics.OutputsClientUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.OutputsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Delete.json
 func ExampleOutputsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<output-name>",
+		"sjrg2157",
+		"sj6458",
+		"output1755",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Get_DocumentDB.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Get_DocumentDB.json
 func ExampleOutputsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<output-name>",
+		"sjrg7983",
+		"sj2331",
+		"output3022",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.OutputsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_ListByStreamingJob.json
-func ExampleOutputsClient_ListByStreamingJob() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_ListByStreamingJob.json
+func ExampleOutputsClient_NewListByStreamingJobPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
-	pager := client.ListByStreamingJob("<resource-group-name>",
-		"<job-name>",
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByStreamingJobPager("sjrg2157",
+		"sj6458",
 		&armstreamanalytics.OutputsClientListByStreamingJobOptions{Select: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Test.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Output_Test.json
 func ExampleOutputsClient_BeginTest() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewOutputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewOutputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginTest(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<output-name>",
+		"sjrg2157",
+		"sj6458",
+		"output1755",
 		&armstreamanalytics.OutputsClientBeginTestOptions{Output: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.OutputsClientTestResult)
+	// TODO: use response item
+	_ = res
 }

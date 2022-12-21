@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -10,8 +10,24 @@ package armhybridcompute
 
 const (
 	moduleName    = "armhybridcompute"
-	moduleVersion = "v0.2.0"
+	moduleVersion = "v1.0.0"
 )
+
+// AssessmentModeTypes - Specifies the assessment mode.
+type AssessmentModeTypes string
+
+const (
+	AssessmentModeTypesAutomaticByPlatform AssessmentModeTypes = "AutomaticByPlatform"
+	AssessmentModeTypesImageDefault        AssessmentModeTypes = "ImageDefault"
+)
+
+// PossibleAssessmentModeTypesValues returns the possible values for the AssessmentModeTypes const type.
+func PossibleAssessmentModeTypesValues() []AssessmentModeTypes {
+	return []AssessmentModeTypes{
+		AssessmentModeTypesAutomaticByPlatform,
+		AssessmentModeTypesImageDefault,
+	}
+}
 
 // CreatedByType - The type of identity that created the resource.
 type CreatedByType string
@@ -33,11 +49,6 @@ func PossibleCreatedByTypeValues() []CreatedByType {
 	}
 }
 
-// ToPtr returns a *CreatedByType pointing to the current value.
-func (c CreatedByType) ToPtr() *CreatedByType {
-	return &c
-}
-
 type InstanceViewTypes string
 
 const (
@@ -51,9 +62,24 @@ func PossibleInstanceViewTypesValues() []InstanceViewTypes {
 	}
 }
 
-// ToPtr returns a *InstanceViewTypes pointing to the current value.
-func (c InstanceViewTypes) ToPtr() *InstanceViewTypes {
-	return &c
+// PatchModeTypes - Specifies the patch mode.
+type PatchModeTypes string
+
+const (
+	PatchModeTypesAutomaticByOS       PatchModeTypes = "AutomaticByOS"
+	PatchModeTypesAutomaticByPlatform PatchModeTypes = "AutomaticByPlatform"
+	PatchModeTypesImageDefault        PatchModeTypes = "ImageDefault"
+	PatchModeTypesManual              PatchModeTypes = "Manual"
+)
+
+// PossiblePatchModeTypesValues returns the possible values for the PatchModeTypes const type.
+func PossiblePatchModeTypesValues() []PatchModeTypes {
+	return []PatchModeTypes{
+		PatchModeTypesAutomaticByOS,
+		PatchModeTypesAutomaticByPlatform,
+		PatchModeTypesImageDefault,
+		PatchModeTypesManual,
+	}
 }
 
 // PublicNetworkAccessType - The network access policy to determine if Azure Arc agents can use public Azure Arc service endpoints.
@@ -77,11 +103,6 @@ func PossiblePublicNetworkAccessTypeValues() []PublicNetworkAccessType {
 	}
 }
 
-// ToPtr returns a *PublicNetworkAccessType pointing to the current value.
-func (c PublicNetworkAccessType) ToPtr() *PublicNetworkAccessType {
-	return &c
-}
-
 // StatusLevelTypes - The level code.
 type StatusLevelTypes string
 
@@ -100,11 +121,6 @@ func PossibleStatusLevelTypesValues() []StatusLevelTypes {
 	}
 }
 
-// ToPtr returns a *StatusLevelTypes pointing to the current value.
-func (c StatusLevelTypes) ToPtr() *StatusLevelTypes {
-	return &c
-}
-
 // StatusTypes - The status of the hybrid machine agent.
 type StatusTypes string
 
@@ -121,9 +137,4 @@ func PossibleStatusTypesValues() []StatusTypes {
 		StatusTypesDisconnected,
 		StatusTypesError,
 	}
-}
-
-// ToPtr returns a *StatusTypes pointing to the current value.
-func (c StatusTypes) ToPtr() *StatusTypes {
-	return &c
 }

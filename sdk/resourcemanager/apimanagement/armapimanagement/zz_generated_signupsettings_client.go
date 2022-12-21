@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type SignUpSettingsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSignUpSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SignUpSettingsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSignUpSettingsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SignUpSettingsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SignUpSettingsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or Update Sign-Up settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // parameters - Create or update parameters.
@@ -95,15 +101,15 @@ func (client *SignUpSettingsClient) createOrUpdateCreateRequest(ctx context.Cont
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SignUpSettingsClient) createOrUpdateHandleResponse(resp *http.Response) (SignUpSettingsClientCreateOrUpdateResponse, error) {
-	result := SignUpSettingsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SignUpSettingsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PortalSignupSettings); err != nil {
 		return SignUpSettingsClientCreateOrUpdateResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *SignUpSettingsClient) createOrUpdateHandleResponse(resp *http.Resp
 
 // Get - Get Sign Up Settings for the Portal
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - SignUpSettingsClientGetOptions contains the optional parameters for the SignUpSettingsClient.Get method.
@@ -152,13 +159,13 @@ func (client *SignUpSettingsClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SignUpSettingsClient) getHandleResponse(resp *http.Response) (SignUpSettingsClientGetResponse, error) {
-	result := SignUpSettingsClientGetResponse{RawResponse: resp}
+	result := SignUpSettingsClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -169,6 +176,7 @@ func (client *SignUpSettingsClient) getHandleResponse(resp *http.Response) (Sign
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the SignUpSettings.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - SignUpSettingsClientGetEntityTagOptions contains the optional parameters for the SignUpSettingsClient.GetEntityTag
@@ -181,6 +189,9 @@ func (client *SignUpSettingsClient) GetEntityTag(ctx context.Context, resourceGr
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return SignUpSettingsClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return SignUpSettingsClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -207,24 +218,23 @@ func (client *SignUpSettingsClient) getEntityTagCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *SignUpSettingsClient) getEntityTagHandleResponse(resp *http.Response) (SignUpSettingsClientGetEntityTagResponse, error) {
-	result := SignUpSettingsClientGetEntityTagResponse{RawResponse: resp}
+	result := SignUpSettingsClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
 // Update - Update Sign-Up settings.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // ifMatch - ETag of the Entity. ETag should match the current entity state from the header response of the GET request or
@@ -243,7 +253,7 @@ func (client *SignUpSettingsClient) Update(ctx context.Context, resourceGroupNam
 	if !runtime.HasStatusCode(resp, http.StatusNoContent) {
 		return SignUpSettingsClientUpdateResponse{}, runtime.NewResponseError(resp)
 	}
-	return SignUpSettingsClientUpdateResponse{RawResponse: resp}, nil
+	return SignUpSettingsClientUpdateResponse{}, nil
 }
 
 // updateCreateRequest creates the Update request.
@@ -268,7 +278,7 @@ func (client *SignUpSettingsClient) updateCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

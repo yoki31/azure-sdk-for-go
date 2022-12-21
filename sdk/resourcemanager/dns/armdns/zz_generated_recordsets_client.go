@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type RecordSetsClient struct {
 // subscriptionID - Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewRecordSetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *RecordSetsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewRecordSetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*RecordSetsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &RecordSetsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates a record set within a DNS zone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // relativeRecordSetName - The name of the record set, relative to the name of the zone.
@@ -103,18 +109,18 @@ func (client *RecordSetsClient) createOrUpdateCreateRequest(ctx context.Context,
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
 	if options != nil && options.IfNoneMatch != nil {
-		req.Raw().Header.Set("If-None-Match", *options.IfNoneMatch)
+		req.Raw().Header["If-None-Match"] = []string{*options.IfNoneMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *RecordSetsClient) createOrUpdateHandleResponse(resp *http.Response) (RecordSetsClientCreateOrUpdateResponse, error) {
-	result := RecordSetsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := RecordSetsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSet); err != nil {
 		return RecordSetsClientCreateOrUpdateResponse{}, err
 	}
@@ -123,6 +129,7 @@ func (client *RecordSetsClient) createOrUpdateHandleResponse(resp *http.Response
 
 // Delete - Deletes a record set from a DNS zone. This operation cannot be undone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // relativeRecordSetName - The name of the record set, relative to the name of the zone.
@@ -141,7 +148,7 @@ func (client *RecordSetsClient) Delete(ctx context.Context, resourceGroupName st
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return RecordSetsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return RecordSetsClientDeleteResponse{RawResponse: resp}, nil
+	return RecordSetsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -172,14 +179,15 @@ func (client *RecordSetsClient) deleteCreateRequest(ctx context.Context, resourc
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a record set.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // relativeRecordSetName - The name of the record set, relative to the name of the zone.
@@ -227,35 +235,52 @@ func (client *RecordSetsClient) getCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *RecordSetsClient) getHandleResponse(resp *http.Response) (RecordSetsClientGetResponse, error) {
-	result := RecordSetsClientGetResponse{RawResponse: resp}
+	result := RecordSetsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSet); err != nil {
 		return RecordSetsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListAllByDNSZone - Lists all record sets in a DNS zone.
+// NewListAllByDNSZonePager - Lists all record sets in a DNS zone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // options - RecordSetsClientListAllByDNSZoneOptions contains the optional parameters for the RecordSetsClient.ListAllByDNSZone
 // method.
-func (client *RecordSetsClient) ListAllByDNSZone(resourceGroupName string, zoneName string, options *RecordSetsClientListAllByDNSZoneOptions) *RecordSetsClientListAllByDNSZonePager {
-	return &RecordSetsClientListAllByDNSZonePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listAllByDNSZoneCreateRequest(ctx, resourceGroupName, zoneName, options)
+func (client *RecordSetsClient) NewListAllByDNSZonePager(resourceGroupName string, zoneName string, options *RecordSetsClientListAllByDNSZoneOptions) *runtime.Pager[RecordSetsClientListAllByDNSZoneResponse] {
+	return runtime.NewPager(runtime.PagingHandler[RecordSetsClientListAllByDNSZoneResponse]{
+		More: func(page RecordSetsClientListAllByDNSZoneResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp RecordSetsClientListAllByDNSZoneResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.RecordSetListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *RecordSetsClientListAllByDNSZoneResponse) (RecordSetsClientListAllByDNSZoneResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listAllByDNSZoneCreateRequest(ctx, resourceGroupName, zoneName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return RecordSetsClientListAllByDNSZoneResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return RecordSetsClientListAllByDNSZoneResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return RecordSetsClientListAllByDNSZoneResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listAllByDNSZoneHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listAllByDNSZoneCreateRequest creates the ListAllByDNSZone request.
@@ -286,35 +311,52 @@ func (client *RecordSetsClient) listAllByDNSZoneCreateRequest(ctx context.Contex
 	}
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listAllByDNSZoneHandleResponse handles the ListAllByDNSZone response.
 func (client *RecordSetsClient) listAllByDNSZoneHandleResponse(resp *http.Response) (RecordSetsClientListAllByDNSZoneResponse, error) {
-	result := RecordSetsClientListAllByDNSZoneResponse{RawResponse: resp}
+	result := RecordSetsClientListAllByDNSZoneResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSetListResult); err != nil {
 		return RecordSetsClientListAllByDNSZoneResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByDNSZone - Lists all record sets in a DNS zone.
+// NewListByDNSZonePager - Lists all record sets in a DNS zone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // options - RecordSetsClientListByDNSZoneOptions contains the optional parameters for the RecordSetsClient.ListByDNSZone
 // method.
-func (client *RecordSetsClient) ListByDNSZone(resourceGroupName string, zoneName string, options *RecordSetsClientListByDNSZoneOptions) *RecordSetsClientListByDNSZonePager {
-	return &RecordSetsClientListByDNSZonePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByDNSZoneCreateRequest(ctx, resourceGroupName, zoneName, options)
+func (client *RecordSetsClient) NewListByDNSZonePager(resourceGroupName string, zoneName string, options *RecordSetsClientListByDNSZoneOptions) *runtime.Pager[RecordSetsClientListByDNSZoneResponse] {
+	return runtime.NewPager(runtime.PagingHandler[RecordSetsClientListByDNSZoneResponse]{
+		More: func(page RecordSetsClientListByDNSZoneResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp RecordSetsClientListByDNSZoneResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.RecordSetListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *RecordSetsClientListByDNSZoneResponse) (RecordSetsClientListByDNSZoneResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByDNSZoneCreateRequest(ctx, resourceGroupName, zoneName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return RecordSetsClientListByDNSZoneResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return RecordSetsClientListByDNSZoneResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return RecordSetsClientListByDNSZoneResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByDNSZoneHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByDNSZoneCreateRequest creates the ListByDNSZone request.
@@ -345,35 +387,52 @@ func (client *RecordSetsClient) listByDNSZoneCreateRequest(ctx context.Context, 
 	}
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByDNSZoneHandleResponse handles the ListByDNSZone response.
 func (client *RecordSetsClient) listByDNSZoneHandleResponse(resp *http.Response) (RecordSetsClientListByDNSZoneResponse, error) {
-	result := RecordSetsClientListByDNSZoneResponse{RawResponse: resp}
+	result := RecordSetsClientListByDNSZoneResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSetListResult); err != nil {
 		return RecordSetsClientListByDNSZoneResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByType - Lists the record sets of a specified type in a DNS zone.
+// NewListByTypePager - Lists the record sets of a specified type in a DNS zone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // recordType - The type of record sets to enumerate.
 // options - RecordSetsClientListByTypeOptions contains the optional parameters for the RecordSetsClient.ListByType method.
-func (client *RecordSetsClient) ListByType(resourceGroupName string, zoneName string, recordType RecordType, options *RecordSetsClientListByTypeOptions) *RecordSetsClientListByTypePager {
-	return &RecordSetsClientListByTypePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByTypeCreateRequest(ctx, resourceGroupName, zoneName, recordType, options)
+func (client *RecordSetsClient) NewListByTypePager(resourceGroupName string, zoneName string, recordType RecordType, options *RecordSetsClientListByTypeOptions) *runtime.Pager[RecordSetsClientListByTypeResponse] {
+	return runtime.NewPager(runtime.PagingHandler[RecordSetsClientListByTypeResponse]{
+		More: func(page RecordSetsClientListByTypeResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp RecordSetsClientListByTypeResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.RecordSetListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *RecordSetsClientListByTypeResponse) (RecordSetsClientListByTypeResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByTypeCreateRequest(ctx, resourceGroupName, zoneName, recordType, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return RecordSetsClientListByTypeResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return RecordSetsClientListByTypeResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return RecordSetsClientListByTypeResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByTypeHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByTypeCreateRequest creates the ListByType request.
@@ -408,13 +467,13 @@ func (client *RecordSetsClient) listByTypeCreateRequest(ctx context.Context, res
 	}
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByTypeHandleResponse handles the ListByType response.
 func (client *RecordSetsClient) listByTypeHandleResponse(resp *http.Response) (RecordSetsClientListByTypeResponse, error) {
-	result := RecordSetsClientListByTypeResponse{RawResponse: resp}
+	result := RecordSetsClientListByTypeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSetListResult); err != nil {
 		return RecordSetsClientListByTypeResponse{}, err
 	}
@@ -423,6 +482,7 @@ func (client *RecordSetsClient) listByTypeHandleResponse(resp *http.Response) (R
 
 // Update - Updates a record set within a DNS zone.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-05-01
 // resourceGroupName - The name of the resource group.
 // zoneName - The name of the DNS zone (without a terminating dot).
 // relativeRecordSetName - The name of the record set, relative to the name of the zone.
@@ -472,15 +532,15 @@ func (client *RecordSetsClient) updateCreateRequest(ctx context.Context, resourc
 	reqQP.Set("api-version", "2018-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *RecordSetsClient) updateHandleResponse(resp *http.Response) (RecordSetsClientUpdateResponse, error) {
-	result := RecordSetsClientUpdateResponse{RawResponse: resp}
+	result := RecordSetsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RecordSet); err != nil {
 		return RecordSetsClientUpdateResponse{}, err
 	}

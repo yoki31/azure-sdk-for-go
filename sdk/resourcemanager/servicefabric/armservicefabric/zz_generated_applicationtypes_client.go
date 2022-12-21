@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ApplicationTypesClient struct {
 // subscriptionID - The customer subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewApplicationTypesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ApplicationTypesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewApplicationTypesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ApplicationTypesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ApplicationTypesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or update a Service Fabric application type name resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // applicationTypeName - The name of the application type name resource.
@@ -98,13 +104,13 @@ func (client *ApplicationTypesClient) createOrUpdateCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ApplicationTypesClient) createOrUpdateHandleResponse(resp *http.Response) (ApplicationTypesClientCreateOrUpdateResponse, error) {
-	result := ApplicationTypesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ApplicationTypesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplicationTypeResource); err != nil {
 		return ApplicationTypesClientCreateOrUpdateResponse{}, err
 	}
@@ -113,31 +119,27 @@ func (client *ApplicationTypesClient) createOrUpdateHandleResponse(resp *http.Re
 
 // BeginDelete - Delete a Service Fabric application type name resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // applicationTypeName - The name of the application type name resource.
 // options - ApplicationTypesClientBeginDeleteOptions contains the optional parameters for the ApplicationTypesClient.BeginDelete
 // method.
-func (client *ApplicationTypesClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, applicationTypeName string, options *ApplicationTypesClientBeginDeleteOptions) (ApplicationTypesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, applicationTypeName, options)
-	if err != nil {
-		return ApplicationTypesClientDeletePollerResponse{}, err
+func (client *ApplicationTypesClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, applicationTypeName string, options *ApplicationTypesClientBeginDeleteOptions) (*runtime.Poller[ApplicationTypesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, applicationTypeName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[ApplicationTypesClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[ApplicationTypesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ApplicationTypesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ApplicationTypesClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return ApplicationTypesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ApplicationTypesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a Service Fabric application type name resource with the specified name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *ApplicationTypesClient) deleteOperation(ctx context.Context, resourceGroupName string, clusterName string, applicationTypeName string, options *ApplicationTypesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, clusterName, applicationTypeName, options)
 	if err != nil {
@@ -179,13 +181,14 @@ func (client *ApplicationTypesClient) deleteCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a Service Fabric application type name resource created or in the process of being created in the Service Fabric
 // cluster resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // applicationTypeName - The name of the application type name resource.
@@ -231,13 +234,13 @@ func (client *ApplicationTypesClient) getCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ApplicationTypesClient) getHandleResponse(resp *http.Response) (ApplicationTypesClientGetResponse, error) {
-	result := ApplicationTypesClientGetResponse{RawResponse: resp}
+	result := ApplicationTypesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplicationTypeResource); err != nil {
 		return ApplicationTypesClientGetResponse{}, err
 	}
@@ -247,6 +250,7 @@ func (client *ApplicationTypesClient) getHandleResponse(resp *http.Response) (Ap
 // List - Gets all application type name resources created or in the process of being created in the Service Fabric cluster
 // resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster resource.
 // options - ApplicationTypesClientListOptions contains the optional parameters for the ApplicationTypesClient.List method.
@@ -287,13 +291,13 @@ func (client *ApplicationTypesClient) listCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ApplicationTypesClient) listHandleResponse(resp *http.Response) (ApplicationTypesClientListResponse, error) {
-	result := ApplicationTypesClientListResponse{RawResponse: resp}
+	result := ApplicationTypesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplicationTypeResourceList); err != nil {
 		return ApplicationTypesClientListResponse{}, err
 	}

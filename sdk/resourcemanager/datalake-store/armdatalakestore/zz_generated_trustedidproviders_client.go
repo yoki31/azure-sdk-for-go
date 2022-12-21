@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,25 +35,30 @@ type TrustedIDProvidersClient struct {
 // forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewTrustedIDProvidersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *TrustedIDProvidersClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewTrustedIDProvidersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*TrustedIDProvidersClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &TrustedIDProvidersClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates the specified trusted identity provider. During update, the trusted identity provider
 // with the specified name will be replaced with this new provider
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2016-11-01
 // resourceGroupName - The name of the Azure resource group.
 // accountName - The name of the Data Lake Store account.
 // trustedIDProviderName - The name of the trusted identity provider. This is used for differentiation of providers in the
@@ -101,13 +107,13 @@ func (client *TrustedIDProvidersClient) createOrUpdateCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2016-11-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *TrustedIDProvidersClient) createOrUpdateHandleResponse(resp *http.Response) (TrustedIDProvidersClientCreateOrUpdateResponse, error) {
-	result := TrustedIDProvidersClientCreateOrUpdateResponse{RawResponse: resp}
+	result := TrustedIDProvidersClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TrustedIDProvider); err != nil {
 		return TrustedIDProvidersClientCreateOrUpdateResponse{}, err
 	}
@@ -116,6 +122,7 @@ func (client *TrustedIDProvidersClient) createOrUpdateHandleResponse(resp *http.
 
 // Delete - Deletes the specified trusted identity provider from the specified Data Lake Store account
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2016-11-01
 // resourceGroupName - The name of the Azure resource group.
 // accountName - The name of the Data Lake Store account.
 // trustedIDProviderName - The name of the trusted identity provider to delete.
@@ -133,7 +140,7 @@ func (client *TrustedIDProvidersClient) Delete(ctx context.Context, resourceGrou
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return TrustedIDProvidersClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return TrustedIDProvidersClientDeleteResponse{RawResponse: resp}, nil
+	return TrustedIDProvidersClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -167,6 +174,7 @@ func (client *TrustedIDProvidersClient) deleteCreateRequest(ctx context.Context,
 
 // Get - Gets the specified Data Lake Store trusted identity provider.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2016-11-01
 // resourceGroupName - The name of the Azure resource group.
 // accountName - The name of the Data Lake Store account.
 // trustedIDProviderName - The name of the trusted identity provider to retrieve.
@@ -212,35 +220,52 @@ func (client *TrustedIDProvidersClient) getCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2016-11-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *TrustedIDProvidersClient) getHandleResponse(resp *http.Response) (TrustedIDProvidersClientGetResponse, error) {
-	result := TrustedIDProvidersClientGetResponse{RawResponse: resp}
+	result := TrustedIDProvidersClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TrustedIDProvider); err != nil {
 		return TrustedIDProvidersClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByAccount - Lists the Data Lake Store trusted identity providers within the specified Data Lake Store account.
+// NewListByAccountPager - Lists the Data Lake Store trusted identity providers within the specified Data Lake Store account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2016-11-01
 // resourceGroupName - The name of the Azure resource group.
 // accountName - The name of the Data Lake Store account.
 // options - TrustedIDProvidersClientListByAccountOptions contains the optional parameters for the TrustedIDProvidersClient.ListByAccount
 // method.
-func (client *TrustedIDProvidersClient) ListByAccount(resourceGroupName string, accountName string, options *TrustedIDProvidersClientListByAccountOptions) *TrustedIDProvidersClientListByAccountPager {
-	return &TrustedIDProvidersClientListByAccountPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByAccountCreateRequest(ctx, resourceGroupName, accountName, options)
+func (client *TrustedIDProvidersClient) NewListByAccountPager(resourceGroupName string, accountName string, options *TrustedIDProvidersClientListByAccountOptions) *runtime.Pager[TrustedIDProvidersClientListByAccountResponse] {
+	return runtime.NewPager(runtime.PagingHandler[TrustedIDProvidersClientListByAccountResponse]{
+		More: func(page TrustedIDProvidersClientListByAccountResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp TrustedIDProvidersClientListByAccountResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.TrustedIDProviderListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *TrustedIDProvidersClientListByAccountResponse) (TrustedIDProvidersClientListByAccountResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByAccountCreateRequest(ctx, resourceGroupName, accountName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return TrustedIDProvidersClientListByAccountResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return TrustedIDProvidersClientListByAccountResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return TrustedIDProvidersClientListByAccountResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByAccountHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByAccountCreateRequest creates the ListByAccount request.
@@ -265,13 +290,13 @@ func (client *TrustedIDProvidersClient) listByAccountCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2016-11-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByAccountHandleResponse handles the ListByAccount response.
 func (client *TrustedIDProvidersClient) listByAccountHandleResponse(resp *http.Response) (TrustedIDProvidersClientListByAccountResponse, error) {
-	result := TrustedIDProvidersClientListByAccountResponse{RawResponse: resp}
+	result := TrustedIDProvidersClientListByAccountResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TrustedIDProviderListResult); err != nil {
 		return TrustedIDProvidersClientListByAccountResponse{}, err
 	}
@@ -280,6 +305,7 @@ func (client *TrustedIDProvidersClient) listByAccountHandleResponse(resp *http.R
 
 // Update - Updates the specified trusted identity provider.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2016-11-01
 // resourceGroupName - The name of the Azure resource group.
 // accountName - The name of the Data Lake Store account.
 // trustedIDProviderName - The name of the trusted identity provider. This is used for differentiation of providers in the
@@ -327,7 +353,7 @@ func (client *TrustedIDProvidersClient) updateCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2016-11-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Parameters != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Parameters)
 	}
@@ -336,7 +362,7 @@ func (client *TrustedIDProvidersClient) updateCreateRequest(ctx context.Context,
 
 // updateHandleResponse handles the Update response.
 func (client *TrustedIDProvidersClient) updateHandleResponse(resp *http.Response) (TrustedIDProvidersClientUpdateResponse, error) {
-	result := TrustedIDProvidersClientUpdateResponse{RawResponse: resp}
+	result := TrustedIDProvidersClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TrustedIDProvider); err != nil {
 		return TrustedIDProvidersClientUpdateResponse{}, err
 	}

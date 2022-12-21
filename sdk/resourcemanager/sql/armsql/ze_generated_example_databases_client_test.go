@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,408 +12,465 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/stable/2014-04-01/examples/DatabaseMetricsListWithFilter.json
-func ExampleDatabasesClient_ListMetrics() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/stable/2014-04-01/examples/DatabaseMetricsListWithFilter.json
+func ExampleDatabasesClient_NewListMetricsPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	res, err := client.ListMetrics(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<filter>",
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListMetricsPager("sqlcrudtest-6730",
+		"sqlcrudtest-9007",
+		"3481",
+		"name/value eq 'cpu_percent' and timeGrain eq '00:10:00' and startTime eq '2017-06-02T18:35:00Z' and endTime eq '2017-06-02T18:55:00Z'",
 		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientListMetricsResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/stable/2014-04-01/examples/DatabaseMetricsDefinitionsList.json
-func ExampleDatabasesClient_ListMetricDefinitions() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	res, err := client.ListMetricDefinitions(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientListMetricDefinitionsResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListVCoreDatabasesByServer.json
-func ExampleDatabasesClient_ListByServer() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	pager := client.ListByServer("<resource-group-name>",
-		"<server-name>",
-		&armsql.DatabasesClientListByServerOptions{SkipToken: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/GetVCoreDatabase.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/stable/2014-04-01/examples/DatabaseMetricsDefinitionsList.json
+func ExampleDatabasesClient_NewListMetricDefinitionsPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListMetricDefinitionsPager("sqlcrudtest-6730",
+		"sqlcrudtest-9007",
+		"3481",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListVCoreDatabasesByServer.json
+func ExampleDatabasesClient_NewListByServerPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByServerPager("Default-SQL-SouthEastAsia",
+		"testsvr",
+		&armsql.DatabasesClientListByServerOptions{SkipToken: nil})
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/GetVCoreDatabase.json
 func ExampleDatabasesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/CreateVCoreDatabaseByServiceObjective.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/CreateVCoreDatabaseByServiceObjective.json
 func ExampleDatabasesClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
 		armsql.Database{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("southeastasia"),
 			SKU: &armsql.SKU{
-				Name:     to.StringPtr("<name>"),
-				Capacity: to.Int32Ptr(2),
-				Family:   to.StringPtr("<family>"),
+				Name:     to.Ptr("BC"),
+				Capacity: to.Ptr[int32](2),
+				Family:   to.Ptr("Gen4"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/DeleteDatabase.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/DeleteDatabase.json
 func ExampleDatabasesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/PatchVCoreDatabaseAssignMaintenanceConfiguration.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/PatchVCoreDatabaseAssignMaintenanceConfiguration.json
 func ExampleDatabasesClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
 		armsql.DatabaseUpdate{
-			Properties: &armsql.DatabaseProperties{
-				MaintenanceConfigurationID: to.StringPtr("<maintenance-configuration-id>"),
+			Properties: &armsql.DatabaseUpdateProperties{
+				MaintenanceConfigurationID: to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/SQL_SouthEastAsia_1"),
 			},
 			SKU: &armsql.SKU{
-				Name: to.StringPtr("<name>"),
+				Name: to.Ptr("BC_Gen5_4"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListDatabasesByElasticPool.json
-func ExampleDatabasesClient_ListByElasticPool() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	pager := client.ListByElasticPool("<resource-group-name>",
-		"<server-name>",
-		"<elastic-pool-name>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/FailoverDatabase.json
-func ExampleDatabasesClient_BeginFailover() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginFailover(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		&armsql.DatabasesClientBeginFailoverOptions{ReplicaType: armsql.ReplicaType("Primary").ToPtr()})
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListVCoreInaccessibleDatabasesByServer.json
-func ExampleDatabasesClient_ListInaccessibleByServer() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	pager := client.ListInaccessibleByServer("<resource-group-name>",
-		"<server-name>",
-		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
-			log.Fatalf("failed to advance page: %v", err)
-		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
-		}
-	}
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/PauseDatabase.json
-func ExampleDatabasesClient_BeginPause() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginPause(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientPauseResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResumeDatabase.json
-func ExampleDatabasesClient_BeginResume() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginResume(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientResumeResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/UpgradeDataWarehouse.json
-func ExampleDatabasesClient_BeginUpgradeDataWarehouse() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginUpgradeDataWarehouse(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/RenameDatabase.json
-func ExampleDatabasesClient_Rename() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	_, err = client.Rename(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		armsql.ResourceMoveDefinition{
-			ID: to.StringPtr("<id>"),
-		},
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ImportDatabaseWithNetworkIsolation.json
-func ExampleDatabasesClient_BeginImport() {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
-	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
-	poller, err := client.BeginImport(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		armsql.ImportExistingDatabaseDefinition{
-			AdministratorLogin:         to.StringPtr("<administrator-login>"),
-			AdministratorLoginPassword: to.StringPtr("<administrator-login-password>"),
-			AuthenticationType:         to.StringPtr("<authentication-type>"),
-			NetworkIsolation: &armsql.NetworkIsolationSettings{
-				SQLServerResourceID:      to.StringPtr("<sqlserver-resource-id>"),
-				StorageAccountResourceID: to.StringPtr("<storage-account-resource-id>"),
-			},
-			StorageKey:     to.StringPtr("<storage-key>"),
-			StorageKeyType: armsql.StorageKeyType("StorageAccessKey").ToPtr(),
-			StorageURI:     to.StringPtr("<storage-uri>"),
-		},
-		nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientImportResult)
-}
-
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ExportDatabaseWithNetworkIsolation.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ExportDatabaseWithNetworkIsolation.json
 func ExampleDatabasesClient_BeginExport() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabasesClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginExport(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
 		armsql.ExportDatabaseDefinition{
-			AdministratorLogin:         to.StringPtr("<administrator-login>"),
-			AdministratorLoginPassword: to.StringPtr("<administrator-login-password>"),
-			AuthenticationType:         to.StringPtr("<authentication-type>"),
+			AdministratorLogin:         to.Ptr("login"),
+			AdministratorLoginPassword: to.Ptr("password"),
+			AuthenticationType:         to.Ptr("Sql"),
 			NetworkIsolation: &armsql.NetworkIsolationSettings{
-				SQLServerResourceID:      to.StringPtr("<sqlserver-resource-id>"),
-				StorageAccountResourceID: to.StringPtr("<storage-account-resource-id>"),
+				SQLServerResourceID:      to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/Default-SQL-SouthEastAsia/providers/Microsoft.Sql/servers/testsvr"),
+				StorageAccountResourceID: to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/Default-SQL-SouthEastAsia/providers/Microsoft.Storage/storageAccounts/test-privatelink"),
 			},
-			StorageKey:     to.StringPtr("<storage-key>"),
-			StorageKeyType: armsql.StorageKeyType("StorageAccessKey").ToPtr(),
-			StorageURI:     to.StringPtr("<storage-uri>"),
+			StorageKey:     to.Ptr("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="),
+			StorageKeyType: to.Ptr(armsql.StorageKeyTypeStorageAccessKey),
+			StorageURI:     to.Ptr("https://test.blob.core.windows.net/test.bacpac"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabasesClientExportResult)
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/FailoverDatabase.json
+func ExampleDatabasesClient_BeginFailover() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginFailover(ctx,
+		"group1",
+		"testServer",
+		"testDatabase",
+		&armsql.DatabasesClientBeginFailoverOptions{ReplicaType: to.Ptr(armsql.ReplicaTypePrimary)})
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	_, err = poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ImportDatabaseWithNetworkIsolation.json
+func ExampleDatabasesClient_BeginImport() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginImport(ctx,
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		armsql.ImportExistingDatabaseDefinition{
+			AdministratorLogin:         to.Ptr("login"),
+			AdministratorLoginPassword: to.Ptr("password"),
+			AuthenticationType:         to.Ptr("Sql"),
+			NetworkIsolation: &armsql.NetworkIsolationSettings{
+				SQLServerResourceID:      to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/Default-SQL-SouthEastAsia/providers/Microsoft.Sql/servers/testsvr"),
+				StorageAccountResourceID: to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/Default-SQL-SouthEastAsia/providers/Microsoft.Storage/storageAccounts/test-privatelink"),
+			},
+			StorageKey:     to.Ptr("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="),
+			StorageKeyType: to.Ptr(armsql.StorageKeyTypeStorageAccessKey),
+			StorageURI:     to.Ptr("https://test.blob.core.windows.net/test.bacpac"),
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	res, err := poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/RenameDatabase.json
+func ExampleDatabasesClient_Rename() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	_, err = client.Rename(ctx,
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdb",
+		armsql.ResourceMoveDefinition{
+			ID: to.Ptr("/subscriptions/00000000-1111-2222-3333-444444444444/resourceGroups/Default-SQL-SouthEastAsia/providers/Microsoft.Sql/servers/testsvr/databases/newtestdb"),
+		},
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/PauseDatabase.json
+func ExampleDatabasesClient_BeginPause() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginPause(ctx,
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdwdb",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	res, err := poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ResumeDatabase.json
+func ExampleDatabasesClient_BeginResume() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginResume(ctx,
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdwdb",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	res, err := poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+	// TODO: use response item
+	_ = res
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/UpgradeDataWarehouse.json
+func ExampleDatabasesClient_BeginUpgradeDataWarehouse() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	poller, err := client.BeginUpgradeDataWarehouse(ctx,
+		"Default-SQL-SouthEastAsia",
+		"testsvr",
+		"testdwdb",
+		nil)
+	if err != nil {
+		log.Fatalf("failed to finish the request: %v", err)
+	}
+	_, err = poller.PollUntilDone(ctx, nil)
+	if err != nil {
+		log.Fatalf("failed to pull the result: %v", err)
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListDatabasesByElasticPool.json
+func ExampleDatabasesClient_NewListByElasticPoolPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByElasticPoolPager("Default-SQL-SouthEastAsia",
+		"testsvr",
+		"pool1",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
+}
+
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-05-01-preview/examples/ListVCoreInaccessibleDatabasesByServer.json
+func ExampleDatabasesClient_NewListInaccessibleByServerPager() {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Fatalf("failed to obtain a credential: %v", err)
+	}
+	ctx := context.Background()
+	client, err := armsql.NewDatabasesClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListInaccessibleByServerPager("Default-SQL-SouthEastAsia",
+		"testsvr",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }

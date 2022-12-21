@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type RolloutsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewRolloutsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *RolloutsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewRolloutsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*RolloutsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &RolloutsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Cancel - Only running rollouts can be canceled.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // rolloutName - The rollout name.
 // options - RolloutsClientCancelOptions contains the optional parameters for the RolloutsClient.Cancel method.
@@ -93,13 +99,13 @@ func (client *RolloutsClient) cancelCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // cancelHandleResponse handles the Cancel response.
 func (client *RolloutsClient) cancelHandleResponse(resp *http.Response) (RolloutsClientCancelResponse, error) {
-	result := RolloutsClientCancelResponse{RawResponse: resp}
+	result := RolloutsClientCancelResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Rollout); err != nil {
 		return RolloutsClientCancelResponse{}, err
 	}
@@ -109,31 +115,27 @@ func (client *RolloutsClient) cancelHandleResponse(resp *http.Response) (Rollout
 // BeginCreateOrUpdate - This is an asynchronous operation and can be polled to completion using the location header returned
 // by this operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // rolloutName - The rollout name.
 // options - RolloutsClientBeginCreateOrUpdateOptions contains the optional parameters for the RolloutsClient.BeginCreateOrUpdate
 // method.
-func (client *RolloutsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, rolloutName string, options *RolloutsClientBeginCreateOrUpdateOptions) (RolloutsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, rolloutName, options)
-	if err != nil {
-		return RolloutsClientCreateOrUpdatePollerResponse{}, err
+func (client *RolloutsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, rolloutName string, options *RolloutsClientBeginCreateOrUpdateOptions) (*runtime.Poller[RolloutsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, rolloutName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[RolloutsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[RolloutsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := RolloutsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("RolloutsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return RolloutsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &RolloutsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - This is an asynchronous operation and can be polled to completion using the location header returned by
 // this operation.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 func (client *RolloutsClient) createOrUpdate(ctx context.Context, resourceGroupName string, rolloutName string, options *RolloutsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, rolloutName, options)
 	if err != nil {
@@ -171,7 +173,7 @@ func (client *RolloutsClient) createOrUpdateCreateRequest(ctx context.Context, r
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.RolloutRequest != nil {
 		return req, runtime.MarshalAsJSON(req, *options.RolloutRequest)
 	}
@@ -180,6 +182,7 @@ func (client *RolloutsClient) createOrUpdateCreateRequest(ctx context.Context, r
 
 // Delete - Only rollouts in terminal state can be deleted.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // rolloutName - The rollout name.
 // options - RolloutsClientDeleteOptions contains the optional parameters for the RolloutsClient.Delete method.
@@ -195,7 +198,7 @@ func (client *RolloutsClient) Delete(ctx context.Context, resourceGroupName stri
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return RolloutsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return RolloutsClientDeleteResponse{RawResponse: resp}, nil
+	return RolloutsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -220,12 +223,13 @@ func (client *RolloutsClient) deleteCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets detailed information of a rollout.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // rolloutName - The rollout name.
 // options - RolloutsClientGetOptions contains the optional parameters for the RolloutsClient.Get method.
@@ -269,13 +273,13 @@ func (client *RolloutsClient) getCreateRequest(ctx context.Context, resourceGrou
 		reqQP.Set("retryAttempt", strconv.FormatInt(int64(*options.RetryAttempt), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *RolloutsClient) getHandleResponse(resp *http.Response) (RolloutsClientGetResponse, error) {
-	result := RolloutsClientGetResponse{RawResponse: resp}
+	result := RolloutsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Rollout); err != nil {
 		return RolloutsClientGetResponse{}, err
 	}
@@ -284,6 +288,7 @@ func (client *RolloutsClient) getHandleResponse(resp *http.Response) (RolloutsCl
 
 // List - Lists the rollouts in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - RolloutsClientListOptions contains the optional parameters for the RolloutsClient.List method.
 func (client *RolloutsClient) List(ctx context.Context, resourceGroupName string, options *RolloutsClientListOptions) (RolloutsClientListResponse, error) {
@@ -319,13 +324,13 @@ func (client *RolloutsClient) listCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *RolloutsClient) listHandleResponse(resp *http.Response) (RolloutsClientListResponse, error) {
-	result := RolloutsClientListResponse{RawResponse: resp}
+	result := RolloutsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.RolloutArray); err != nil {
 		return RolloutsClientListResponse{}, err
 	}
@@ -334,6 +339,7 @@ func (client *RolloutsClient) listHandleResponse(resp *http.Response) (RolloutsC
 
 // Restart - Only failed rollouts can be restarted.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-11-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // rolloutName - The rollout name.
 // options - RolloutsClientRestartOptions contains the optional parameters for the RolloutsClient.Restart method.
@@ -377,13 +383,13 @@ func (client *RolloutsClient) restartCreateRequest(ctx context.Context, resource
 	}
 	reqQP.Set("api-version", "2019-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // restartHandleResponse handles the Restart response.
 func (client *RolloutsClient) restartHandleResponse(resp *http.Response) (RolloutsClientRestartResponse, error) {
-	result := RolloutsClientRestartResponse{RawResponse: resp}
+	result := RolloutsClientRestartResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Rollout); err != nil {
 		return RolloutsClientRestartResponse{}, err
 	}

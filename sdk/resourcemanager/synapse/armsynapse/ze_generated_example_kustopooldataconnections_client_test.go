@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,194 +12,223 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsCheckNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsCheckNameAvailability.json
 func ExampleKustoPoolDataConnectionsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
+		"kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"Kustodatabase8",
 		armsynapse.DataConnectionCheckNameRequest{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("DataConnections8"),
+			Type: to.Ptr("Microsoft.Synapse/workspaces/kustoPools/databases/dataConnections"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionValidation.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionValidation.json
 func ExampleKustoPoolDataConnectionsClient_BeginDataConnectionValidation() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDataConnectionValidation(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
+		"kustorptest",
+		"kustorptest",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
 		armsynapse.DataConnectionValidation{
-			DataConnectionName: to.StringPtr("<data-connection-name>"),
+			DataConnectionName: to.Ptr("DataConnections8"),
 			Properties: &armsynapse.EventHubDataConnection{
-				Kind: armsynapse.DataConnectionKind("EventHub").ToPtr(),
+				Kind: to.Ptr(armsynapse.DataConnectionKindEventHub),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientDataConnectionValidationResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsListByDatabase.json
-func ExampleKustoPoolDataConnectionsClient_ListByDatabase() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsListByDatabase.json
+func ExampleKustoPoolDataConnectionsClient_NewListByDatabasePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
-	res, err := client.ListByDatabase(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
-		nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientListByDatabaseResult)
+	pager := client.NewListByDatabasePager("kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsGet.json
 func ExampleKustoPoolDataConnectionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
-		"<data-connection-name>",
+		"kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
+		"DataConnections8",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsCreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsCreateOrUpdate.json
 func ExampleKustoPoolDataConnectionsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
-		"<data-connection-name>",
+		"kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
+		"DataConnections8",
 		&armsynapse.EventHubDataConnection{
-			Kind:     armsynapse.DataConnectionKind("EventHub").ToPtr(),
-			Location: to.StringPtr("<location>"),
+			Kind:     to.Ptr(armsynapse.DataConnectionKindEventHub),
+			Location: to.Ptr("westus"),
 			Properties: &armsynapse.EventHubConnectionProperties{
-				ConsumerGroup:      to.StringPtr("<consumer-group>"),
-				EventHubResourceID: to.StringPtr("<event-hub-resource-id>"),
+				ConsumerGroup:      to.Ptr("testConsumerGroup1"),
+				EventHubResourceID: to.Ptr("/subscriptions/12345678-1234-1234-1234-123456789098/resourceGroups/kustorptest/providers/Microsoft.EventHub/namespaces/eventhubTestns1/eventhubs/eventhubTest1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsUpdate.json
 func ExampleKustoPoolDataConnectionsClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
-		"<data-connection-name>",
+		"kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
+		"DataConnections8",
 		&armsynapse.EventHubDataConnection{
-			Kind:     armsynapse.DataConnectionKind("EventHub").ToPtr(),
-			Location: to.StringPtr("<location>"),
+			Kind:     to.Ptr(armsynapse.DataConnectionKindEventHub),
+			Location: to.Ptr("westus"),
 			Properties: &armsynapse.EventHubConnectionProperties{
-				ConsumerGroup:      to.StringPtr("<consumer-group>"),
-				EventHubResourceID: to.StringPtr("<event-hub-resource-id>"),
+				ConsumerGroup:      to.Ptr("testConsumerGroup1"),
+				EventHubResourceID: to.Ptr("/subscriptions/12345678-1234-1234-1234-123456789098/resourceGroups/kustorptest/providers/Microsoft.EventHub/namespaces/eventhubTestns1/eventhubs/eventhubTest1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolDataConnectionsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolDataConnectionsDelete.json
 func ExampleKustoPoolDataConnectionsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolDataConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolDataConnectionsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<database-name>",
-		"<data-connection-name>",
+		"kustorptest",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"KustoDatabase8",
+		"kustoeventhubconnection1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

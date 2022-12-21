@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,178 +12,209 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dataprotection/armdataprotection"
 )
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/GetBackupVaultsInSubscription.json
-func ExampleBackupVaultsClient_GetInSubscription() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/GetBackupVaultsInSubscription.json
+func ExampleBackupVaultsClient_NewGetInSubscriptionPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
-	pager := client.GetInSubscription(nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewGetInSubscriptionPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/GetBackupVaultsInResourceGroup.json
-func ExampleBackupVaultsClient_GetInResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/GetBackupVaultsInResourceGroup.json
+func ExampleBackupVaultsClient_NewGetInResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
-	pager := client.GetInResourceGroup("<resource-group-name>",
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewGetInResourceGroupPager("SampleResourceGroup",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/GetBackupVault.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/GetBackupVault.json
 func ExampleBackupVaultsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
+		"SampleResourceGroup",
+		"swaggerExample",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BackupVaultsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/PutBackupVault.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/PutBackupVault.json
 func ExampleBackupVaultsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
+		"SampleResourceGroup",
+		"swaggerExample",
 		armdataprotection.BackupVaultResource{
 			Identity: &armdataprotection.DppIdentityDetails{
-				Type: to.StringPtr("<type>"),
+				Type: to.Ptr("None"),
 			},
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("WestUS"),
 			Tags: map[string]*string{
-				"key1": to.StringPtr("val1"),
+				"key1": to.Ptr("val1"),
 			},
 			Properties: &armdataprotection.BackupVault{
+				MonitoringSettings: &armdataprotection.MonitoringSettings{
+					AzureMonitorAlertSettings: &armdataprotection.AzureMonitorAlertSettings{
+						AlertsForAllJobFailures: to.Ptr(armdataprotection.AlertsStateEnabled),
+					},
+				},
 				StorageSettings: []*armdataprotection.StorageSetting{
 					{
-						Type:          armdataprotection.StorageSettingTypes("LocallyRedundant").ToPtr(),
-						DatastoreType: armdataprotection.StorageSettingStoreTypes("VaultStore").ToPtr(),
+						Type:          to.Ptr(armdataprotection.StorageSettingTypesLocallyRedundant),
+						DatastoreType: to.Ptr(armdataprotection.StorageSettingStoreTypesVaultStore),
 					}},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BackupVaultsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/DeleteBackupVault.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/DeleteBackupVault.json
 func ExampleBackupVaultsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
+		"SampleResourceGroup",
+		"swaggerExample",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/PatchBackupVault.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/PatchBackupVault.json
 func ExampleBackupVaultsClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
+		"SampleResourceGroup",
+		"swaggerExample",
 		armdataprotection.PatchResourceRequestInput{
+			Properties: &armdataprotection.PatchBackupVaultInput{
+				MonitoringSettings: &armdataprotection.MonitoringSettings{
+					AzureMonitorAlertSettings: &armdataprotection.AzureMonitorAlertSettings{
+						AlertsForAllJobFailures: to.Ptr(armdataprotection.AlertsStateEnabled),
+					},
+				},
+			},
 			Tags: map[string]*string{
-				"newKey": to.StringPtr("newVal"),
+				"newKey": to.Ptr("newVal"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BackupVaultsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2021-07-01/examples/VaultCRUD/CheckBackupVaultsNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/examples/VaultCRUD/CheckBackupVaultsNameAvailability.json
 func ExampleBackupVaultsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdataprotection.NewBackupVaultsClient("<subscription-id>", cred, nil)
+	client, err := armdataprotection.NewBackupVaultsClient("0b352192-dcac-4cc7-992e-a96190ccc68c", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<resource-group-name>",
-		"<location>",
+		"SampleResourceGroup",
+		"westus",
 		armdataprotection.CheckNameAvailabilityRequest{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("swaggerExample"),
+			Type: to.Ptr("Microsoft.DataProtection/BackupVaults"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.BackupVaultsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }

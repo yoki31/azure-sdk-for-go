@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -8,12 +8,16 @@
 
 package armhybridconnectivity
 
-import (
-	"encoding/json"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"reflect"
-	"time"
-)
+import "time"
+
+// AADProfileProperties - The AAD Profile
+type AADProfileProperties struct {
+	// REQUIRED; The arc ingress gateway server app id.
+	ServerID *string `json:"serverId,omitempty"`
+
+	// REQUIRED; The target resource home tenant id.
+	TenantID *string `json:"tenantId,omitempty"`
+}
 
 // EndpointAccessResource - The endpoint access for the target resource.
 type EndpointAccessResource struct {
@@ -29,7 +33,7 @@ type EndpointProperties struct {
 	// The resource Id of the connectivity endpoint (optional).
 	ResourceID *string `json:"resourceId,omitempty"`
 
-	// READ-ONLY
+	// READ-ONLY; The resource provisioning state.
 	ProvisioningState *string `json:"provisioningState,omitempty" azure:"ro"`
 }
 
@@ -49,17 +53,6 @@ type EndpointResource struct {
 
 	// READ-ONLY; The type of the resource. E.g. "Microsoft.Compute/virtualMachines" or "Microsoft.Storage/storageAccounts"
 	Type *string `json:"type,omitempty" azure:"ro"`
-}
-
-// MarshalJSON implements the json.Marshaller interface for type EndpointResource.
-func (e EndpointResource) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	populate(objectMap, "id", e.ID)
-	populate(objectMap, "name", e.Name)
-	populate(objectMap, "properties", e.Properties)
-	populate(objectMap, "systemData", e.SystemData)
-	populate(objectMap, "type", e.Type)
-	return json.Marshal(objectMap)
 }
 
 // EndpointsClientCreateOrUpdateOptions contains the optional parameters for the EndpointsClient.CreateOrUpdate method.
@@ -83,6 +76,12 @@ type EndpointsClientListCredentialsOptions struct {
 	Expiresin *int64
 }
 
+// EndpointsClientListManagedProxyDetailsOptions contains the optional parameters for the EndpointsClient.ListManagedProxyDetails
+// method.
+type EndpointsClientListManagedProxyDetailsOptions struct {
+	// placeholder for future optional parameters
+}
+
 // EndpointsClientListOptions contains the optional parameters for the EndpointsClient.List method.
 type EndpointsClientListOptions struct {
 	// placeholder for future optional parameters
@@ -102,18 +101,10 @@ type EndpointsList struct {
 	Value []*EndpointResource `json:"value,omitempty"`
 }
 
-// MarshalJSON implements the json.Marshaller interface for type EndpointsList.
-func (e EndpointsList) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	populate(objectMap, "nextLink", e.NextLink)
-	populate(objectMap, "value", e.Value)
-	return json.Marshal(objectMap)
-}
-
 // ErrorAdditionalInfo - The resource management error additional info.
 type ErrorAdditionalInfo struct {
 	// READ-ONLY; The additional info.
-	Info map[string]interface{} `json:"info,omitempty" azure:"ro"`
+	Info interface{} `json:"info,omitempty" azure:"ro"`
 
 	// READ-ONLY; The additional info type.
 	Type *string `json:"type,omitempty" azure:"ro"`
@@ -137,22 +128,47 @@ type ErrorDetail struct {
 	Target *string `json:"target,omitempty" azure:"ro"`
 }
 
-// MarshalJSON implements the json.Marshaller interface for type ErrorDetail.
-func (e ErrorDetail) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	populate(objectMap, "additionalInfo", e.AdditionalInfo)
-	populate(objectMap, "code", e.Code)
-	populate(objectMap, "details", e.Details)
-	populate(objectMap, "message", e.Message)
-	populate(objectMap, "target", e.Target)
-	return json.Marshal(objectMap)
-}
-
 // ErrorResponse - Common error response for all Azure Resource Manager APIs to return error details for failed operations.
 // (This also follows the OData error response format.).
 type ErrorResponse struct {
 	// The error object.
 	Error *ErrorDetail `json:"error,omitempty"`
+}
+
+// IngressGatewayResource - The ingress gateway access credentials
+type IngressGatewayResource struct {
+	// Ingress gateway profile
+	Ingress *IngressProfileProperties `json:"ingress,omitempty"`
+
+	// Azure relay hybrid connection access properties
+	Relay *RelayNamespaceAccessProperties `json:"relay,omitempty"`
+}
+
+// IngressProfileProperties - Ingress gateway profile
+type IngressProfileProperties struct {
+	// REQUIRED; The AAD Profile
+	AADProfile *AADProfileProperties `json:"aadProfile,omitempty"`
+
+	// REQUIRED; The ingress hostname.
+	Hostname *string `json:"hostname,omitempty"`
+}
+
+// ManagedProxyRequest - Represent ManageProxy Request object.
+type ManagedProxyRequest struct {
+	// REQUIRED; The name of the service.
+	Service *string `json:"service,omitempty"`
+
+	// The target host name.
+	Hostname *string `json:"hostname,omitempty"`
+}
+
+// ManagedProxyResource - Managed Proxy
+type ManagedProxyResource struct {
+	// REQUIRED; The expiration time of short lived proxy name in unix epoch.
+	ExpiresOn *int64 `json:"expiresOn,omitempty"`
+
+	// REQUIRED; The short lived proxy name.
+	Proxy *string `json:"proxy,omitempty"`
 }
 
 // Operation - Details of a REST API operation, returned from the Resource Provider Operations API
@@ -202,14 +218,6 @@ type OperationListResult struct {
 
 	// READ-ONLY; List of operations supported by the resource provider
 	Value []*Operation `json:"value,omitempty" azure:"ro"`
-}
-
-// MarshalJSON implements the json.Marshaller interface for type OperationListResult.
-func (o OperationListResult) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	populate(objectMap, "nextLink", o.NextLink)
-	populate(objectMap, "value", o.Value)
-	return json.Marshal(objectMap)
 }
 
 // OperationsClientListOptions contains the optional parameters for the OperationsClient.List method.
@@ -279,68 +287,4 @@ type SystemData struct {
 
 	// The type of identity that last modified the resource.
 	LastModifiedByType *CreatedByType `json:"lastModifiedByType,omitempty"`
-}
-
-// MarshalJSON implements the json.Marshaller interface for type SystemData.
-func (s SystemData) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	populateTimeRFC3339(objectMap, "createdAt", s.CreatedAt)
-	populate(objectMap, "createdBy", s.CreatedBy)
-	populate(objectMap, "createdByType", s.CreatedByType)
-	populateTimeRFC3339(objectMap, "lastModifiedAt", s.LastModifiedAt)
-	populate(objectMap, "lastModifiedBy", s.LastModifiedBy)
-	populate(objectMap, "lastModifiedByType", s.LastModifiedByType)
-	return json.Marshal(objectMap)
-}
-
-// UnmarshalJSON implements the json.Unmarshaller interface for type SystemData.
-func (s *SystemData) UnmarshalJSON(data []byte) error {
-	var rawMsg map[string]json.RawMessage
-	if err := json.Unmarshal(data, &rawMsg); err != nil {
-		return err
-	}
-	for key, val := range rawMsg {
-		var err error
-		switch key {
-		case "createdAt":
-			err = unpopulateTimeRFC3339(val, &s.CreatedAt)
-			delete(rawMsg, key)
-		case "createdBy":
-			err = unpopulate(val, &s.CreatedBy)
-			delete(rawMsg, key)
-		case "createdByType":
-			err = unpopulate(val, &s.CreatedByType)
-			delete(rawMsg, key)
-		case "lastModifiedAt":
-			err = unpopulateTimeRFC3339(val, &s.LastModifiedAt)
-			delete(rawMsg, key)
-		case "lastModifiedBy":
-			err = unpopulate(val, &s.LastModifiedBy)
-			delete(rawMsg, key)
-		case "lastModifiedByType":
-			err = unpopulate(val, &s.LastModifiedByType)
-			delete(rawMsg, key)
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func populate(m map[string]interface{}, k string, v interface{}) {
-	if v == nil {
-		return
-	} else if azcore.IsNullValue(v) {
-		m[k] = nil
-	} else if !reflect.ValueOf(v).IsNil() {
-		m[k] = v
-	}
-}
-
-func unpopulate(data json.RawMessage, v interface{}) error {
-	if data == nil {
-		return nil
-	}
-	return json.Unmarshal(data, v)
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type AgreementsClient struct {
 // NewAgreementsClient creates a new instance of AgreementsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAgreementsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *AgreementsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAgreementsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*AgreementsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &AgreementsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets an agreement by ID.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // agreementName - The ID that uniquely identifies an agreement.
 // options - AgreementsClientGetOptions contains the optional parameters for the AgreementsClient.Get method.
@@ -87,34 +93,51 @@ func (client *AgreementsClient) getCreateRequest(ctx context.Context, billingAcc
 		reqQP.Set("$expand", *options.Expand)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *AgreementsClient) getHandleResponse(resp *http.Response) (AgreementsClientGetResponse, error) {
-	result := AgreementsClientGetResponse{RawResponse: resp}
+	result := AgreementsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Agreement); err != nil {
 		return AgreementsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByBillingAccount - Lists the agreements for a billing account.
+// NewListByBillingAccountPager - Lists the agreements for a billing account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // options - AgreementsClientListByBillingAccountOptions contains the optional parameters for the AgreementsClient.ListByBillingAccount
 // method.
-func (client *AgreementsClient) ListByBillingAccount(billingAccountName string, options *AgreementsClientListByBillingAccountOptions) *AgreementsClientListByBillingAccountPager {
-	return &AgreementsClientListByBillingAccountPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByBillingAccountCreateRequest(ctx, billingAccountName, options)
+func (client *AgreementsClient) NewListByBillingAccountPager(billingAccountName string, options *AgreementsClientListByBillingAccountOptions) *runtime.Pager[AgreementsClientListByBillingAccountResponse] {
+	return runtime.NewPager(runtime.PagingHandler[AgreementsClientListByBillingAccountResponse]{
+		More: func(page AgreementsClientListByBillingAccountResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp AgreementsClientListByBillingAccountResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.AgreementListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *AgreementsClientListByBillingAccountResponse) (AgreementsClientListByBillingAccountResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByBillingAccountCreateRequest(ctx, billingAccountName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return AgreementsClientListByBillingAccountResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return AgreementsClientListByBillingAccountResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return AgreementsClientListByBillingAccountResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByBillingAccountHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByBillingAccountCreateRequest creates the ListByBillingAccount request.
@@ -134,13 +157,13 @@ func (client *AgreementsClient) listByBillingAccountCreateRequest(ctx context.Co
 		reqQP.Set("$expand", *options.Expand)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByBillingAccountHandleResponse handles the ListByBillingAccount response.
 func (client *AgreementsClient) listByBillingAccountHandleResponse(resp *http.Response) (AgreementsClientListByBillingAccountResponse, error) {
-	result := AgreementsClientListByBillingAccountResponse{RawResponse: resp}
+	result := AgreementsClientListByBillingAccountResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AgreementListResult); err != nil {
 		return AgreementsClientListByBillingAccountResponse{}, err
 	}

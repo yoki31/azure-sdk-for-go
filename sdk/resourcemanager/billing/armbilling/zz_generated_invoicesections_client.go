@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,51 +32,51 @@ type InvoiceSectionsClient struct {
 // NewInvoiceSectionsClient creates a new instance of InvoiceSectionsClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewInvoiceSectionsClient(credential azcore.TokenCredential, options *arm.ClientOptions) *InvoiceSectionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewInvoiceSectionsClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*InvoiceSectionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &InvoiceSectionsClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates an invoice section. The operation is supported only for billing accounts with
 // agreement type Microsoft Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // billingProfileName - The ID that uniquely identifies a billing profile.
 // invoiceSectionName - The ID that uniquely identifies an invoice section.
 // parameters - The new or updated invoice section.
 // options - InvoiceSectionsClientBeginCreateOrUpdateOptions contains the optional parameters for the InvoiceSectionsClient.BeginCreateOrUpdate
 // method.
-func (client *InvoiceSectionsClient) BeginCreateOrUpdate(ctx context.Context, billingAccountName string, billingProfileName string, invoiceSectionName string, parameters InvoiceSection, options *InvoiceSectionsClientBeginCreateOrUpdateOptions) (InvoiceSectionsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, billingAccountName, billingProfileName, invoiceSectionName, parameters, options)
-	if err != nil {
-		return InvoiceSectionsClientCreateOrUpdatePollerResponse{}, err
+func (client *InvoiceSectionsClient) BeginCreateOrUpdate(ctx context.Context, billingAccountName string, billingProfileName string, invoiceSectionName string, parameters InvoiceSection, options *InvoiceSectionsClientBeginCreateOrUpdateOptions) (*runtime.Poller[InvoiceSectionsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, billingAccountName, billingProfileName, invoiceSectionName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[InvoiceSectionsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[InvoiceSectionsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := InvoiceSectionsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("InvoiceSectionsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return InvoiceSectionsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &InvoiceSectionsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates an invoice section. The operation is supported only for billing accounts with agreement
 // type Microsoft Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 func (client *InvoiceSectionsClient) createOrUpdate(ctx context.Context, billingAccountName string, billingProfileName string, invoiceSectionName string, parameters InvoiceSection, options *InvoiceSectionsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, billingAccountName, billingProfileName, invoiceSectionName, parameters, options)
 	if err != nil {
@@ -113,13 +114,14 @@ func (client *InvoiceSectionsClient) createOrUpdateCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Get - Gets an invoice section by its ID. The operation is supported only for billing accounts with agreement type Microsoft
 // Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // billingProfileName - The ID that uniquely identifies a billing profile.
 // invoiceSectionName - The ID that uniquely identifies an invoice section.
@@ -161,36 +163,53 @@ func (client *InvoiceSectionsClient) getCreateRequest(ctx context.Context, billi
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *InvoiceSectionsClient) getHandleResponse(resp *http.Response) (InvoiceSectionsClientGetResponse, error) {
-	result := InvoiceSectionsClientGetResponse{RawResponse: resp}
+	result := InvoiceSectionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.InvoiceSection); err != nil {
 		return InvoiceSectionsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByBillingProfile - Lists the invoice sections that a user has access to. The operation is supported only for billing
-// accounts with agreement type Microsoft Customer Agreement.
+// NewListByBillingProfilePager - Lists the invoice sections that a user has access to. The operation is supported only for
+// billing accounts with agreement type Microsoft Customer Agreement.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-05-01
 // billingAccountName - The ID that uniquely identifies a billing account.
 // billingProfileName - The ID that uniquely identifies a billing profile.
 // options - InvoiceSectionsClientListByBillingProfileOptions contains the optional parameters for the InvoiceSectionsClient.ListByBillingProfile
 // method.
-func (client *InvoiceSectionsClient) ListByBillingProfile(billingAccountName string, billingProfileName string, options *InvoiceSectionsClientListByBillingProfileOptions) *InvoiceSectionsClientListByBillingProfilePager {
-	return &InvoiceSectionsClientListByBillingProfilePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByBillingProfileCreateRequest(ctx, billingAccountName, billingProfileName, options)
+func (client *InvoiceSectionsClient) NewListByBillingProfilePager(billingAccountName string, billingProfileName string, options *InvoiceSectionsClientListByBillingProfileOptions) *runtime.Pager[InvoiceSectionsClientListByBillingProfileResponse] {
+	return runtime.NewPager(runtime.PagingHandler[InvoiceSectionsClientListByBillingProfileResponse]{
+		More: func(page InvoiceSectionsClientListByBillingProfileResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp InvoiceSectionsClientListByBillingProfileResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.InvoiceSectionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *InvoiceSectionsClientListByBillingProfileResponse) (InvoiceSectionsClientListByBillingProfileResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByBillingProfileCreateRequest(ctx, billingAccountName, billingProfileName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return InvoiceSectionsClientListByBillingProfileResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return InvoiceSectionsClientListByBillingProfileResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return InvoiceSectionsClientListByBillingProfileResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByBillingProfileHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByBillingProfileCreateRequest creates the ListByBillingProfile request.
@@ -211,13 +230,13 @@ func (client *InvoiceSectionsClient) listByBillingProfileCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByBillingProfileHandleResponse handles the ListByBillingProfile response.
 func (client *InvoiceSectionsClient) listByBillingProfileHandleResponse(resp *http.Response) (InvoiceSectionsClientListByBillingProfileResponse, error) {
-	result := InvoiceSectionsClientListByBillingProfileResponse{RawResponse: resp}
+	result := InvoiceSectionsClientListByBillingProfileResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.InvoiceSectionListResult); err != nil {
 		return InvoiceSectionsClientListByBillingProfileResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,142 +12,157 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/support/armsupport"
 )
 
-// x-ms-original-file: specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/CheckNameAvailabilityWithSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/CheckNameAvailabilityWithSubscription.json
 func ExampleTicketsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsupport.NewTicketsClient("<subscription-id>", cred, nil)
+	client, err := armsupport.NewTicketsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
 		armsupport.CheckNameAvailabilityInput{
-			Name: to.StringPtr("<name>"),
-			Type: armsupport.TypeMicrosoftSupportSupportTickets.ToPtr(),
+			Name: to.Ptr("sampleName"),
+			Type: to.Ptr(armsupport.TypeMicrosoftSupportSupportTickets),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TicketsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/ListSupportTicketsCreatedOnOrAfterAndInOpenStateBySubscription.json
-func ExampleTicketsClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/ListSupportTicketsCreatedOnOrAfterAndInOpenStateBySubscription.json
+func ExampleTicketsClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsupport.NewTicketsClient("<subscription-id>", cred, nil)
-	pager := client.List(&armsupport.TicketsClientListOptions{Top: nil,
-		Filter: to.StringPtr("<filter>"),
+	client, err := armsupport.NewTicketsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager(&armsupport.TicketsClientListOptions{Top: nil,
+		Filter: to.Ptr("createdDate ge 2020-03-10T22:08:51Z and status eq 'Open'"),
 	})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/GetSubscriptionSupportTicketDetails.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/GetSubscriptionSupportTicketDetails.json
 func ExampleTicketsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsupport.NewTicketsClient("<subscription-id>", cred, nil)
+	client, err := armsupport.NewTicketsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<support-ticket-name>",
+		"testticket",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TicketsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/UpdateContactDetailsOfSupportTicketForSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/UpdateContactDetailsOfSupportTicketForSubscription.json
 func ExampleTicketsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsupport.NewTicketsClient("<subscription-id>", cred, nil)
+	client, err := armsupport.NewTicketsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<support-ticket-name>",
+		"testticket",
 		armsupport.UpdateSupportTicket{
 			ContactDetails: &armsupport.UpdateContactProfile{
 				AdditionalEmailAddresses: []*string{
-					to.StringPtr("tname@contoso.com"),
-					to.StringPtr("teamtest@contoso.com")},
-				Country:                  to.StringPtr("<country>"),
-				FirstName:                to.StringPtr("<first-name>"),
-				LastName:                 to.StringPtr("<last-name>"),
-				PhoneNumber:              to.StringPtr("<phone-number>"),
-				PreferredContactMethod:   armsupport.PreferredContactMethod("email").ToPtr(),
-				PreferredSupportLanguage: to.StringPtr("<preferred-support-language>"),
-				PreferredTimeZone:        to.StringPtr("<preferred-time-zone>"),
-				PrimaryEmailAddress:      to.StringPtr("<primary-email-address>"),
+					to.Ptr("tname@contoso.com"),
+					to.Ptr("teamtest@contoso.com")},
+				Country:                  to.Ptr("USA"),
+				FirstName:                to.Ptr("first name"),
+				LastName:                 to.Ptr("last name"),
+				PhoneNumber:              to.Ptr("123-456-7890"),
+				PreferredContactMethod:   to.Ptr(armsupport.PreferredContactMethodEmail),
+				PreferredSupportLanguage: to.Ptr("en-US"),
+				PreferredTimeZone:        to.Ptr("Pacific Standard Time"),
+				PrimaryEmailAddress:      to.Ptr("test.name@contoso.com"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TicketsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/CreateBillingSupportTicketForSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/support/resource-manager/Microsoft.Support/stable/2020-04-01/examples/CreateBillingSupportTicketForSubscription.json
 func ExampleTicketsClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsupport.NewTicketsClient("<subscription-id>", cred, nil)
+	client, err := armsupport.NewTicketsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<support-ticket-name>",
+		"testticket",
 		armsupport.TicketDetails{
 			Properties: &armsupport.TicketDetailsProperties{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("my description"),
 				ContactDetails: &armsupport.ContactProfile{
-					Country:                  to.StringPtr("<country>"),
-					FirstName:                to.StringPtr("<first-name>"),
-					LastName:                 to.StringPtr("<last-name>"),
-					PreferredContactMethod:   armsupport.PreferredContactMethod("email").ToPtr(),
-					PreferredSupportLanguage: to.StringPtr("<preferred-support-language>"),
-					PreferredTimeZone:        to.StringPtr("<preferred-time-zone>"),
-					PrimaryEmailAddress:      to.StringPtr("<primary-email-address>"),
+					Country:                  to.Ptr("usa"),
+					FirstName:                to.Ptr("abc"),
+					LastName:                 to.Ptr("xyz"),
+					PreferredContactMethod:   to.Ptr(armsupport.PreferredContactMethodEmail),
+					PreferredSupportLanguage: to.Ptr("en-US"),
+					PreferredTimeZone:        to.Ptr("Pacific Standard Time"),
+					PrimaryEmailAddress:      to.Ptr("abc@contoso.com"),
 				},
-				ProblemClassificationID: to.StringPtr("<problem-classification-id>"),
-				ServiceID:               to.StringPtr("<service-id>"),
-				Severity:                armsupport.SeverityLevel("moderate").ToPtr(),
-				Title:                   to.StringPtr("<title>"),
+				ProblemClassificationID: to.Ptr("/providers/Microsoft.Support/services/billing_service_guid/problemClassifications/billing_problemClassification_guid"),
+				ServiceID:               to.Ptr("/providers/Microsoft.Support/services/billing_service_guid"),
+				Severity:                to.Ptr(armsupport.SeverityLevelModerate),
+				Title:                   to.Ptr("my title"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.TicketsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }

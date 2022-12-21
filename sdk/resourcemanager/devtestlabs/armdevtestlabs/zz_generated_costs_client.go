@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type CostsClient struct {
 // subscriptionID - The subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewCostsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *CostsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewCostsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*CostsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &CostsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or replace an existing cost.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the cost.
@@ -97,13 +103,13 @@ func (client *CostsClient) createOrUpdateCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, labCost)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *CostsClient) createOrUpdateHandleResponse(resp *http.Response) (CostsClientCreateOrUpdateResponse, error) {
-	result := CostsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := CostsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.LabCost); err != nil {
 		return CostsClientCreateOrUpdateResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *CostsClient) createOrUpdateHandleResponse(resp *http.Response) (Co
 
 // Get - Get cost.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-15
 // resourceGroupName - The name of the resource group.
 // labName - The name of the lab.
 // name - The name of the cost.
@@ -160,13 +167,13 @@ func (client *CostsClient) getCreateRequest(ctx context.Context, resourceGroupNa
 	}
 	reqQP.Set("api-version", "2018-09-15")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *CostsClient) getHandleResponse(resp *http.Response) (CostsClientGetResponse, error) {
-	result := CostsClientGetResponse{RawResponse: resp}
+	result := CostsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.LabCost); err != nil {
 		return CostsClientGetResponse{}, err
 	}

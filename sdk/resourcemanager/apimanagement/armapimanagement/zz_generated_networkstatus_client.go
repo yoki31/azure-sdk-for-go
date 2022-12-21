@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,25 +35,30 @@ type NetworkStatusClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewNetworkStatusClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *NetworkStatusClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewNetworkStatusClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*NetworkStatusClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &NetworkStatusClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // ListByLocation - Gets the Connectivity Status to the external resources on which the Api Management service depends from
 // inside the Cloud Service. This also returns the DNS Servers as visible to the CloudService.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // locationName - Location in which the API Management service is deployed. This is one of the Azure Regions like West US,
@@ -100,13 +106,13 @@ func (client *NetworkStatusClient) listByLocationCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByLocationHandleResponse handles the ListByLocation response.
 func (client *NetworkStatusClient) listByLocationHandleResponse(resp *http.Response) (NetworkStatusClientListByLocationResponse, error) {
-	result := NetworkStatusClientListByLocationResponse{RawResponse: resp}
+	result := NetworkStatusClientListByLocationResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkStatusContract); err != nil {
 		return NetworkStatusClientListByLocationResponse{}, err
 	}
@@ -116,6 +122,7 @@ func (client *NetworkStatusClient) listByLocationHandleResponse(resp *http.Respo
 // ListByService - Gets the Connectivity Status to the external resources on which the Api Management service depends from
 // inside the Cloud Service. This also returns the DNS Servers as visible to the CloudService.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - NetworkStatusClientListByServiceOptions contains the optional parameters for the NetworkStatusClient.ListByService
@@ -157,13 +164,13 @@ func (client *NetworkStatusClient) listByServiceCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *NetworkStatusClient) listByServiceHandleResponse(resp *http.Response) (NetworkStatusClientListByServiceResponse, error) {
-	result := NetworkStatusClientListByServiceResponse{RawResponse: resp}
+	result := NetworkStatusClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkStatusContractByLocationArray); err != nil {
 		return NetworkStatusClientListByServiceResponse{}, err
 	}

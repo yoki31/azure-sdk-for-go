@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -28,23 +29,28 @@ type PostClient struct {
 // NewPostClient creates a new instance of PostClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPostClient(credential azcore.TokenCredential, options *arm.ClientOptions) *PostClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPostClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*PostClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PostClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // DisableLockbox - Disable Tenant for Lockbox
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-02-28-preview
 // options - PostClientDisableLockboxOptions contains the optional parameters for the PostClient.DisableLockbox method.
 func (client *PostClient) DisableLockbox(ctx context.Context, options *PostClientDisableLockboxOptions) (PostClientDisableLockboxResponse, error) {
 	req, err := client.disableLockboxCreateRequest(ctx, options)
@@ -58,7 +64,7 @@ func (client *PostClient) DisableLockbox(ctx context.Context, options *PostClien
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PostClientDisableLockboxResponse{}, runtime.NewResponseError(resp)
 	}
-	return PostClientDisableLockboxResponse{RawResponse: resp}, nil
+	return PostClientDisableLockboxResponse{}, nil
 }
 
 // disableLockboxCreateRequest creates the DisableLockbox request.
@@ -71,12 +77,13 @@ func (client *PostClient) disableLockboxCreateRequest(ctx context.Context, optio
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-02-28-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // EnableLockbox - Enable Tenant for Lockbox
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-02-28-preview
 // options - PostClientEnableLockboxOptions contains the optional parameters for the PostClient.EnableLockbox method.
 func (client *PostClient) EnableLockbox(ctx context.Context, options *PostClientEnableLockboxOptions) (PostClientEnableLockboxResponse, error) {
 	req, err := client.enableLockboxCreateRequest(ctx, options)
@@ -90,7 +97,7 @@ func (client *PostClient) EnableLockbox(ctx context.Context, options *PostClient
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PostClientEnableLockboxResponse{}, runtime.NewResponseError(resp)
 	}
-	return PostClientEnableLockboxResponse{RawResponse: resp}, nil
+	return PostClientEnableLockboxResponse{}, nil
 }
 
 // enableLockboxCreateRequest creates the EnableLockbox request.
@@ -103,6 +110,6 @@ func (client *PostClient) enableLockboxCreateRequest(ctx context.Context, option
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-02-28-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }

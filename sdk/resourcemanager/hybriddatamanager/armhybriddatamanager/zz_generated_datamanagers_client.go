@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,52 +34,52 @@ type DataManagersClient struct {
 // subscriptionID - The Subscription Id
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDataManagersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DataManagersClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDataManagersClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DataManagersClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DataManagersClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Creates a new data manager resource with the specified parameters. Existing resources cannot be updated with
 // this API and should instead be updated with the Update data manager resource API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The Resource Group Name
 // dataManagerName - The name of the DataManager Resource within the specified resource group. DataManager names must be between
 // 3 and 24 characters in length and use any alphanumeric and underscore only
 // dataManager - Data manager resource details from request body.
 // options - DataManagersClientBeginCreateOptions contains the optional parameters for the DataManagersClient.BeginCreate
 // method.
-func (client *DataManagersClient) BeginCreate(ctx context.Context, resourceGroupName string, dataManagerName string, dataManager DataManager, options *DataManagersClientBeginCreateOptions) (DataManagersClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, dataManagerName, dataManager, options)
-	if err != nil {
-		return DataManagersClientCreatePollerResponse{}, err
+func (client *DataManagersClient) BeginCreate(ctx context.Context, resourceGroupName string, dataManagerName string, dataManager DataManager, options *DataManagersClientBeginCreateOptions) (*runtime.Poller[DataManagersClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, dataManagerName, dataManager, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DataManagersClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DataManagersClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DataManagersClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DataManagersClient.Create", "", resp, client.pl)
-	if err != nil {
-		return DataManagersClientCreatePollerResponse{}, err
-	}
-	result.Poller = &DataManagersClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Creates a new data manager resource with the specified parameters. Existing resources cannot be updated with this
 // API and should instead be updated with the Update data manager resource API.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 func (client *DataManagersClient) create(ctx context.Context, resourceGroupName string, dataManagerName string, dataManager DataManager, options *DataManagersClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, dataManagerName, dataManager, options)
 	if err != nil {
@@ -116,37 +117,33 @@ func (client *DataManagersClient) createCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, dataManager)
 }
 
 // BeginDelete - Deletes a data manager resource in Microsoft Azure.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The Resource Group Name
 // dataManagerName - The name of the DataManager Resource within the specified resource group. DataManager names must be between
 // 3 and 24 characters in length and use any alphanumeric and underscore only
 // options - DataManagersClientBeginDeleteOptions contains the optional parameters for the DataManagersClient.BeginDelete
 // method.
-func (client *DataManagersClient) BeginDelete(ctx context.Context, resourceGroupName string, dataManagerName string, options *DataManagersClientBeginDeleteOptions) (DataManagersClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, dataManagerName, options)
-	if err != nil {
-		return DataManagersClientDeletePollerResponse{}, err
+func (client *DataManagersClient) BeginDelete(ctx context.Context, resourceGroupName string, dataManagerName string, options *DataManagersClientBeginDeleteOptions) (*runtime.Poller[DataManagersClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, dataManagerName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DataManagersClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DataManagersClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DataManagersClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DataManagersClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return DataManagersClientDeletePollerResponse{}, err
-	}
-	result.Poller = &DataManagersClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a data manager resource in Microsoft Azure.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 func (client *DataManagersClient) deleteOperation(ctx context.Context, resourceGroupName string, dataManagerName string, options *DataManagersClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, dataManagerName, options)
 	if err != nil {
@@ -189,6 +186,7 @@ func (client *DataManagersClient) deleteCreateRequest(ctx context.Context, resou
 
 // Get - Gets information about the specified data manager resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The Resource Group Name
 // dataManagerName - The name of the DataManager Resource within the specified resource group. DataManager names must be between
 // 3 and 24 characters in length and use any alphanumeric and underscore only
@@ -230,35 +228,43 @@ func (client *DataManagersClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DataManagersClient) getHandleResponse(resp *http.Response) (DataManagersClientGetResponse, error) {
-	result := DataManagersClientGetResponse{RawResponse: resp}
+	result := DataManagersClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DataManager); err != nil {
 		return DataManagersClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Lists all the data manager resources available under the subscription.
+// NewListPager - Lists all the data manager resources available under the subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // options - DataManagersClientListOptions contains the optional parameters for the DataManagersClient.List method.
-func (client *DataManagersClient) List(ctx context.Context, options *DataManagersClientListOptions) (DataManagersClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, options)
-	if err != nil {
-		return DataManagersClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return DataManagersClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return DataManagersClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *DataManagersClient) NewListPager(options *DataManagersClientListOptions) *runtime.Pager[DataManagersClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DataManagersClientListResponse]{
+		More: func(page DataManagersClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *DataManagersClientListResponse) (DataManagersClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, options)
+			if err != nil {
+				return DataManagersClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DataManagersClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DataManagersClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -275,37 +281,45 @@ func (client *DataManagersClient) listCreateRequest(ctx context.Context, options
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *DataManagersClient) listHandleResponse(resp *http.Response) (DataManagersClientListResponse, error) {
-	result := DataManagersClientListResponse{RawResponse: resp}
+	result := DataManagersClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DataManagerList); err != nil {
 		return DataManagersClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Lists all the data manager resources available under the given resource group.
+// NewListByResourceGroupPager - Lists all the data manager resources available under the given resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The Resource Group Name
 // options - DataManagersClientListByResourceGroupOptions contains the optional parameters for the DataManagersClient.ListByResourceGroup
 // method.
-func (client *DataManagersClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, options *DataManagersClientListByResourceGroupOptions) (DataManagersClientListByResourceGroupResponse, error) {
-	req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
-	if err != nil {
-		return DataManagersClientListByResourceGroupResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return DataManagersClientListByResourceGroupResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return DataManagersClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listByResourceGroupHandleResponse(resp)
+func (client *DataManagersClient) NewListByResourceGroupPager(resourceGroupName string, options *DataManagersClientListByResourceGroupOptions) *runtime.Pager[DataManagersClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DataManagersClientListByResourceGroupResponse]{
+		More: func(page DataManagersClientListByResourceGroupResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *DataManagersClientListByResourceGroupResponse) (DataManagersClientListByResourceGroupResponse, error) {
+			req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			if err != nil {
+				return DataManagersClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DataManagersClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DataManagersClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
+		},
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -326,13 +340,13 @@ func (client *DataManagersClient) listByResourceGroupCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *DataManagersClient) listByResourceGroupHandleResponse(resp *http.Response) (DataManagersClientListByResourceGroupResponse, error) {
-	result := DataManagersClientListByResourceGroupResponse{RawResponse: resp}
+	result := DataManagersClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DataManagerList); err != nil {
 		return DataManagersClientListByResourceGroupResponse{}, err
 	}
@@ -341,32 +355,28 @@ func (client *DataManagersClient) listByResourceGroupHandleResponse(resp *http.R
 
 // BeginUpdate - Updates the properties of an existing data manager resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The Resource Group Name
 // dataManagerName - The name of the DataManager Resource within the specified resource group. DataManager names must be between
 // 3 and 24 characters in length and use any alphanumeric and underscore only
 // dataManagerUpdateParameter - Data manager resource details from request body.
 // options - DataManagersClientBeginUpdateOptions contains the optional parameters for the DataManagersClient.BeginUpdate
 // method.
-func (client *DataManagersClient) BeginUpdate(ctx context.Context, resourceGroupName string, dataManagerName string, dataManagerUpdateParameter DataManagerUpdateParameter, options *DataManagersClientBeginUpdateOptions) (DataManagersClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, dataManagerName, dataManagerUpdateParameter, options)
-	if err != nil {
-		return DataManagersClientUpdatePollerResponse{}, err
+func (client *DataManagersClient) BeginUpdate(ctx context.Context, resourceGroupName string, dataManagerName string, dataManagerUpdateParameter DataManagerUpdateParameter, options *DataManagersClientBeginUpdateOptions) (*runtime.Poller[DataManagersClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, dataManagerName, dataManagerUpdateParameter, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DataManagersClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DataManagersClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DataManagersClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DataManagersClient.Update", "", resp, client.pl)
-	if err != nil {
-		return DataManagersClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &DataManagersClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates the properties of an existing data manager resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 func (client *DataManagersClient) update(ctx context.Context, resourceGroupName string, dataManagerName string, dataManagerUpdateParameter DataManagerUpdateParameter, options *DataManagersClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, dataManagerName, dataManagerUpdateParameter, options)
 	if err != nil {
@@ -405,8 +415,8 @@ func (client *DataManagersClient) updateCreateRequest(ctx context.Context, resou
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, dataManagerUpdateParameter)
 }

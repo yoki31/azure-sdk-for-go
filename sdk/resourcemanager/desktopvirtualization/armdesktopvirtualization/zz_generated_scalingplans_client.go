@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ScalingPlansClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewScalingPlansClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ScalingPlansClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewScalingPlansClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ScalingPlansClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ScalingPlansClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Create or update a scaling plan.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scalingPlanName - The name of the scaling plan.
 // scalingPlan - Object containing scaling plan definitions.
@@ -90,15 +96,15 @@ func (client *ScalingPlansClient) createCreateRequest(ctx context.Context, resou
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, scalingPlan)
 }
 
 // createHandleResponse handles the Create response.
 func (client *ScalingPlansClient) createHandleResponse(resp *http.Response) (ScalingPlansClientCreateResponse, error) {
-	result := ScalingPlansClientCreateResponse{RawResponse: resp}
+	result := ScalingPlansClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlan); err != nil {
 		return ScalingPlansClientCreateResponse{}, err
 	}
@@ -107,6 +113,7 @@ func (client *ScalingPlansClient) createHandleResponse(resp *http.Response) (Sca
 
 // Delete - Remove a scaling plan.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scalingPlanName - The name of the scaling plan.
 // options - ScalingPlansClientDeleteOptions contains the optional parameters for the ScalingPlansClient.Delete method.
@@ -122,7 +129,7 @@ func (client *ScalingPlansClient) Delete(ctx context.Context, resourceGroupName 
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ScalingPlansClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ScalingPlansClientDeleteResponse{RawResponse: resp}, nil
+	return ScalingPlansClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -145,14 +152,15 @@ func (client *ScalingPlansClient) deleteCreateRequest(ctx context.Context, resou
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a scaling plan.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scalingPlanName - The name of the scaling plan.
 // options - ScalingPlansClientGetOptions contains the optional parameters for the ScalingPlansClient.Get method.
@@ -191,37 +199,54 @@ func (client *ScalingPlansClient) getCreateRequest(ctx context.Context, resource
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ScalingPlansClient) getHandleResponse(resp *http.Response) (ScalingPlansClientGetResponse, error) {
-	result := ScalingPlansClientGetResponse{RawResponse: resp}
+	result := ScalingPlansClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlan); err != nil {
 		return ScalingPlansClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByHostPool - List scaling plan associated with hostpool.
+// NewListByHostPoolPager - List scaling plan associated with hostpool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // hostPoolName - The name of the host pool within the specified resource group
 // options - ScalingPlansClientListByHostPoolOptions contains the optional parameters for the ScalingPlansClient.ListByHostPool
 // method.
-func (client *ScalingPlansClient) ListByHostPool(resourceGroupName string, hostPoolName string, options *ScalingPlansClientListByHostPoolOptions) *ScalingPlansClientListByHostPoolPager {
-	return &ScalingPlansClientListByHostPoolPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByHostPoolCreateRequest(ctx, resourceGroupName, hostPoolName, options)
+func (client *ScalingPlansClient) NewListByHostPoolPager(resourceGroupName string, hostPoolName string, options *ScalingPlansClientListByHostPoolOptions) *runtime.Pager[ScalingPlansClientListByHostPoolResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ScalingPlansClientListByHostPoolResponse]{
+		More: func(page ScalingPlansClientListByHostPoolResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ScalingPlansClientListByHostPoolResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ScalingPlanList.NextLink)
+		Fetcher: func(ctx context.Context, page *ScalingPlansClientListByHostPoolResponse) (ScalingPlansClientListByHostPoolResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByHostPoolCreateRequest(ctx, resourceGroupName, hostPoolName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ScalingPlansClientListByHostPoolResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ScalingPlansClientListByHostPoolResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ScalingPlansClientListByHostPoolResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByHostPoolHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByHostPoolCreateRequest creates the ListByHostPool request.
@@ -244,36 +269,53 @@ func (client *ScalingPlansClient) listByHostPoolCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByHostPoolHandleResponse handles the ListByHostPool response.
 func (client *ScalingPlansClient) listByHostPoolHandleResponse(resp *http.Response) (ScalingPlansClientListByHostPoolResponse, error) {
-	result := ScalingPlansClientListByHostPoolResponse{RawResponse: resp}
+	result := ScalingPlansClientListByHostPoolResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlanList); err != nil {
 		return ScalingPlansClientListByHostPoolResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - List scaling plans.
+// NewListByResourceGroupPager - List scaling plans.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - ScalingPlansClientListByResourceGroupOptions contains the optional parameters for the ScalingPlansClient.ListByResourceGroup
 // method.
-func (client *ScalingPlansClient) ListByResourceGroup(resourceGroupName string, options *ScalingPlansClientListByResourceGroupOptions) *ScalingPlansClientListByResourceGroupPager {
-	return &ScalingPlansClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *ScalingPlansClient) NewListByResourceGroupPager(resourceGroupName string, options *ScalingPlansClientListByResourceGroupOptions) *runtime.Pager[ScalingPlansClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ScalingPlansClientListByResourceGroupResponse]{
+		More: func(page ScalingPlansClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ScalingPlansClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ScalingPlanList.NextLink)
+		Fetcher: func(ctx context.Context, page *ScalingPlansClientListByResourceGroupResponse) (ScalingPlansClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ScalingPlansClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ScalingPlansClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ScalingPlansClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -292,35 +334,52 @@ func (client *ScalingPlansClient) listByResourceGroupCreateRequest(ctx context.C
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ScalingPlansClient) listByResourceGroupHandleResponse(resp *http.Response) (ScalingPlansClientListByResourceGroupResponse, error) {
-	result := ScalingPlansClientListByResourceGroupResponse{RawResponse: resp}
+	result := ScalingPlansClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlanList); err != nil {
 		return ScalingPlansClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - List scaling plans in subscription.
+// NewListBySubscriptionPager - List scaling plans in subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // options - ScalingPlansClientListBySubscriptionOptions contains the optional parameters for the ScalingPlansClient.ListBySubscription
 // method.
-func (client *ScalingPlansClient) ListBySubscription(options *ScalingPlansClientListBySubscriptionOptions) *ScalingPlansClientListBySubscriptionPager {
-	return &ScalingPlansClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *ScalingPlansClient) NewListBySubscriptionPager(options *ScalingPlansClientListBySubscriptionOptions) *runtime.Pager[ScalingPlansClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ScalingPlansClientListBySubscriptionResponse]{
+		More: func(page ScalingPlansClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ScalingPlansClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ScalingPlanList.NextLink)
+		Fetcher: func(ctx context.Context, page *ScalingPlansClientListBySubscriptionResponse) (ScalingPlansClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ScalingPlansClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ScalingPlansClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ScalingPlansClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -335,15 +394,15 @@ func (client *ScalingPlansClient) listBySubscriptionCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *ScalingPlansClient) listBySubscriptionHandleResponse(resp *http.Response) (ScalingPlansClientListBySubscriptionResponse, error) {
-	result := ScalingPlansClientListBySubscriptionResponse{RawResponse: resp}
+	result := ScalingPlansClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlanList); err != nil {
 		return ScalingPlansClientListBySubscriptionResponse{}, err
 	}
@@ -352,6 +411,7 @@ func (client *ScalingPlansClient) listBySubscriptionHandleResponse(resp *http.Re
 
 // Update - Update a scaling plan.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-02-10-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // scalingPlanName - The name of the scaling plan.
 // options - ScalingPlansClientUpdateOptions contains the optional parameters for the ScalingPlansClient.Update method.
@@ -390,9 +450,9 @@ func (client *ScalingPlansClient) updateCreateRequest(ctx context.Context, resou
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-09-03-preview")
+	reqQP.Set("api-version", "2022-02-10-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.ScalingPlan != nil {
 		return req, runtime.MarshalAsJSON(req, *options.ScalingPlan)
 	}
@@ -401,7 +461,7 @@ func (client *ScalingPlansClient) updateCreateRequest(ctx context.Context, resou
 
 // updateHandleResponse handles the Update response.
 func (client *ScalingPlansClient) updateHandleResponse(resp *http.Response) (ScalingPlansClientUpdateResponse, error) {
-	result := ScalingPlansClientUpdateResponse{RawResponse: resp}
+	result := ScalingPlansClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ScalingPlan); err != nil {
 		return ScalingPlansClientUpdateResponse{}, err
 	}

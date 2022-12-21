@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,110 +12,127 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// x-ms-original-file: specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/cancelSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/cancelSubscription.json
 func ExampleClient_Cancel() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsubscription.NewClient(cred, nil)
+	client, err := armsubscription.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Cancel(ctx,
-		"<subscription-id>",
+		"83aa47df-e3e9-49ff-877b-94304bf3d3ad",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientCancelResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/renameSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/renameSubscription.json
 func ExampleClient_Rename() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsubscription.NewClient(cred, nil)
+	client, err := armsubscription.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Rename(ctx,
-		"<subscription-id>",
+		"83aa47df-e3e9-49ff-877b-94304bf3d3ad",
 		armsubscription.Name{
-			SubscriptionName: to.StringPtr("<subscription-name>"),
+			SubscriptionName: to.Ptr("Test Sub"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientRenameResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/enableSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/enableSubscription.json
 func ExampleClient_Enable() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsubscription.NewClient(cred, nil)
+	client, err := armsubscription.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Enable(ctx,
-		"<subscription-id>",
+		"7948bcee-488c-47ce-941c-38e20ede803d",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientEnableResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/acceptSubscriptionOwnership.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/acceptSubscriptionOwnership.json
 func ExampleClient_BeginAcceptOwnership() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsubscription.NewClient(cred, nil)
+	client, err := armsubscription.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginAcceptOwnership(ctx,
-		"<subscription-id>",
+		"291bba3f-e0a5-47bc-a099-3bdcb2a50a05",
 		armsubscription.AcceptOwnershipRequest{
 			Properties: &armsubscription.AcceptOwnershipRequestProperties{
-				DisplayName: to.StringPtr("<display-name>"),
+				DisplayName: to.Ptr("Test Subscription"),
 				Tags: map[string]*string{
-					"tag1": to.StringPtr("Messi"),
-					"tag2": to.StringPtr("Ronaldo"),
-					"tag3": to.StringPtr("Lebron"),
+					"tag1": to.Ptr("Messi"),
+					"tag2": to.Ptr("Ronaldo"),
+					"tag3": to.Ptr("Lebron"),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/acceptOwnershipStatus.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/subscription/resource-manager/Microsoft.Subscription/stable/2021-10-01/examples/acceptOwnershipStatus.json
 func ExampleClient_AcceptOwnershipStatus() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsubscription.NewClient(cred, nil)
+	client, err := armsubscription.NewClient(cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.AcceptOwnershipStatus(ctx,
-		"<subscription-id>",
+		"291bba3f-e0a5-47bc-a099-3bdcb2a50a05",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ClientAcceptOwnershipStatusResult)
+	// TODO: use response item
+	_ = res
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type ProductClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewProductClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ProductClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewProductClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ProductClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ProductClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or Updates a product.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -100,15 +106,15 @@ func (client *ProductClient) createOrUpdateCreateRequest(ctx context.Context, re
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ProductClient) createOrUpdateHandleResponse(resp *http.Response) (ProductClientCreateOrUpdateResponse, error) {
-	result := ProductClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ProductClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -120,6 +126,7 @@ func (client *ProductClient) createOrUpdateHandleResponse(resp *http.Response) (
 
 // Delete - Delete product.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -138,7 +145,7 @@ func (client *ProductClient) Delete(ctx context.Context, resourceGroupName strin
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ProductClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ProductClientDeleteResponse{RawResponse: resp}, nil
+	return ProductClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -170,13 +177,14 @@ func (client *ProductClient) deleteCreateRequest(ctx context.Context, resourceGr
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the product specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -222,13 +230,13 @@ func (client *ProductClient) getCreateRequest(ctx context.Context, resourceGroup
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ProductClient) getHandleResponse(resp *http.Response) (ProductClientGetResponse, error) {
-	result := ProductClientGetResponse{RawResponse: resp}
+	result := ProductClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -239,6 +247,7 @@ func (client *ProductClient) getHandleResponse(resp *http.Response) (ProductClie
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the product specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -251,6 +260,9 @@ func (client *ProductClient) GetEntityTag(ctx context.Context, resourceGroupName
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return ProductClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return ProductClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -281,37 +293,52 @@ func (client *ProductClient) getEntityTagCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *ProductClient) getEntityTagHandleResponse(resp *http.Response) (ProductClientGetEntityTagResponse, error) {
-	result := ProductClientGetEntityTagResponse{RawResponse: resp}
+	result := ProductClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of products in the specified service instance.
+// NewListByServicePager - Lists a collection of products in the specified service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - ProductClientListByServiceOptions contains the optional parameters for the ProductClient.ListByService method.
-func (client *ProductClient) ListByService(resourceGroupName string, serviceName string, options *ProductClientListByServiceOptions) *ProductClientListByServicePager {
-	return &ProductClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *ProductClient) NewListByServicePager(resourceGroupName string, serviceName string, options *ProductClientListByServiceOptions) *runtime.Pager[ProductClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ProductClientListByServiceResponse]{
+		More: func(page ProductClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ProductClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ProductCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *ProductClientListByServiceResponse) (ProductClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ProductClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ProductClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ProductClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -351,34 +378,51 @@ func (client *ProductClient) listByServiceCreateRequest(ctx context.Context, res
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *ProductClient) listByServiceHandleResponse(resp *http.Response) (ProductClientListByServiceResponse, error) {
-	result := ProductClientListByServiceResponse{RawResponse: resp}
+	result := ProductClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ProductCollection); err != nil {
 		return ProductClientListByServiceResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByTags - Lists a collection of products associated with tags.
+// NewListByTagsPager - Lists a collection of products associated with tags.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - ProductClientListByTagsOptions contains the optional parameters for the ProductClient.ListByTags method.
-func (client *ProductClient) ListByTags(resourceGroupName string, serviceName string, options *ProductClientListByTagsOptions) *ProductClientListByTagsPager {
-	return &ProductClientListByTagsPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByTagsCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *ProductClient) NewListByTagsPager(resourceGroupName string, serviceName string, options *ProductClientListByTagsOptions) *runtime.Pager[ProductClientListByTagsResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ProductClientListByTagsResponse]{
+		More: func(page ProductClientListByTagsResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ProductClientListByTagsResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.TagResourceCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *ProductClientListByTagsResponse) (ProductClientListByTagsResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByTagsCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ProductClientListByTagsResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ProductClientListByTagsResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ProductClientListByTagsResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByTagsHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByTagsCreateRequest creates the ListByTags request.
@@ -415,13 +459,13 @@ func (client *ProductClient) listByTagsCreateRequest(ctx context.Context, resour
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByTagsHandleResponse handles the ListByTags response.
 func (client *ProductClient) listByTagsHandleResponse(resp *http.Response) (ProductClientListByTagsResponse, error) {
-	result := ProductClientListByTagsResponse{RawResponse: resp}
+	result := ProductClientListByTagsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagResourceCollection); err != nil {
 		return ProductClientListByTagsResponse{}, err
 	}
@@ -430,6 +474,7 @@ func (client *ProductClient) listByTagsHandleResponse(resp *http.Response) (Prod
 
 // Update - Update existing product details.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -478,14 +523,14 @@ func (client *ProductClient) updateCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ProductClient) updateHandleResponse(resp *http.Response) (ProductClientUpdateResponse, error) {
-	result := ProductClientUpdateResponse{RawResponse: resp}
+	result := ProductClientUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}

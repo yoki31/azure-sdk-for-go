@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,50 @@ type WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewWorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewWorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create or Update a workspace managed sql server's extended blob auditing policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // blobAuditingPolicyName - The name of the blob auditing policy.
 // parameters - Properties of extended blob auditing policy.
 // options - WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientBeginCreateOrUpdateOptions contains the optional parameters
 // for the WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient.BeginCreateOrUpdate method.
-func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, blobAuditingPolicyName BlobAuditingPolicyName, parameters ExtendedServerBlobAuditingPolicy, options *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientBeginCreateOrUpdateOptions) (WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, blobAuditingPolicyName, parameters, options)
-	if err != nil {
-		return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdatePollerResponse{}, err
+func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, blobAuditingPolicyName BlobAuditingPolicyName, parameters ExtendedServerBlobAuditingPolicy, options *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientBeginCreateOrUpdateOptions) (*runtime.Poller[WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, blobAuditingPolicyName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or Update a workspace managed sql server's extended blob auditing policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) createOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, blobAuditingPolicyName BlobAuditingPolicyName, parameters ExtendedServerBlobAuditingPolicy, options *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, workspaceName, blobAuditingPolicyName, parameters, options)
 	if err != nil {
@@ -118,12 +119,13 @@ func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) creat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Get - Get a workspace SQL server's extended blob auditing policy.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // blobAuditingPolicyName - The name of the blob auditing policy.
@@ -170,35 +172,52 @@ func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) getCr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) getHandleResponse(resp *http.Response) (WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientGetResponse, error) {
-	result := WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientGetResponse{RawResponse: resp}
+	result := WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ExtendedServerBlobAuditingPolicy); err != nil {
 		return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByWorkspace - List workspace managed sql server's extended blob auditing policies.
+// NewListByWorkspacePager - List workspace managed sql server's extended blob auditing policies.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // options - WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceOptions contains the optional parameters
 // for the WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient.ListByWorkspace method.
-func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) ListByWorkspace(resourceGroupName string, workspaceName string, options *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceOptions) *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspacePager {
-	return &WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspacePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByWorkspaceCreateRequest(ctx, resourceGroupName, workspaceName, options)
+func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) NewListByWorkspacePager(resourceGroupName string, workspaceName string, options *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceOptions) *runtime.Pager[WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse]{
+		More: func(page WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ExtendedServerBlobAuditingPolicyListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse) (WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByWorkspaceCreateRequest(ctx, resourceGroupName, workspaceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByWorkspaceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByWorkspaceCreateRequest creates the ListByWorkspace request.
@@ -223,13 +242,13 @@ func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) listB
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByWorkspaceHandleResponse handles the ListByWorkspace response.
 func (client *WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClient) listByWorkspaceHandleResponse(resp *http.Response) (WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse, error) {
-	result := WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{RawResponse: resp}
+	result := WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ExtendedServerBlobAuditingPolicyListResult); err != nil {
 		return WorkspaceManagedSQLServerExtendedBlobAuditingPoliciesClientListByWorkspaceResponse{}, err
 	}

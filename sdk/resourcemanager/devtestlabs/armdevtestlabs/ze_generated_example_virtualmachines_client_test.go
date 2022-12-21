@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,444 +12,499 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/devtestlabs/armdevtestlabs"
 )
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_List.json
-func ExampleVirtualMachinesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_List.json
+func ExampleVirtualMachinesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<lab-name>",
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("resourceGroupName",
+		"{labName}",
 		&armdevtestlabs.VirtualMachinesClientListOptions{Expand: nil,
 			Filter:  nil,
 			Top:     nil,
 			Orderby: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Get.json
 func ExampleVirtualMachinesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		&armdevtestlabs.VirtualMachinesClientGetOptions{Expand: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.VirtualMachinesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_CreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_CreateOrUpdate.json
 func ExampleVirtualMachinesClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		armdevtestlabs.LabVirtualMachine{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("{location}"),
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 			Properties: &armdevtestlabs.LabVirtualMachineProperties{
-				AllowClaim:              to.BoolPtr(true),
-				DisallowPublicIPAddress: to.BoolPtr(true),
+				AllowClaim:              to.Ptr(true),
+				DisallowPublicIPAddress: to.Ptr(true),
 				GalleryImageReference: &armdevtestlabs.GalleryImageReference{
-					Offer:     to.StringPtr("<offer>"),
-					OSType:    to.StringPtr("<ostype>"),
-					Publisher: to.StringPtr("<publisher>"),
-					SKU:       to.StringPtr("<sku>"),
-					Version:   to.StringPtr("<version>"),
+					Offer:     to.Ptr("UbuntuServer"),
+					OSType:    to.Ptr("Linux"),
+					Publisher: to.Ptr("Canonical"),
+					SKU:       to.Ptr("16.04-LTS"),
+					Version:   to.Ptr("Latest"),
 				},
-				LabSubnetName:       to.StringPtr("<lab-subnet-name>"),
-				LabVirtualNetworkID: to.StringPtr("<lab-virtual-network-id>"),
-				Password:            to.StringPtr("<password>"),
-				Size:                to.StringPtr("<size>"),
-				StorageType:         to.StringPtr("<storage-type>"),
-				UserName:            to.StringPtr("<user-name>"),
+				LabSubnetName:       to.Ptr("{virtualNetworkName}Subnet"),
+				LabVirtualNetworkID: to.Ptr("/subscriptions/{subscriptionId}/resourcegroups/resourceGroupName/providers/microsoft.devtestlab/labs/{labName}/virtualnetworks/{virtualNetworkName}"),
+				Password:            to.Ptr("{userPassword}"),
+				Size:                to.Ptr("Standard_A2_v2"),
+				StorageType:         to.Ptr("Standard"),
+				UserName:            to.Ptr("{userName}"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.VirtualMachinesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Delete.json
 func ExampleVirtualMachinesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Update.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Update.json
 func ExampleVirtualMachinesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		armdevtestlabs.LabVirtualMachineFragment{},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.VirtualMachinesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_AddDataDisk.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_AddDataDisk.json
 func ExampleVirtualMachinesClient_BeginAddDataDisk() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginAddDataDisk(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{virtualMachineName}",
 		armdevtestlabs.DataDiskProperties{
 			AttachNewDataDiskOptions: &armdevtestlabs.AttachNewDataDiskOptions{
-				DiskName:    to.StringPtr("<disk-name>"),
-				DiskSizeGiB: to.Int32Ptr(127),
-				DiskType:    armdevtestlabs.StorageType("{diskType}").ToPtr(),
+				DiskName:    to.Ptr("{diskName}"),
+				DiskSizeGiB: to.Ptr[int32](127),
+				DiskType:    to.Ptr(armdevtestlabs.StorageType("{diskType}")),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_ApplyArtifacts.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_ApplyArtifacts.json
 func ExampleVirtualMachinesClient_BeginApplyArtifacts() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginApplyArtifacts(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		armdevtestlabs.ApplyArtifactsRequest{
 			Artifacts: []*armdevtestlabs.ArtifactInstallProperties{
 				{
-					ArtifactID: to.StringPtr("<artifact-id>"),
+					ArtifactID: to.Ptr("/subscriptions/{subscriptionId}/resourceGroups/resourceGroupName/providers/Microsoft.DevTestLab/labs/{labName}/artifactSources/public repo/artifacts/windows-restart"),
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Claim.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Claim.json
 func ExampleVirtualMachinesClient_BeginClaim() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginClaim(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_DetachDataDisk.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_DetachDataDisk.json
 func ExampleVirtualMachinesClient_BeginDetachDataDisk() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDetachDataDisk(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{virtualMachineName}",
 		armdevtestlabs.DetachDataDiskProperties{
-			ExistingLabDiskID: to.StringPtr("<existing-lab-disk-id>"),
+			ExistingLabDiskID: to.Ptr("/subscriptions/{subscriptionId}/resourcegroups/resourceGroupName/providers/microsoft.devtestlab/labs/{labName}/virtualmachines/{virtualMachineName}"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_GetRdpFileContents.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_GetRdpFileContents.json
 func ExampleVirtualMachinesClient_GetRdpFileContents() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetRdpFileContents(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.VirtualMachinesClientGetRdpFileContentsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_ListApplicableSchedules.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_ListApplicableSchedules.json
 func ExampleVirtualMachinesClient_ListApplicableSchedules() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListApplicableSchedules(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.VirtualMachinesClientListApplicableSchedulesResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Redeploy.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Redeploy.json
 func ExampleVirtualMachinesClient_BeginRedeploy() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginRedeploy(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Resize.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Resize.json
 func ExampleVirtualMachinesClient_BeginResize() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginResize(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		armdevtestlabs.ResizeLabVirtualMachineProperties{
-			Size: to.StringPtr("<size>"),
+			Size: to.Ptr("Standard_A4_v2"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Restart.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Restart.json
 func ExampleVirtualMachinesClient_BeginRestart() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginRestart(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Start.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Start.json
 func ExampleVirtualMachinesClient_BeginStart() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStart(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Stop.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_Stop.json
 func ExampleVirtualMachinesClient_BeginStop() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStop(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_TransferDisks.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_TransferDisks.json
 func ExampleVirtualMachinesClient_BeginTransferDisks() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginTransferDisks(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{virtualmachineName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_UnClaim.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/VirtualMachines_UnClaim.json
 func ExampleVirtualMachinesClient_BeginUnClaim() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewVirtualMachinesClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewVirtualMachinesClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUnClaim(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{vmName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

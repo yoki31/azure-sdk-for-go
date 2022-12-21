@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armvideoanalyzer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -25,42 +25,61 @@ import (
 // PipelineJobOperationStatusesClient contains the methods for the PipelineJobOperationStatuses group.
 // Don't use this type directly, use NewPipelineJobOperationStatusesClient() instead.
 type PipelineJobOperationStatusesClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewPipelineJobOperationStatusesClient creates a new instance of PipelineJobOperationStatusesClient with the specified values.
-func NewPipelineJobOperationStatusesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *PipelineJobOperationStatusesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The ID of the target subscription.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewPipelineJobOperationStatusesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*PipelineJobOperationStatusesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &PipelineJobOperationStatusesClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &PipelineJobOperationStatusesClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
 // Get - Get the operation status of a pipeline job with the given operationId.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *PipelineJobOperationStatusesClient) Get(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, operationID string, options *PipelineJobOperationStatusesGetOptions) (PipelineJobOperationStatusesGetResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// pipelineJobName - The pipeline job name.
+// operationID - The operation ID.
+// options - PipelineJobOperationStatusesClientGetOptions contains the optional parameters for the PipelineJobOperationStatusesClient.Get
+// method.
+func (client *PipelineJobOperationStatusesClient) Get(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, operationID string, options *PipelineJobOperationStatusesClientGetOptions) (PipelineJobOperationStatusesClientGetResponse, error) {
 	req, err := client.getCreateRequest(ctx, resourceGroupName, accountName, pipelineJobName, operationID, options)
 	if err != nil {
-		return PipelineJobOperationStatusesGetResponse{}, err
+		return PipelineJobOperationStatusesClientGetResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return PipelineJobOperationStatusesGetResponse{}, err
+		return PipelineJobOperationStatusesClientGetResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return PipelineJobOperationStatusesGetResponse{}, client.getHandleError(resp)
+		return PipelineJobOperationStatusesClientGetResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getHandleResponse(resp)
 }
 
 // getCreateRequest creates the Get request.
-func (client *PipelineJobOperationStatusesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, operationID string, options *PipelineJobOperationStatusesGetOptions) (*policy.Request, error) {
+func (client *PipelineJobOperationStatusesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, pipelineJobName string, operationID string, options *PipelineJobOperationStatusesClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/pipelineJobs/{pipelineJobName}/operationStatuses/{operationId}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -82,35 +101,22 @@ func (client *PipelineJobOperationStatusesClient) getCreateRequest(ctx context.C
 		return nil, errors.New("parameter operationID cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{operationId}", url.PathEscape(operationID))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *PipelineJobOperationStatusesClient) getHandleResponse(resp *http.Response) (PipelineJobOperationStatusesGetResponse, error) {
-	result := PipelineJobOperationStatusesGetResponse{RawResponse: resp}
+func (client *PipelineJobOperationStatusesClient) getHandleResponse(resp *http.Response) (PipelineJobOperationStatusesClientGetResponse, error) {
+	result := PipelineJobOperationStatusesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PipelineJobOperationStatus); err != nil {
-		return PipelineJobOperationStatusesGetResponse{}, runtime.NewResponseError(err, resp)
+		return PipelineJobOperationStatusesClientGetResponse{}, err
 	}
 	return result, nil
-}
-
-// getHandleError handles the Get error response.
-func (client *PipelineJobOperationStatusesClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
@@ -13,17 +13,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"io/fs"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -54,6 +55,7 @@ const (
 	randomSeedVariableName      = "randomSeed"
 	nowVariableName             = "now"
 	ModeEnvironmentVariableName = "AZURE_TEST_MODE"
+	recordingAssetConfigName    = "assets.json"
 )
 
 // Inspired by https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
@@ -415,7 +417,7 @@ func (r *Recording) createVariablesFileIfNotExists() (*os.File, error) {
 }
 
 func (r *Recording) unmarshalVariablesFile(out interface{}) error {
-	data, err := ioutil.ReadFile(r.VariablesFile)
+	data, err := os.ReadFile(r.VariablesFile)
 	if err != nil {
 		// If the file or dir do not exist, this is not an error to report
 		if os.IsNotExist(err) {
@@ -468,13 +470,29 @@ func init() {
 			log.Panicf(err.Error())
 		}
 	}
-	cert, err := ioutil.ReadFile(localFile)
+	cert, err := os.ReadFile(localFile)
 	if err != nil {
 		log.Printf("could not read file set in PROXY_CERT variable at %s.\n", localFile)
 	}
 
 	if ok := certPool.AppendCertsFromPEM(cert); !ok {
 		log.Println("no certs appended, using system certs only")
+	}
+
+	// Set a Default matcher that ignores :path, :scheme, :authority, and :method headers
+	err = SetDefaultMatcher(
+		nil,
+		&SetDefaultMatcherOptions{ExcludedHeaders: []string{
+			":authority",
+			":method",
+			":path",
+			":scheme",
+		}},
+	)
+	if err != nil {
+		log.Println("could not set the default matcher")
+	} else {
+		log.Println("default matcher was set ")
 	}
 }
 
@@ -496,7 +514,27 @@ type recordedTest struct {
 	variables   map[string]interface{}
 }
 
-var testSuite = map[string]recordedTest{}
+// testMap maps test names to metadata
+type testMap struct {
+	m *sync.Map
+}
+
+// Load returns the named test's metadata, if it has been stored
+func (t *testMap) Load(name string) (recordedTest, bool) {
+	var rt recordedTest
+	v, ok := t.m.Load(name)
+	if ok {
+		rt = v.(recordedTest)
+	}
+	return rt, ok
+}
+
+// Store sets metadata for the named test
+func (t *testMap) Store(name string, data recordedTest) {
+	t.m.Store(name, data)
+}
+
+var testSuite = testMap{&sync.Map{}}
 
 var client = http.Client{
 	Transport: &http.Transport{
@@ -508,6 +546,7 @@ type RecordingOptions struct {
 	UseHTTPS        bool
 	GroupForReplace string
 	Variables       map[string]interface{}
+	TestInstance    *testing.T
 }
 
 func defaultOptions() *RecordingOptions {
@@ -516,17 +555,26 @@ func defaultOptions() *RecordingOptions {
 	}
 }
 
-func (r RecordingOptions) ReplaceAuthority(t *testing.T, rawReq *http.Request) {
+func (r RecordingOptions) ReplaceAuthority(t *testing.T, rawReq *http.Request) *http.Request {
 	if GetRecordMode() != LiveMode && !IsLiveOnly(t) {
 		originalURLHost := rawReq.URL.Host
-		rawReq.URL.Scheme = r.scheme()
-		rawReq.URL.Host = r.host()
-		rawReq.Host = r.host()
 
-		rawReq.Header.Set(UpstreamURIHeader, fmt.Sprintf("%v://%v", r.scheme(), originalURLHost))
-		rawReq.Header.Set(ModeHeader, GetRecordMode())
-		rawReq.Header.Set(IDHeader, GetRecordingId(t))
+		// don't modify the original request
+		cp := *rawReq
+		cpURL := *cp.URL
+		cp.URL = &cpURL
+		cp.Header = rawReq.Header.Clone()
+
+		cp.URL.Scheme = r.scheme()
+		cp.URL.Host = r.host()
+		cp.Host = r.host()
+
+		cp.Header.Set(UpstreamURIHeader, fmt.Sprintf("%v://%v", r.scheme(), originalURLHost))
+		cp.Header.Set(ModeHeader, GetRecordMode())
+		cp.Header.Set(IDHeader, GetRecordingId(t))
+		rawReq = &cp
 	}
+	return rawReq
 }
 
 func (r RecordingOptions) host() string {
@@ -548,7 +596,95 @@ func (r RecordingOptions) baseURL() string {
 }
 
 func getTestId(pathToRecordings string, t *testing.T) string {
-	return path.Join(pathToRecordings, "recordings", t.Name()+".json")
+	return filepath.Join(pathToRecordings, "recordings", t.Name()+".json")
+}
+
+func getGitRoot(fromPath string) (string, error) {
+	absPath, err := filepath.Abs(fromPath)
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Dir = absPath
+
+	root, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Unable to find git root for path '%s'", absPath)
+	}
+
+	// Wrap with Abs() to get os-specific path separators to support sub-path matching
+	return filepath.Abs(strings.TrimSpace(string(root)))
+}
+
+// Traverse up from a recording path until an asset config file is found.
+// Stop searching when the root of the git repository is reached.
+func findAssetsConfigFile(fromPath string, untilPath string) (string, error) {
+	absPath, err := filepath.Abs(fromPath)
+	if err != nil {
+		return "", err
+	}
+	assetConfigPath := filepath.Join(absPath, recordingAssetConfigName)
+
+	if _, err := os.Stat(assetConfigPath); err == nil {
+		return assetConfigPath, nil
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return "", err
+	}
+
+	if absPath == untilPath {
+		return "", nil
+	}
+
+	parentDir := filepath.Dir(absPath)
+	// This shouldn't be hit due to checks in getGitRoot, but it can't hurt to be defensive
+	if parentDir == absPath || parentDir == "." {
+		return "", nil
+	}
+
+	return findAssetsConfigFile(parentDir, untilPath)
+}
+
+// Returns absolute and relative paths to an asset configuration file, or an error.
+func getAssetsConfigLocation(pathToRecordings string) (string, string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", "", err
+	}
+	gitRoot, err := getGitRoot(cwd)
+	if err != nil {
+		return "", "", err
+	}
+	abs, err := findAssetsConfigFile(filepath.Join(gitRoot, pathToRecordings), gitRoot)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Pass a path relative to the git root to test proxy so that paths
+	// can be resolved when the repo root is mounted as a volume in a container
+	rel := strings.Replace(abs, gitRoot, "", 1)
+	rel = strings.TrimLeft(rel, string(os.PathSeparator))
+	return abs, rel, nil
+}
+
+func requestStart(url string, testId string, assetConfigLocation string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	reqBody := map[string]string{"x-recording-file": testId}
+	if assetConfigLocation != "" {
+		reqBody["x-recording-assets-file"] = assetConfigLocation
+	}
+	marshalled, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Body = io.NopCloser(bytes.NewReader(marshalled))
+	req.ContentLength = int64(len(marshalled))
+
+	return client.Do(req)
 }
 
 // Start tells the test proxy to begin accepting requests for a given test
@@ -560,7 +696,7 @@ func Start(t *testing.T, pathToRecordings string, options *RecordingOptions) err
 		return nil
 	}
 
-	if testStruct, ok := testSuite[t.Name()]; ok {
+	if testStruct, ok := testSuite.Load(t.Name()); ok {
 		if testStruct.liveOnly {
 			// test should only be run live, don't want to generate recording
 			return nil
@@ -569,21 +705,30 @@ func Start(t *testing.T, pathToRecordings string, options *RecordingOptions) err
 
 	testId := getTestId(pathToRecordings, t)
 
+	absAssetLocation, relAssetLocation, err := getAssetsConfigLocation(pathToRecordings)
+	if err != nil {
+		return err
+	}
+
 	url := fmt.Sprintf("%s/%s/start", options.baseURL(), recordMode)
 
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
+	var resp *http.Response
+	if absAssetLocation == "" {
+		resp, err = requestStart(url, testId, "")
+		if err != nil {
+			return err
+		}
+	} else if resp, err = requestStart(url, testId, absAssetLocation); err != nil {
 		return err
+	} else if resp.StatusCode >= 400 {
+		if resp, err = requestStart(url, testId, relAssetLocation); err != nil {
+			return err
+		}
 	}
-	req.Header.Set("x-recording-file", testId)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
 	recId := resp.Header.Get(IDHeader)
 	if recId == "" {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
 			return err
@@ -593,7 +738,7 @@ func Start(t *testing.T, pathToRecordings string, options *RecordingOptions) err
 
 	// Unmarshal any variables returned by the proxy
 	var m map[string]interface{}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		return err
@@ -605,16 +750,16 @@ func Start(t *testing.T, pathToRecordings string, options *RecordingOptions) err
 		}
 	}
 
-	if val, ok := testSuite[t.Name()]; ok {
+	if val, ok := testSuite.Load(t.Name()); ok {
 		val.recordingId = recId
 		val.variables = m
-		testSuite[t.Name()] = val
+		testSuite.Store(t.Name(), val)
 	} else {
-		testSuite[t.Name()] = recordedTest{
+		testSuite.Store(t.Name(), recordedTest{
 			recordingId: recId,
 			liveOnly:    false,
 			variables:   m,
-		}
+		})
 	}
 	return nil
 }
@@ -628,7 +773,7 @@ func Stop(t *testing.T, options *RecordingOptions) error {
 		return nil
 	}
 
-	if testStruct, ok := testSuite[t.Name()]; ok {
+	if testStruct, ok := testSuite.Load(t.Name()); ok {
 		if testStruct.liveOnly {
 			// test should only be run live, don't want to generate recording
 			return nil
@@ -646,19 +791,19 @@ func Stop(t *testing.T, options *RecordingOptions) error {
 		if err != nil {
 			return err
 		}
-		req.Body = ioutil.NopCloser(bytes.NewReader(marshalled))
+		req.Body = io.NopCloser(bytes.NewReader(marshalled))
 		req.ContentLength = int64(len(marshalled))
 	}
 
 	var recTest recordedTest
 	var ok bool
-	if recTest, ok = testSuite[t.Name()]; !ok {
+	if recTest, ok = testSuite.Load(t.Name()); !ok {
 		return errors.New("Recording ID was never set. Did you call StartRecording?")
 	}
-	req.Header.Set("x-recording-id", recTest.recordingId)
+	req.Header.Set(IDHeader, recTest.recordingId)
 	resp, err := client.Do(req)
 	if resp.StatusCode != 200 {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err == nil {
 			return fmt.Errorf("proxy did not stop the recording properly: %s", string(b))
@@ -679,11 +824,11 @@ func GetEnvVariable(varName string, recordedValue string) string {
 }
 
 func LiveOnly(t *testing.T) {
-	if val, ok := testSuite[t.Name()]; ok {
+	if val, ok := testSuite.Load(t.Name()); ok {
 		val.liveOnly = true
-		testSuite[t.Name()] = val
+		testSuite.Store(t.Name(), val)
 	} else {
-		testSuite[t.Name()] = recordedTest{liveOnly: true}
+		testSuite.Store(t.Name(), recordedTest{liveOnly: true})
 	}
 	if GetRecordMode() == PlaybackMode {
 		t.Skip("Live Test Only")
@@ -699,7 +844,11 @@ func Sleep(duration time.Duration) {
 }
 
 func GetRecordingId(t *testing.T) string {
-	return testSuite[t.Name()].recordingId
+	if val, ok := testSuite.Load(t.Name()); ok {
+		return val.recordingId
+	} else {
+		return ""
+	}
 }
 
 func GetRecordMode() string {
@@ -728,7 +877,7 @@ type RecordingHTTPClient struct {
 }
 
 func (c RecordingHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	c.options.ReplaceAuthority(c.t, req)
+	req = c.options.ReplaceAuthority(c.t, req)
 	return c.defaultClient.Do(req)
 }
 
@@ -762,7 +911,7 @@ func GetHTTPClient(t *testing.T) (*http.Client, error) {
 }
 
 func IsLiveOnly(t *testing.T) bool {
-	if s, ok := testSuite[t.Name()]; ok {
+	if s, ok := testSuite.Load(t.Name()); ok {
 		return s.liveOnly
 	}
 	return false
@@ -770,7 +919,7 @@ func IsLiveOnly(t *testing.T) bool {
 
 // GetVariables returns access to the variables stored by the test proxy for a specific test
 func GetVariables(t *testing.T) map[string]interface{} {
-	if s, ok := testSuite[t.Name()]; ok {
+	if s, ok := testSuite.Load(t.Name()); ok {
 		return s.variables
 	}
 	return nil

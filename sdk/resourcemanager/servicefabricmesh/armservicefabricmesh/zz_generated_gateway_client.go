@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,26 +34,31 @@ type GatewayClient struct {
 // subscriptionID - The customer subscription identifier
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewGatewayClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *GatewayClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewGatewayClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*GatewayClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &GatewayClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Creates a gateway resource with the specified name, description and properties. If a gateway resource with the
 // same name exists, then it is updated with the specified description and properties. Use
 // gateway resources to create a gateway for public connectivity for services within your application.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-01-preview
 // resourceGroupName - Azure resource group name
 // gatewayResourceName - The identity of the gateway.
 // gatewayResourceDescription - Description for creating a Gateway resource.
@@ -91,13 +97,13 @@ func (client *GatewayClient) createCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, gatewayResourceDescription)
 }
 
 // createHandleResponse handles the Create response.
 func (client *GatewayClient) createHandleResponse(resp *http.Response) (GatewayClientCreateResponse, error) {
-	result := GatewayClientCreateResponse{RawResponse: resp}
+	result := GatewayClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayResourceDescription); err != nil {
 		return GatewayClientCreateResponse{}, err
 	}
@@ -106,6 +112,7 @@ func (client *GatewayClient) createHandleResponse(resp *http.Response) (GatewayC
 
 // Delete - Deletes the gateway resource identified by the name.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-01-preview
 // resourceGroupName - Azure resource group name
 // gatewayResourceName - The identity of the gateway.
 // options - GatewayClientDeleteOptions contains the optional parameters for the GatewayClient.Delete method.
@@ -121,7 +128,7 @@ func (client *GatewayClient) Delete(ctx context.Context, resourceGroupName strin
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted, http.StatusNoContent) {
 		return GatewayClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return GatewayClientDeleteResponse{RawResponse: resp}, nil
+	return GatewayClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -143,13 +150,14 @@ func (client *GatewayClient) deleteCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the information about the gateway resource with the given name. The information include the description and
 // other properties of the gateway.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-01-preview
 // resourceGroupName - Azure resource group name
 // gatewayResourceName - The identity of the gateway.
 // options - GatewayClientGetOptions contains the optional parameters for the GatewayClient.Get method.
@@ -187,35 +195,52 @@ func (client *GatewayClient) getCreateRequest(ctx context.Context, resourceGroup
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *GatewayClient) getHandleResponse(resp *http.Response) (GatewayClientGetResponse, error) {
-	result := GatewayClientGetResponse{RawResponse: resp}
+	result := GatewayClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayResourceDescription); err != nil {
 		return GatewayClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets the information about all gateway resources in a given resource group. The information include
-// the description and other properties of the Gateway.
+// NewListByResourceGroupPager - Gets the information about all gateway resources in a given resource group. The information
+// include the description and other properties of the Gateway.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-01-preview
 // resourceGroupName - Azure resource group name
 // options - GatewayClientListByResourceGroupOptions contains the optional parameters for the GatewayClient.ListByResourceGroup
 // method.
-func (client *GatewayClient) ListByResourceGroup(resourceGroupName string, options *GatewayClientListByResourceGroupOptions) *GatewayClientListByResourceGroupPager {
-	return &GatewayClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *GatewayClient) NewListByResourceGroupPager(resourceGroupName string, options *GatewayClientListByResourceGroupOptions) *runtime.Pager[GatewayClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[GatewayClientListByResourceGroupResponse]{
+		More: func(page GatewayClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp GatewayClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.GatewayResourceDescriptionList.NextLink)
+		Fetcher: func(ctx context.Context, page *GatewayClientListByResourceGroupResponse) (GatewayClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return GatewayClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return GatewayClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return GatewayClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -236,34 +261,51 @@ func (client *GatewayClient) listByResourceGroupCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *GatewayClient) listByResourceGroupHandleResponse(resp *http.Response) (GatewayClientListByResourceGroupResponse, error) {
-	result := GatewayClientListByResourceGroupResponse{RawResponse: resp}
+	result := GatewayClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayResourceDescriptionList); err != nil {
 		return GatewayClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Gets the information about all gateway resources in a given resource group. The information include
-// the description and other properties of the gateway.
+// NewListBySubscriptionPager - Gets the information about all gateway resources in a given resource group. The information
+// include the description and other properties of the gateway.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2018-09-01-preview
 // options - GatewayClientListBySubscriptionOptions contains the optional parameters for the GatewayClient.ListBySubscription
 // method.
-func (client *GatewayClient) ListBySubscription(options *GatewayClientListBySubscriptionOptions) *GatewayClientListBySubscriptionPager {
-	return &GatewayClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *GatewayClient) NewListBySubscriptionPager(options *GatewayClientListBySubscriptionOptions) *runtime.Pager[GatewayClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[GatewayClientListBySubscriptionResponse]{
+		More: func(page GatewayClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp GatewayClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.GatewayResourceDescriptionList.NextLink)
+		Fetcher: func(ctx context.Context, page *GatewayClientListBySubscriptionResponse) (GatewayClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return GatewayClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return GatewayClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return GatewayClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -280,13 +322,13 @@ func (client *GatewayClient) listBySubscriptionCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2018-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *GatewayClient) listBySubscriptionHandleResponse(resp *http.Response) (GatewayClientListBySubscriptionResponse, error) {
-	result := GatewayClientListBySubscriptionResponse{RawResponse: resp}
+	result := GatewayClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GatewayResourceDescriptionList); err != nil {
 		return GatewayClientListBySubscriptionResponse{}, err
 	}

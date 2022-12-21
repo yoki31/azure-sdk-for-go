@@ -37,7 +37,7 @@ func ConstantDetachmentSender(remainingArgs []string) {
 
 			err = sender.SendMessage(sc.Context, &azservicebus.Message{
 				Body: []byte(fmt.Sprintf("test body %d", i)),
-			})
+			}, nil)
 			sc.PanicOnError("failed to send message", err)
 			stats.AddSent(1)
 		}
@@ -58,13 +58,13 @@ func ConstantDetachmentSender(remainingArgs []string) {
 
 			err = batch.AddMessage(&azservicebus.Message{
 				Body: []byte(fmt.Sprintf("batch test body %d", i)),
-			})
+			}, nil)
 			sc.PanicOnError("failed to add message", err)
 
 			err = shared.ForceQueueDetach(sc.Context, adminClient, queueName)
 			sc.PanicOnError("failed updating queue", err)
 
-			err = sender.SendMessageBatch(sc.Context, batch)
+			err = sender.SendMessageBatch(sc.Context, batch, nil)
 			sc.PanicOnError("failed to send message batch", err)
 			stats.AddSent(1)
 		}
@@ -78,7 +78,7 @@ func ConstantDetachmentSender(remainingArgs []string) {
 func createDetachResources(sc *shared.StressContext, name string) (string, *shared.Stats, *azservicebus.Sender) {
 	queueName := fmt.Sprintf("detach_%s-%s", name, sc.Nano)
 
-	shared.MustCreateAutoDeletingQueue(sc, queueName)
+	shared.MustCreateAutoDeletingQueue(sc, queueName, nil)
 
 	client, err := azservicebus.NewClientFromConnectionString(sc.ConnectionString, nil)
 	sc.PanicOnError("failed to create client", err)
@@ -109,6 +109,12 @@ func checkMessages(sc *shared.StressContext, queueName string, numSent int, stat
 		defer cancel()
 
 		messages, err := receiver.ReceiveMessages(ctx, numSent, nil)
+
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			// test is over or we received nothing (ie, we're probably done)
+			break
+		}
+
 		sc.PanicOnError("failed to receive messages", err)
 
 		if len(messages) == 0 {

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,160 +12,174 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/eventhub/armeventhub"
 )
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceList.json
-func ExampleNamespacesClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceList.json
+func ExampleNamespacesClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.List(nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceListByResourceGroup.json
-func ExampleNamespacesClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceListByResourceGroup.json
+func ExampleNamespacesClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroup("<resource-group-name>",
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupPager("ResurceGroupSample",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceCreate.json
 func ExampleNamespacesClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResurceGroupSample",
+		"NamespaceSample",
 		armeventhub.EHNamespace{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("East US"),
 			Identity: &armeventhub.Identity{
-				Type: armeventhub.ManagedServiceIdentityTypeSystemAssignedUserAssigned.ToPtr(),
+				Type: to.Ptr(armeventhub.ManagedServiceIdentityTypeSystemAssignedUserAssigned),
 				UserAssignedIdentities: map[string]*armeventhub.UserAssignedIdentity{
 					"/subscriptions/SampleSubscription/resourceGroups/ResurceGroupSample/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ud1": {},
 					"/subscriptions/SampleSubscription/resourceGroups/ResurceGroupSample/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ud2": {},
 				},
 			},
 			Properties: &armeventhub.EHNamespaceProperties{
-				ClusterArmID: to.StringPtr("<cluster-arm-id>"),
+				ClusterArmID: to.Ptr("/subscriptions/SampleSubscription/resourceGroups/ResurceGroupSample/providers/Microsoft.EventHub/clusters/enc-test"),
 				Encryption: &armeventhub.Encryption{
-					KeySource: to.StringPtr("<key-source>"),
+					KeySource: to.Ptr("Microsoft.KeyVault"),
 					KeyVaultProperties: []*armeventhub.KeyVaultProperties{
 						{
 							Identity: &armeventhub.UserAssignedIdentityProperties{
-								UserAssignedIdentity: to.StringPtr("<user-assigned-identity>"),
+								UserAssignedIdentity: to.Ptr("/subscriptions/SampleSubscription/resourceGroups/ResurceGroupSample/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ud1"),
 							},
-							KeyName:     to.StringPtr("<key-name>"),
-							KeyVaultURI: to.StringPtr("<key-vault-uri>"),
+							KeyName:     to.Ptr("Samplekey"),
+							KeyVaultURI: to.Ptr("https://aprao-keyvault-user.vault-int.azure-int.net/"),
 						}},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceDelete.json
 func ExampleNamespacesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResurceGroupSample",
+		"NamespaceSample",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceGet.json
 func ExampleNamespacesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResurceGroupSample",
+		"NamespaceSample",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceUpdate.json
 func ExampleNamespacesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("SampleSubscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResurceGroupSample",
+		"NamespaceSample",
 		armeventhub.EHNamespace{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("East US"),
 			Identity: &armeventhub.Identity{
-				Type: armeventhub.ManagedServiceIdentityTypeSystemAssignedUserAssigned.ToPtr(),
+				Type: to.Ptr(armeventhub.ManagedServiceIdentityTypeSystemAssignedUserAssigned),
 				UserAssignedIdentities: map[string]*armeventhub.UserAssignedIdentity{
 					"/subscriptions/SampleSubscription/resourceGroups/ResurceGroupSample/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ud2": nil,
 				},
@@ -173,254 +187,291 @@ func ExampleNamespacesClient_Update() {
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetCreate.json
 func ExampleNamespacesClient_CreateOrUpdateNetworkRuleSet() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("Subscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdateNetworkRuleSet(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResourceGroup",
+		"sdk-Namespace-6019",
 		armeventhub.NetworkRuleSet{
 			Properties: &armeventhub.NetworkRuleSetProperties{
-				DefaultAction: armeventhub.DefaultAction("Deny").ToPtr(),
+				DefaultAction: to.Ptr(armeventhub.DefaultActionDeny),
 				IPRules: []*armeventhub.NWRuleSetIPRules{
 					{
-						Action: armeventhub.NetworkRuleIPAction("Allow").ToPtr(),
-						IPMask: to.StringPtr("<ipmask>"),
+						Action: to.Ptr(armeventhub.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.1"),
 					},
 					{
-						Action: armeventhub.NetworkRuleIPAction("Allow").ToPtr(),
-						IPMask: to.StringPtr("<ipmask>"),
+						Action: to.Ptr(armeventhub.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.2"),
 					},
 					{
-						Action: armeventhub.NetworkRuleIPAction("Allow").ToPtr(),
-						IPMask: to.StringPtr("<ipmask>"),
+						Action: to.Ptr(armeventhub.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.3"),
 					},
 					{
-						Action: armeventhub.NetworkRuleIPAction("Allow").ToPtr(),
-						IPMask: to.StringPtr("<ipmask>"),
+						Action: to.Ptr(armeventhub.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.4"),
 					},
 					{
-						Action: armeventhub.NetworkRuleIPAction("Allow").ToPtr(),
-						IPMask: to.StringPtr("<ipmask>"),
+						Action: to.Ptr(armeventhub.NetworkRuleIPActionAllow),
+						IPMask: to.Ptr("1.1.1.5"),
 					}},
 				VirtualNetworkRules: []*armeventhub.NWRuleSetVirtualNetworkRules{
 					{
-						IgnoreMissingVnetServiceEndpoint: to.BoolPtr(true),
+						IgnoreMissingVnetServiceEndpoint: to.Ptr(true),
 						Subnet: &armeventhub.Subnet{
-							ID: to.StringPtr("<id>"),
+							ID: to.Ptr("/subscriptions/subscriptionid/resourcegroups/resourcegroupid/providers/Microsoft.Network/virtualNetworks/myvn/subnets/subnet2"),
 						},
 					},
 					{
-						IgnoreMissingVnetServiceEndpoint: to.BoolPtr(false),
+						IgnoreMissingVnetServiceEndpoint: to.Ptr(false),
 						Subnet: &armeventhub.Subnet{
-							ID: to.StringPtr("<id>"),
+							ID: to.Ptr("/subscriptions/subscriptionid/resourcegroups/resourcegroupid/providers/Microsoft.Network/virtualNetworks/myvn/subnets/subnet3"),
 						},
 					},
 					{
-						IgnoreMissingVnetServiceEndpoint: to.BoolPtr(false),
+						IgnoreMissingVnetServiceEndpoint: to.Ptr(false),
 						Subnet: &armeventhub.Subnet{
-							ID: to.StringPtr("<id>"),
+							ID: to.Ptr("/subscriptions/subscriptionid/resourcegroups/resourcegroupid/providers/Microsoft.Network/virtualNetworks/myvn/subnets/subnet6"),
 						},
 					}},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCreateOrUpdateNetworkRuleSetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetGet.json
 func ExampleNamespacesClient_GetNetworkRuleSet() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("Subscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetNetworkRuleSet(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResourceGroup",
+		"sdk-Namespace-6019",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientGetNetworkRuleSetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetList.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/VirtualNetworkRule/EHNetworkRuleSetList.json
 func ExampleNamespacesClient_ListNetworkRuleSet() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("Subscription", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListNetworkRuleSet(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
+		"ResourceGroup",
+		"sdk-Namespace-6019",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientListNetworkRuleSetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleListAll.json
-func ExampleNamespacesClient_ListAuthorizationRules() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleListAll.json
+func ExampleNamespacesClient_NewListAuthorizationRulesPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
-	pager := client.ListAuthorizationRules("<resource-group-name>",
-		"<namespace-name>",
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListAuthorizationRulesPager("ArunMonocle",
+		"sdk-Namespace-2702",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleCreate.json
 func ExampleNamespacesClient_CreateOrUpdateAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdateAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-2702",
+		"sdk-Authrules-1746",
 		armeventhub.AuthorizationRule{
 			Properties: &armeventhub.AuthorizationRuleProperties{
 				Rights: []*armeventhub.AccessRights{
-					armeventhub.AccessRights("Listen").ToPtr(),
-					armeventhub.AccessRights("Send").ToPtr()},
+					to.Ptr(armeventhub.AccessRightsListen),
+					to.Ptr(armeventhub.AccessRightsSend)},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCreateOrUpdateAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleDelete.json
 func ExampleNamespacesClient_DeleteAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.DeleteAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-8980",
+		"sdk-Authrules-8929",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleGet.json
 func ExampleNamespacesClient_GetAuthorizationRule() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetAuthorizationRule(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-2702",
+		"sdk-Authrules-1746",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientGetAuthorizationRuleResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleListKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleListKey.json
 func ExampleNamespacesClient_ListKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-2702",
+		"sdk-Authrules-1746",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientListKeysResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceAuthorizationRuleRegenerateKey.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceAuthorizationRuleRegenerateKey.json
 func ExampleNamespacesClient_RegenerateKeys() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.RegenerateKeys(ctx,
-		"<resource-group-name>",
-		"<namespace-name>",
-		"<authorization-rule-name>",
+		"ArunMonocle",
+		"sdk-Namespace-8980",
+		"sdk-Authrules-8929",
 		armeventhub.RegenerateAccessKeyParameters{
-			KeyType: armeventhub.KeyType("PrimaryKey").ToPtr(),
+			KeyType: to.Ptr(armeventhub.KeyTypePrimaryKey),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientRegenerateKeysResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/eventhub/resource-manager/Microsoft.EventHub/stable/2021-11-01/examples/NameSpaces/EHNameSpaceCheckNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/eventhub/resource-manager/Microsoft.EventHub/preview/2022-01-01-preview/examples/NameSpaces/EHNameSpaceCheckNameAvailability.json
 func ExampleNamespacesClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armeventhub.NewNamespacesClient("<subscription-id>", cred, nil)
+	client, err := armeventhub.NewNamespacesClient("5f750a97-50d9-4e36-8081-c9ee4c0210d4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
 		armeventhub.CheckNameAvailabilityParameter{
-			Name: to.StringPtr("<name>"),
+			Name: to.Ptr("sdk-Namespace-8458"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.NamespacesClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }

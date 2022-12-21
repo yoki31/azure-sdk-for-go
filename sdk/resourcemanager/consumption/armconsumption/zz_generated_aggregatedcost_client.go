@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,24 +32,29 @@ type AggregatedCostClient struct {
 // NewAggregatedCostClient creates a new instance of AggregatedCostClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAggregatedCostClient(credential azcore.TokenCredential, options *arm.ClientOptions) *AggregatedCostClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAggregatedCostClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*AggregatedCostClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &AggregatedCostClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // GetByManagementGroup - Provides the aggregate cost of a management group and all child management groups by current billing
 // period.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // managementGroupID - Azure Management Group ID.
 // options - AggregatedCostClientGetByManagementGroupOptions contains the optional parameters for the AggregatedCostClient.GetByManagementGroup
 // method.
@@ -84,13 +90,13 @@ func (client *AggregatedCostClient) getByManagementGroupCreateRequest(ctx contex
 		reqQP.Set("$filter", *options.Filter)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByManagementGroupHandleResponse handles the GetByManagementGroup response.
 func (client *AggregatedCostClient) getByManagementGroupHandleResponse(resp *http.Response) (AggregatedCostClientGetByManagementGroupResponse, error) {
-	result := AggregatedCostClientGetByManagementGroupResponse{RawResponse: resp}
+	result := AggregatedCostClientGetByManagementGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementGroupAggregatedCostResult); err != nil {
 		return AggregatedCostClientGetByManagementGroupResponse{}, err
 	}
@@ -100,6 +106,7 @@ func (client *AggregatedCostClient) getByManagementGroupHandleResponse(resp *htt
 // GetForBillingPeriodByManagementGroup - Provides the aggregate cost of a management group and all child management groups
 // by specified billing period
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-10-01
 // managementGroupID - Azure Management Group ID.
 // billingPeriodName - Billing Period Name.
 // options - AggregatedCostClientGetForBillingPeriodByManagementGroupOptions contains the optional parameters for the AggregatedCostClient.GetForBillingPeriodByManagementGroup
@@ -137,13 +144,13 @@ func (client *AggregatedCostClient) getForBillingPeriodByManagementGroupCreateRe
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-10-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getForBillingPeriodByManagementGroupHandleResponse handles the GetForBillingPeriodByManagementGroup response.
 func (client *AggregatedCostClient) getForBillingPeriodByManagementGroupHandleResponse(resp *http.Response) (AggregatedCostClientGetForBillingPeriodByManagementGroupResponse, error) {
-	result := AggregatedCostClientGetForBillingPeriodByManagementGroupResponse{RawResponse: resp}
+	result := AggregatedCostClientGetForBillingPeriodByManagementGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ManagementGroupAggregatedCostResult); err != nil {
 		return AggregatedCostClientGetForBillingPeriodByManagementGroupResponse{}, err
 	}

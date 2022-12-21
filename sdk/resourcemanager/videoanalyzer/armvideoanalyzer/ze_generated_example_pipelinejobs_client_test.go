@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,149 +12,170 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/videoanalyzer/armvideoanalyzer"
 )
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-list.json
-func ExamplePipelineJobsClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-list.json
+func ExamplePipelineJobsClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<account-name>",
-		&armvideoanalyzer.PipelineJobsListOptions{Filter: nil,
-			Top: to.Int32Ptr(2),
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("testrg",
+		"testaccount2",
+		&armvideoanalyzer.PipelineJobsClientListOptions{Filter: nil,
+			Top: to.Ptr[int32](2),
 		})
-	for pager.NextPage(ctx) {
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("PipelineJob.ID: %s\n", *v.ID)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-get-by-name.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-get-by-name.json
 func ExamplePipelineJobsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<pipeline-job-name>",
+		"testrg",
+		"testaccount2",
+		"pipelineJob1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("PipelineJob.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-create.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-create.json
 func ExamplePipelineJobsClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<pipeline-job-name>",
+		"testrg",
+		"testaccount2",
+		"pipelineJob1",
 		armvideoanalyzer.PipelineJob{
 			Properties: &armvideoanalyzer.PipelineJobProperties{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("Pipeline Job 1 Dsecription"),
 				Parameters: []*armvideoanalyzer.ParameterDefinition{
 					{
-						Name:  to.StringPtr("<name>"),
-						Value: to.StringPtr("<value>"),
+						Name:  to.Ptr("timesequences"),
+						Value: to.Ptr("[[\"2020-10-05T03:30:00Z\", \"2020-10-05T04:30:00Z\"]]"),
 					},
 					{
-						Name:  to.StringPtr("<name>"),
-						Value: to.StringPtr("<value>"),
+						Name:  to.Ptr("videoSourceName"),
+						Value: to.Ptr("camera001"),
 					}},
-				TopologyName: to.StringPtr("<topology-name>"),
+				TopologyName: to.Ptr("pipelinetopology1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("PipelineJob.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-delete.json
 func ExamplePipelineJobsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<pipeline-job-name>",
+		"testrg",
+		"testaccount2",
+		"pipelineJob1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-patch.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-patch.json
 func ExamplePipelineJobsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<pipeline-job-name>",
+		"testrg",
+		"testaccount2",
+		"pipelineJob1",
 		armvideoanalyzer.PipelineJobUpdate{
 			Properties: &armvideoanalyzer.PipelineJobPropertiesUpdate{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("Pipeline Job 1 description"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("PipelineJob.ID: %s\n", *res.ID)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-cancel.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/videoanalyzer/resource-manager/Microsoft.Media/preview/2021-11-01-preview/examples/pipeline-job-cancel.json
 func ExamplePipelineJobsClient_BeginCancel() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armvideoanalyzer.NewPipelineJobsClient("<subscription-id>", cred, nil)
+	client, err := armvideoanalyzer.NewPipelineJobsClient("591e76c3-3e97-44db-879c-3e2b12961b62", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCancel(ctx,
-		"<resource-group-name>",
-		"<account-name>",
-		"<pipeline-job-name>",
+		"testrg",
+		"testaccount2",
+		"pipelineJob1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

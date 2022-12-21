@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ServerAdvisorsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServerAdvisorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServerAdvisorsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServerAdvisorsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServerAdvisorsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServerAdvisorsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets a server advisor.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -97,13 +103,13 @@ func (client *ServerAdvisorsClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServerAdvisorsClient) getHandleResponse(resp *http.Response) (ServerAdvisorsClientGetResponse, error) {
-	result := ServerAdvisorsClientGetResponse{RawResponse: resp}
+	result := ServerAdvisorsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Advisor); err != nil {
 		return ServerAdvisorsClientGetResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *ServerAdvisorsClient) getHandleResponse(resp *http.Response) (Serv
 
 // ListByServer - Gets a list of server advisors.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -157,13 +164,13 @@ func (client *ServerAdvisorsClient) listByServerCreateRequest(ctx context.Contex
 	}
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServerHandleResponse handles the ListByServer response.
 func (client *ServerAdvisorsClient) listByServerHandleResponse(resp *http.Response) (ServerAdvisorsClientListByServerResponse, error) {
-	result := ServerAdvisorsClientListByServerResponse{RawResponse: resp}
+	result := ServerAdvisorsClientListByServerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AdvisorArray); err != nil {
 		return ServerAdvisorsClientListByServerResponse{}, err
 	}
@@ -172,6 +179,7 @@ func (client *ServerAdvisorsClient) listByServerHandleResponse(resp *http.Respon
 
 // Update - Updates a server advisor.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -219,13 +227,13 @@ func (client *ServerAdvisorsClient) updateCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ServerAdvisorsClient) updateHandleResponse(resp *http.Response) (ServerAdvisorsClientUpdateResponse, error) {
-	result := ServerAdvisorsClientUpdateResponse{RawResponse: resp}
+	result := ServerAdvisorsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Advisor); err != nil {
 		return ServerAdvisorsClientUpdateResponse{}, err
 	}

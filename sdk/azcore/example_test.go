@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright 2017 Microsoft Corporation. All rights reserved.
 // Use of this source code is governed by an MIT
@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -21,13 +21,13 @@ import (
 )
 
 // false positive by linter
-func ExampleSetEvents() { //nolint:govet
+func ExampleSetEvents() {
 	// only log HTTP requests and responses
 	log.SetEvents(log.EventRequest, log.EventResponse)
 }
 
 // false positive by linter
-func ExampleSetListener() { //nolint:govet
+func ExampleSetListener() {
 	// a simple logger that writes to stdout
 	log.SetListener(func(cls log.Event, msg string) {
 		fmt.Printf("%s: %s\n", cls, msg)
@@ -56,7 +56,7 @@ func (w Widget) MarshalJSON() ([]byte, error) {
 
 func ExampleNullValue() {
 	w := Widget{
-		Count: azcore.NullValue(0).(*int),
+		Count: azcore.NullValue[*int](),
 	}
 	b, _ := json.Marshal(w)
 	fmt.Println(string(b))
@@ -83,5 +83,5 @@ func ExampleResponseError() {
 		}
 	}
 	// Do something with response
-	fmt.Println(ioutil.ReadAll(resp.Body))
+	fmt.Println(io.ReadAll(resp.Body))
 }

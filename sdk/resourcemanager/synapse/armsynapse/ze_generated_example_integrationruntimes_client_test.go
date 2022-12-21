@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,253 +12,287 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Update.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Update.json
 func ExampleIntegrationRuntimesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		armsynapse.UpdateIntegrationRuntimeRequest{
-			AutoUpdate:        armsynapse.IntegrationRuntimeAutoUpdate("Off").ToPtr(),
-			UpdateDelayOffset: to.StringPtr("<update-delay-offset>"),
+			AutoUpdate:        to.Ptr(armsynapse.IntegrationRuntimeAutoUpdateOff),
+			UpdateDelayOffset: to.Ptr("\"PT3H\""),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.IntegrationRuntimesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Get.json
 func ExampleIntegrationRuntimesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		&armsynapse.IntegrationRuntimesClientGetOptions{IfNoneMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.IntegrationRuntimesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Create.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Create.json
 func ExampleIntegrationRuntimesClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		armsynapse.IntegrationRuntimeResource{
 			Properties: &armsynapse.SelfHostedIntegrationRuntime{
-				Type:        armsynapse.IntegrationRuntimeType("SelfHosted").ToPtr(),
-				Description: to.StringPtr("<description>"),
+				Type:        to.Ptr(armsynapse.IntegrationRuntimeTypeSelfHosted),
+				Description: to.Ptr("A selfhosted integration runtime"),
 			},
 		},
 		&armsynapse.IntegrationRuntimesClientBeginCreateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.IntegrationRuntimesClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Delete.json
 func ExampleIntegrationRuntimesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Upgrade.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Upgrade.json
 func ExampleIntegrationRuntimesClient_Upgrade() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Upgrade(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_ListByWorkspace.json
-func ExampleIntegrationRuntimesClient_ListByWorkspace() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_ListByWorkspace.json
+func ExampleIntegrationRuntimesClient_NewListByWorkspacePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
-	pager := client.ListByWorkspace("<resource-group-name>",
-		"<workspace-name>",
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByWorkspacePager("exampleResourceGroup",
+		"exampleWorkspace",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Start.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Start.json
 func ExampleIntegrationRuntimesClient_BeginStart() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStart(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleManagedIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.IntegrationRuntimesClientStartResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Stop.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_Stop.json
 func ExampleIntegrationRuntimesClient_BeginStop() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginStop(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleManagedIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_ListOutboundNetworkDependenciesEndpoints.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_ListOutboundNetworkDependenciesEndpoints.json
 func ExampleIntegrationRuntimesClient_ListOutboundNetworkDependenciesEndpoints() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("ade9c2b6-c160-4305-9bb9-80342f6c1ae2", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListOutboundNetworkDependenciesEndpoints(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.IntegrationRuntimesClientListOutboundNetworkDependenciesEndpointsResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_EnableInteractiveQuery.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_EnableInteractiveQuery.json
 func ExampleIntegrationRuntimesClient_BeginEnableInteractiveQuery() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginEnableInteractiveQuery(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleManagedIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_DisableInteractiveQuery.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/IntegrationRuntimes_DisableInteractiveQuery.json
 func ExampleIntegrationRuntimesClient_BeginDisableInteractiveQuery() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewIntegrationRuntimesClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewIntegrationRuntimesClient("12345678-1234-1234-1234-12345678abc", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDisableInteractiveQuery(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<integration-runtime-name>",
+		"exampleResourceGroup",
+		"exampleWorkspace",
+		"exampleManagedIntegrationRuntime",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

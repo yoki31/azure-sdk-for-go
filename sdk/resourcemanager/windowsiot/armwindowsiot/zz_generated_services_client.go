@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ServicesClient struct {
 // subscriptionID - The subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewServicesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ServicesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewServicesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ServicesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ServicesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckDeviceServiceNameAvailability - Check if a Windows IoT Device Service name is available.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // deviceServiceCheckNameAvailabilityParameters - Set the name parameter in the DeviceServiceCheckNameAvailabilityParameters
 // structure to the name of the Windows IoT Device Service to check.
 // options - ServicesClientCheckDeviceServiceNameAvailabilityOptions contains the optional parameters for the ServicesClient.CheckDeviceServiceNameAvailability
@@ -84,13 +90,13 @@ func (client *ServicesClient) checkDeviceServiceNameAvailabilityCreateRequest(ct
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, deviceServiceCheckNameAvailabilityParameters)
 }
 
 // checkDeviceServiceNameAvailabilityHandleResponse handles the CheckDeviceServiceNameAvailability response.
 func (client *ServicesClient) checkDeviceServiceNameAvailabilityHandleResponse(resp *http.Response) (ServicesClientCheckDeviceServiceNameAvailabilityResponse, error) {
-	result := ServicesClientCheckDeviceServiceNameAvailabilityResponse{RawResponse: resp}
+	result := ServicesClientCheckDeviceServiceNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceServiceNameAvailabilityInfo); err != nil {
 		return ServicesClientCheckDeviceServiceNameAvailabilityResponse{}, err
 	}
@@ -101,6 +107,7 @@ func (client *ServicesClient) checkDeviceServiceNameAvailabilityHandleResponse(r
 // is to retrieve the Windows IoT Device Service metadata and security metadata, and then combine
 // them with the modified values in a new body to update the Windows IoT Device Service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The name of the resource group that contains the Windows IoT Device Service.
 // deviceName - The name of the Windows IoT Device Service.
 // deviceService - The Windows IoT Device Service metadata and security metadata.
@@ -143,15 +150,15 @@ func (client *ServicesClient) createOrUpdateCreateRequest(ctx context.Context, r
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, deviceService)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ServicesClient) createOrUpdateHandleResponse(resp *http.Response) (ServicesClientCreateOrUpdateResponse, error) {
-	result := ServicesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ServicesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceService); err != nil {
 		return ServicesClientCreateOrUpdateResponse{}, err
 	}
@@ -160,6 +167,7 @@ func (client *ServicesClient) createOrUpdateHandleResponse(resp *http.Response) 
 
 // Delete - Delete a Windows IoT Device Service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The name of the resource group that contains the Windows IoT Device Service.
 // deviceName - The name of the Windows IoT Device Service.
 // options - ServicesClientDeleteOptions contains the optional parameters for the ServicesClient.Delete method.
@@ -200,13 +208,13 @@ func (client *ServicesClient) deleteCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // deleteHandleResponse handles the Delete response.
 func (client *ServicesClient) deleteHandleResponse(resp *http.Response) (ServicesClientDeleteResponse, error) {
-	result := ServicesClientDeleteResponse{RawResponse: resp}
+	result := ServicesClientDeleteResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceService); err != nil {
 		return ServicesClientDeleteResponse{}, err
 	}
@@ -215,6 +223,7 @@ func (client *ServicesClient) deleteHandleResponse(resp *http.Response) (Service
 
 // Get - Get the non-security related metadata of a Windows IoT Device Service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The name of the resource group that contains the Windows IoT Device Service.
 // deviceName - The name of the Windows IoT Device Service.
 // options - ServicesClientGetOptions contains the optional parameters for the ServicesClient.Get method.
@@ -255,32 +264,49 @@ func (client *ServicesClient) getCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ServicesClient) getHandleResponse(resp *http.Response) (ServicesClientGetResponse, error) {
-	result := ServicesClientGetResponse{RawResponse: resp}
+	result := ServicesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceService); err != nil {
 		return ServicesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Get all the IoT hubs in a subscription.
+// NewListPager - Get all the IoT hubs in a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // options - ServicesClientListOptions contains the optional parameters for the ServicesClient.List method.
-func (client *ServicesClient) List(options *ServicesClientListOptions) *ServicesClientListPager {
-	return &ServicesClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *ServicesClient) NewListPager(options *ServicesClientListOptions) *runtime.Pager[ServicesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServicesClientListResponse]{
+		More: func(page ServicesClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServicesClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeviceServiceDescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ServicesClientListResponse) (ServicesClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServicesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServicesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServicesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -297,34 +323,51 @@ func (client *ServicesClient) listCreateRequest(ctx context.Context, options *Se
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ServicesClient) listHandleResponse(resp *http.Response) (ServicesClientListResponse, error) {
-	result := ServicesClientListResponse{RawResponse: resp}
+	result := ServicesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceServiceDescriptionListResult); err != nil {
 		return ServicesClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Get all the IoT hubs in a resource group.
+// NewListByResourceGroupPager - Get all the IoT hubs in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The name of the resource group that contains the Windows IoT Device Service.
 // options - ServicesClientListByResourceGroupOptions contains the optional parameters for the ServicesClient.ListByResourceGroup
 // method.
-func (client *ServicesClient) ListByResourceGroup(resourceGroupName string, options *ServicesClientListByResourceGroupOptions) *ServicesClientListByResourceGroupPager {
-	return &ServicesClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *ServicesClient) NewListByResourceGroupPager(resourceGroupName string, options *ServicesClientListByResourceGroupOptions) *runtime.Pager[ServicesClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ServicesClientListByResourceGroupResponse]{
+		More: func(page ServicesClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ServicesClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DeviceServiceDescriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ServicesClientListByResourceGroupResponse) (ServicesClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ServicesClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ServicesClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ServicesClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -345,13 +388,13 @@ func (client *ServicesClient) listByResourceGroupCreateRequest(ctx context.Conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *ServicesClient) listByResourceGroupHandleResponse(resp *http.Response) (ServicesClientListByResourceGroupResponse, error) {
-	result := ServicesClientListByResourceGroupResponse{RawResponse: resp}
+	result := ServicesClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceServiceDescriptionListResult); err != nil {
 		return ServicesClientListByResourceGroupResponse{}, err
 	}
@@ -362,6 +405,7 @@ func (client *ServicesClient) listByResourceGroupHandleResponse(resp *http.Respo
 // Windows IoT Device Service metadata and security metadata, and then combine them with
 // the modified values in a new body to update the Windows IoT Device Service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-06-01
 // resourceGroupName - The name of the resource group that contains the Windows IoT Device Service.
 // deviceName - The name of the Windows IoT Device Service.
 // deviceService - The Windows IoT Device Service metadata and security metadata.
@@ -404,15 +448,15 @@ func (client *ServicesClient) updateCreateRequest(ctx context.Context, resourceG
 	reqQP.Set("api-version", "2019-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, deviceService)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *ServicesClient) updateHandleResponse(resp *http.Response) (ServicesClientUpdateResponse, error) {
-	result := ServicesClientUpdateResponse{RawResponse: resp}
+	result := ServicesClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DeviceService); err != nil {
 		return ServicesClientUpdateResponse{}, err
 	}

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ApplyUpdatesClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewApplyUpdatesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ApplyUpdatesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewApplyUpdatesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ApplyUpdatesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ApplyUpdatesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Apply maintenance updates to resource
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
@@ -103,13 +109,13 @@ func (client *ApplyUpdatesClient) createOrUpdateCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ApplyUpdatesClient) createOrUpdateHandleResponse(resp *http.Response) (ApplyUpdatesClientCreateOrUpdateResponse, error) {
-	result := ApplyUpdatesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ApplyUpdatesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplyUpdate); err != nil {
 		return ApplyUpdatesClientCreateOrUpdateResponse{}, err
 	}
@@ -118,6 +124,7 @@ func (client *ApplyUpdatesClient) createOrUpdateHandleResponse(resp *http.Respon
 
 // CreateOrUpdateParent - Apply maintenance updates to resource with parent
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceParentType - Resource parent type
@@ -179,13 +186,13 @@ func (client *ApplyUpdatesClient) createOrUpdateParentCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // createOrUpdateParentHandleResponse handles the CreateOrUpdateParent response.
 func (client *ApplyUpdatesClient) createOrUpdateParentHandleResponse(resp *http.Response) (ApplyUpdatesClientCreateOrUpdateParentResponse, error) {
-	result := ApplyUpdatesClientCreateOrUpdateParentResponse{RawResponse: resp}
+	result := ApplyUpdatesClientCreateOrUpdateParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplyUpdate); err != nil {
 		return ApplyUpdatesClientCreateOrUpdateParentResponse{}, err
 	}
@@ -194,6 +201,7 @@ func (client *ApplyUpdatesClient) createOrUpdateParentHandleResponse(resp *http.
 
 // Get - Track maintenance updates to resource
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // providerName - Resource provider name
 // resourceType - Resource type
@@ -249,13 +257,13 @@ func (client *ApplyUpdatesClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ApplyUpdatesClient) getHandleResponse(resp *http.Response) (ApplyUpdatesClientGetResponse, error) {
-	result := ApplyUpdatesClientGetResponse{RawResponse: resp}
+	result := ApplyUpdatesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplyUpdate); err != nil {
 		return ApplyUpdatesClientGetResponse{}, err
 	}
@@ -264,6 +272,7 @@ func (client *ApplyUpdatesClient) getHandleResponse(resp *http.Response) (ApplyU
 
 // GetParent - Track maintenance updates to resource with parent
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // resourceGroupName - Resource group name
 // resourceParentType - Resource parent type
 // resourceParentName - Resource parent identifier
@@ -329,35 +338,43 @@ func (client *ApplyUpdatesClient) getParentCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getParentHandleResponse handles the GetParent response.
 func (client *ApplyUpdatesClient) getParentHandleResponse(resp *http.Response) (ApplyUpdatesClientGetParentResponse, error) {
-	result := ApplyUpdatesClientGetParentResponse{RawResponse: resp}
+	result := ApplyUpdatesClientGetParentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplyUpdate); err != nil {
 		return ApplyUpdatesClientGetParentResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Get Configuration records within a subscription
+// NewListPager - Get Configuration records within a subscription
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-09-01-preview
 // options - ApplyUpdatesClientListOptions contains the optional parameters for the ApplyUpdatesClient.List method.
-func (client *ApplyUpdatesClient) List(ctx context.Context, options *ApplyUpdatesClientListOptions) (ApplyUpdatesClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, options)
-	if err != nil {
-		return ApplyUpdatesClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return ApplyUpdatesClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return ApplyUpdatesClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *ApplyUpdatesClient) NewListPager(options *ApplyUpdatesClientListOptions) *runtime.Pager[ApplyUpdatesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ApplyUpdatesClientListResponse]{
+		More: func(page ApplyUpdatesClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *ApplyUpdatesClientListResponse) (ApplyUpdatesClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, options)
+			if err != nil {
+				return ApplyUpdatesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ApplyUpdatesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ApplyUpdatesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -374,13 +391,13 @@ func (client *ApplyUpdatesClient) listCreateRequest(ctx context.Context, options
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-09-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ApplyUpdatesClient) listHandleResponse(resp *http.Response) (ApplyUpdatesClientListResponse, error) {
-	result := ApplyUpdatesClientListResponse{RawResponse: resp}
+	result := ApplyUpdatesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListApplyUpdate); err != nil {
 		return ApplyUpdatesClientListResponse{}, err
 	}

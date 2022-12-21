@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,50 +36,52 @@ type GlobalSchemaClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewGlobalSchemaClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *GlobalSchemaClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewGlobalSchemaClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*GlobalSchemaClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &GlobalSchemaClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates new or updates existing specified Schema of the API Management service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // schemaID - Schema id identifier. Must be unique in the current API Management service instance.
 // parameters - Create or update parameters.
 // options - GlobalSchemaClientBeginCreateOrUpdateOptions contains the optional parameters for the GlobalSchemaClient.BeginCreateOrUpdate
 // method.
-func (client *GlobalSchemaClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serviceName string, schemaID string, parameters GlobalSchemaContract, options *GlobalSchemaClientBeginCreateOrUpdateOptions) (GlobalSchemaClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, serviceName, schemaID, parameters, options)
-	if err != nil {
-		return GlobalSchemaClientCreateOrUpdatePollerResponse{}, err
+func (client *GlobalSchemaClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serviceName string, schemaID string, parameters GlobalSchemaContract, options *GlobalSchemaClientBeginCreateOrUpdateOptions) (*runtime.Poller[GlobalSchemaClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, serviceName, schemaID, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[GlobalSchemaClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[GlobalSchemaClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := GlobalSchemaClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("GlobalSchemaClient.CreateOrUpdate", "location", resp, client.pl)
-	if err != nil {
-		return GlobalSchemaClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &GlobalSchemaClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates new or updates existing specified Schema of the API Management service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 func (client *GlobalSchemaClient) createOrUpdate(ctx context.Context, resourceGroupName string, serviceName string, schemaID string, parameters GlobalSchemaContract, options *GlobalSchemaClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, serviceName, schemaID, parameters, options)
 	if err != nil {
@@ -121,14 +124,15 @@ func (client *GlobalSchemaClient) createOrUpdateCreateRequest(ctx context.Contex
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Delete - Deletes specific Schema.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // schemaID - Schema id identifier. Must be unique in the current API Management service instance.
@@ -147,7 +151,7 @@ func (client *GlobalSchemaClient) Delete(ctx context.Context, resourceGroupName 
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return GlobalSchemaClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return GlobalSchemaClientDeleteResponse{RawResponse: resp}, nil
+	return GlobalSchemaClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -176,13 +180,14 @@ func (client *GlobalSchemaClient) deleteCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the Schema specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // schemaID - Schema id identifier. Must be unique in the current API Management service instance.
@@ -228,13 +233,13 @@ func (client *GlobalSchemaClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *GlobalSchemaClient) getHandleResponse(resp *http.Response) (GlobalSchemaClientGetResponse, error) {
-	result := GlobalSchemaClientGetResponse{RawResponse: resp}
+	result := GlobalSchemaClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -245,6 +250,7 @@ func (client *GlobalSchemaClient) getHandleResponse(resp *http.Response) (Global
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the Schema specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // schemaID - Schema id identifier. Must be unique in the current API Management service instance.
@@ -258,6 +264,9 @@ func (client *GlobalSchemaClient) GetEntityTag(ctx context.Context, resourceGrou
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return GlobalSchemaClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return GlobalSchemaClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -288,38 +297,53 @@ func (client *GlobalSchemaClient) getEntityTagCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *GlobalSchemaClient) getEntityTagHandleResponse(resp *http.Response) (GlobalSchemaClientGetEntityTagResponse, error) {
-	result := GlobalSchemaClientGetEntityTagResponse{RawResponse: resp}
+	result := GlobalSchemaClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of schemas registered with service instance.
+// NewListByServicePager - Lists a collection of schemas registered with service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - GlobalSchemaClientListByServiceOptions contains the optional parameters for the GlobalSchemaClient.ListByService
 // method.
-func (client *GlobalSchemaClient) ListByService(resourceGroupName string, serviceName string, options *GlobalSchemaClientListByServiceOptions) *GlobalSchemaClientListByServicePager {
-	return &GlobalSchemaClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *GlobalSchemaClient) NewListByServicePager(resourceGroupName string, serviceName string, options *GlobalSchemaClientListByServiceOptions) *runtime.Pager[GlobalSchemaClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[GlobalSchemaClientListByServiceResponse]{
+		More: func(page GlobalSchemaClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp GlobalSchemaClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.GlobalSchemaCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *GlobalSchemaClientListByServiceResponse) (GlobalSchemaClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return GlobalSchemaClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return GlobalSchemaClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return GlobalSchemaClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -353,13 +377,13 @@ func (client *GlobalSchemaClient) listByServiceCreateRequest(ctx context.Context
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *GlobalSchemaClient) listByServiceHandleResponse(resp *http.Response) (GlobalSchemaClientListByServiceResponse, error) {
-	result := GlobalSchemaClientListByServiceResponse{RawResponse: resp}
+	result := GlobalSchemaClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.GlobalSchemaCollection); err != nil {
 		return GlobalSchemaClientListByServiceResponse{}, err
 	}

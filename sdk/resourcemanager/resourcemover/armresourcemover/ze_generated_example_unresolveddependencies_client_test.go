@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -16,26 +16,31 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcemover/armresourcemover"
 )
 
-// x-ms-original-file: specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/UnresolvedDependencies_Get.json
-func ExampleUnresolvedDependenciesClient_Get() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resourcemover/resource-manager/Microsoft.Migrate/stable/2021-08-01/examples/UnresolvedDependencies_Get.json
+func ExampleUnresolvedDependenciesClient_NewGetPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresourcemover.NewUnresolvedDependenciesClient("<subscription-id>", cred, nil)
-	pager := client.Get("<resource-group-name>",
-		"<move-collection-name>",
-		&armresourcemover.UnresolvedDependenciesGetOptions{DependencyLevel: nil,
+	client, err := armresourcemover.NewUnresolvedDependenciesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewGetPager("rg1",
+		"movecollection1",
+		&armresourcemover.UnresolvedDependenciesClientGetOptions{DependencyLevel: nil,
 			Orderby: nil,
 			Filter:  nil,
 		})
-	for pager.NextPage(ctx) {
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("UnresolvedDependency.ID: %s\n", *v.ID)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

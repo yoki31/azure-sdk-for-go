@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,91 +17,106 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/recoveryservices/armrecoveryservicesbackup"
 )
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/ProtectionIntent_Validate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/ProtectionIntent_Validate.json
 func ExampleProtectionIntentClient_Validate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectionIntentClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectionIntentClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Validate(ctx,
-		"<azure-region>",
+		"southeastasia",
 		armrecoveryservicesbackup.PreValidateEnableBackupRequest{
-			Properties:   to.StringPtr("<properties>"),
-			ResourceID:   to.StringPtr("<resource-id>"),
-			ResourceType: armrecoveryservicesbackup.DataSourceType("VM").ToPtr(),
-			VaultID:      to.StringPtr("<vault-id>"),
+			Properties:   to.Ptr(""),
+			ResourceID:   to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/arunaupgrade/providers/Microsoft.Compute/VirtualMachines/upgrade1"),
+			ResourceType: to.Ptr(armrecoveryservicesbackup.DataSourceTypeVM),
+			VaultID:      to.Ptr("/Subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/myRG/providers/Microsoft.RecoveryServices/Vaults/myVault"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectionIntentClientValidateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureWorkload/BackupProtectionIntent_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureWorkload/BackupProtectionIntent_Get.json
 func ExampleProtectionIntentClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectionIntentClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectionIntentClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<intent-object-name>",
+		"myVault",
+		"myRG",
+		"Azure",
+		"249D9B07-D2EF-4202-AA64-65F35418564E",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectionIntentClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureIaasVm/ProtectionIntent_CreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureIaasVm/ProtectionIntent_CreateOrUpdate.json
 func ExampleProtectionIntentClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectionIntentClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectionIntentClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<intent-object-name>",
+		"myVault",
+		"myRG",
+		"Azure",
+		"vm;iaasvmcontainerv2;chamsrgtest;chamscandel",
 		armrecoveryservicesbackup.ProtectionIntentResource{
 			Properties: &armrecoveryservicesbackup.AzureResourceProtectionIntent{
-				PolicyID:                 to.StringPtr("<policy-id>"),
-				ProtectionIntentItemType: armrecoveryservicesbackup.ProtectionIntentItemType("AzureResourceItem").ToPtr(),
-				SourceResourceID:         to.StringPtr("<source-resource-id>"),
+				PolicyID:                 to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/myRG/providers/Microsoft.RecoveryServices/vaults/myVault/backupPolicies/myPolicy"),
+				ProtectionIntentItemType: to.Ptr(armrecoveryservicesbackup.ProtectionIntentItemTypeAzureResourceItem),
+				SourceResourceID:         to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/chamsrgtest/providers/Microsoft.Compute/virtualMachines/chamscandel"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ProtectionIntentClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2021-10-01/examples/AzureWorkload/BackupProtectionIntent_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/recoveryservicesbackup/resource-manager/Microsoft.RecoveryServices/stable/2022-02-01/examples/AzureWorkload/BackupProtectionIntent_Delete.json
 func ExampleProtectionIntentClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armrecoveryservicesbackup.NewProtectionIntentClient("<subscription-id>", cred, nil)
+	client, err := armrecoveryservicesbackup.NewProtectionIntentClient("00000000-0000-0000-0000-000000000000", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<vault-name>",
-		"<resource-group-name>",
-		"<fabric-name>",
-		"<intent-object-name>",
+		"myVault",
+		"myRG",
+		"Azure",
+		"249D9B07-D2EF-4202-AA64-65F35418564E",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

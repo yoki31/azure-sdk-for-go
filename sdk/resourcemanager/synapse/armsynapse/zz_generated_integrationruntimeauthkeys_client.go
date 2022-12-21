@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type IntegrationRuntimeAuthKeysClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewIntegrationRuntimeAuthKeysClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *IntegrationRuntimeAuthKeysClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewIntegrationRuntimeAuthKeysClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*IntegrationRuntimeAuthKeysClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &IntegrationRuntimeAuthKeysClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // List - List authentication keys in an integration runtime
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // integrationRuntimeName - Integration runtime name
@@ -97,13 +103,13 @@ func (client *IntegrationRuntimeAuthKeysClient) listCreateRequest(ctx context.Co
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *IntegrationRuntimeAuthKeysClient) listHandleResponse(resp *http.Response) (IntegrationRuntimeAuthKeysClientListResponse, error) {
-	result := IntegrationRuntimeAuthKeysClientListResponse{RawResponse: resp}
+	result := IntegrationRuntimeAuthKeysClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationRuntimeAuthKeys); err != nil {
 		return IntegrationRuntimeAuthKeysClientListResponse{}, err
 	}
@@ -112,6 +118,7 @@ func (client *IntegrationRuntimeAuthKeysClient) listHandleResponse(resp *http.Re
 
 // Regenerate - Regenerate the authentication key for an integration runtime
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // integrationRuntimeName - Integration runtime name
@@ -159,13 +166,13 @@ func (client *IntegrationRuntimeAuthKeysClient) regenerateCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, regenerateKeyParameters)
 }
 
 // regenerateHandleResponse handles the Regenerate response.
 func (client *IntegrationRuntimeAuthKeysClient) regenerateHandleResponse(resp *http.Response) (IntegrationRuntimeAuthKeysClientRegenerateResponse, error) {
-	result := IntegrationRuntimeAuthKeysClientRegenerateResponse{RawResponse: resp}
+	result := IntegrationRuntimeAuthKeysClientRegenerateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IntegrationRuntimeAuthKeys); err != nil {
 		return IntegrationRuntimeAuthKeysClientRegenerateResponse{}, err
 	}

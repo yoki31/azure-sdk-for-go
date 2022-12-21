@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,47 +12,48 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/streamanalytics/armstreamanalytics"
 )
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Create_Reference_Blob_CSV.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Create_Reference_Blob_CSV.json
 func ExampleInputsClient_CreateOrReplace() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrReplace(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<input-name>",
+		"sjrg8440",
+		"sj9597",
+		"input7225",
 		armstreamanalytics.Input{
 			Properties: &armstreamanalytics.ReferenceInputProperties{
-				Type: to.StringPtr("<type>"),
+				Type: to.Ptr("Reference"),
 				Serialization: &armstreamanalytics.CSVSerialization{
-					Type: armstreamanalytics.EventSerializationType("Csv").ToPtr(),
+					Type: to.Ptr(armstreamanalytics.EventSerializationTypeCSV),
 					Properties: &armstreamanalytics.CSVSerializationProperties{
-						Encoding:       armstreamanalytics.Encoding("UTF8").ToPtr(),
-						FieldDelimiter: to.StringPtr("<field-delimiter>"),
+						Encoding:       to.Ptr(armstreamanalytics.EncodingUTF8),
+						FieldDelimiter: to.Ptr(","),
 					},
 				},
 				Datasource: &armstreamanalytics.BlobReferenceInputDataSource{
-					Type: to.StringPtr("<type>"),
+					Type: to.Ptr("Microsoft.Storage/Blob"),
 					Properties: &armstreamanalytics.BlobReferenceInputDataSourceProperties{
-						Container:   to.StringPtr("<container>"),
-						DateFormat:  to.StringPtr("<date-format>"),
-						PathPattern: to.StringPtr("<path-pattern>"),
+						Container:   to.Ptr("state"),
+						DateFormat:  to.Ptr("yyyy/MM/dd"),
+						PathPattern: to.Ptr("{date}/{time}"),
 						StorageAccounts: []*armstreamanalytics.StorageAccount{
 							{
-								AccountKey:  to.StringPtr("<account-key>"),
-								AccountName: to.StringPtr("<account-name>"),
+								AccountKey:  to.Ptr("someAccountKey=="),
+								AccountName: to.Ptr("someAccountName"),
 							}},
-						TimeFormat: to.StringPtr("<time-format>"),
+						TimeFormat: to.Ptr("HH"),
 					},
 				},
 			},
@@ -61,129 +62,146 @@ func ExampleInputsClient_CreateOrReplace() {
 			IfNoneMatch: nil,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.InputsClientCreateOrReplaceResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Update_Reference_Blob.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Update_Reference_Blob.json
 func ExampleInputsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<input-name>",
+		"sjrg8440",
+		"sj9597",
+		"input7225",
 		armstreamanalytics.Input{
 			Properties: &armstreamanalytics.ReferenceInputProperties{
-				Type: to.StringPtr("<type>"),
+				Type: to.Ptr("Reference"),
 				Serialization: &armstreamanalytics.CSVSerialization{
-					Type: armstreamanalytics.EventSerializationType("Csv").ToPtr(),
+					Type: to.Ptr(armstreamanalytics.EventSerializationTypeCSV),
 					Properties: &armstreamanalytics.CSVSerializationProperties{
-						Encoding:       armstreamanalytics.Encoding("UTF8").ToPtr(),
-						FieldDelimiter: to.StringPtr("<field-delimiter>"),
+						Encoding:       to.Ptr(armstreamanalytics.EncodingUTF8),
+						FieldDelimiter: to.Ptr("|"),
 					},
 				},
 				Datasource: &armstreamanalytics.BlobReferenceInputDataSource{
-					Type: to.StringPtr("<type>"),
+					Type: to.Ptr("Microsoft.Storage/Blob"),
 					Properties: &armstreamanalytics.BlobReferenceInputDataSourceProperties{
-						Container: to.StringPtr("<container>"),
+						Container: to.Ptr("differentContainer"),
 					},
 				},
 			},
 		},
 		&armstreamanalytics.InputsClientUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.InputsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Delete.json
 func ExampleInputsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<input-name>",
+		"sjrg8440",
+		"sj9597",
+		"input7225",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Get_Reference_Blob_CSV.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Get_Reference_Blob_CSV.json
 func ExampleInputsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<input-name>",
+		"sjrg8440",
+		"sj9597",
+		"input7225",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.InputsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_ListByStreamingJob.json
-func ExampleInputsClient_ListByStreamingJob() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_ListByStreamingJob.json
+func ExampleInputsClient_NewListByStreamingJobPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
-	pager := client.ListByStreamingJob("<resource-group-name>",
-		"<job-name>",
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByStreamingJobPager("sjrg8440",
+		"sj9597",
 		&armstreamanalytics.InputsClientListByStreamingJobOptions{Select: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Test.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/streamanalytics/resource-manager/Microsoft.StreamAnalytics/stable/2020-03-01/examples/Input_Test.json
 func ExampleInputsClient_BeginTest() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armstreamanalytics.NewInputsClient("<subscription-id>", cred, nil)
+	client, err := armstreamanalytics.NewInputsClient("56b5e0a9-b645-407d-99b0-c64f86013e3d", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginTest(ctx,
-		"<resource-group-name>",
-		"<job-name>",
-		"<input-name>",
+		"sjrg8440",
+		"sj9597",
+		"input7225",
 		&armstreamanalytics.InputsClientBeginTestOptions{Input: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.InputsClientTestResult)
+	// TODO: use response item
+	_ = res
 }

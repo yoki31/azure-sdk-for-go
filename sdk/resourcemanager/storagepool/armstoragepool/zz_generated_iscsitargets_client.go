@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,52 @@ type IscsiTargetsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewIscsiTargetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *IscsiTargetsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewIscsiTargetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*IscsiTargetsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &IscsiTargetsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Create or Update an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // diskPoolName - The name of the Disk Pool.
 // iscsiTargetName - The name of the iSCSI Target.
 // iscsiTargetCreatePayload - Request payload for iSCSI Target create operation.
 // options - IscsiTargetsClientBeginCreateOrUpdateOptions contains the optional parameters for the IscsiTargetsClient.BeginCreateOrUpdate
 // method.
-func (client *IscsiTargetsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetCreatePayload IscsiTargetCreate, options *IscsiTargetsClientBeginCreateOrUpdateOptions) (IscsiTargetsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetCreatePayload, options)
-	if err != nil {
-		return IscsiTargetsClientCreateOrUpdatePollerResponse{}, err
+func (client *IscsiTargetsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetCreatePayload IscsiTargetCreate, options *IscsiTargetsClientBeginCreateOrUpdateOptions) (*runtime.Poller[IscsiTargetsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetCreatePayload, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[IscsiTargetsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[IscsiTargetsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := IscsiTargetsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("IscsiTargetsClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return IscsiTargetsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &IscsiTargetsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Create or Update an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 func (client *IscsiTargetsClient) createOrUpdate(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetCreatePayload IscsiTargetCreate, options *IscsiTargetsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetCreatePayload, options)
 	if err != nil {
@@ -118,37 +121,35 @@ func (client *IscsiTargetsClient) createOrUpdateCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, iscsiTargetCreatePayload)
 }
 
 // BeginDelete - Delete an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // diskPoolName - The name of the Disk Pool.
 // iscsiTargetName - The name of the iSCSI Target.
 // options - IscsiTargetsClientBeginDeleteOptions contains the optional parameters for the IscsiTargetsClient.BeginDelete
 // method.
-func (client *IscsiTargetsClient) BeginDelete(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, options *IscsiTargetsClientBeginDeleteOptions) (IscsiTargetsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, diskPoolName, iscsiTargetName, options)
-	if err != nil {
-		return IscsiTargetsClientDeletePollerResponse{}, err
+func (client *IscsiTargetsClient) BeginDelete(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, options *IscsiTargetsClientBeginDeleteOptions) (*runtime.Poller[IscsiTargetsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, diskPoolName, iscsiTargetName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[IscsiTargetsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[IscsiTargetsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := IscsiTargetsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("IscsiTargetsClient.Delete", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return IscsiTargetsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &IscsiTargetsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 func (client *IscsiTargetsClient) deleteOperation(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, options *IscsiTargetsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, diskPoolName, iscsiTargetName, options)
 	if err != nil {
@@ -190,12 +191,13 @@ func (client *IscsiTargetsClient) deleteCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // diskPoolName - The name of the Disk Pool.
 // iscsiTargetName - The name of the iSCSI Target.
@@ -241,35 +243,52 @@ func (client *IscsiTargetsClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *IscsiTargetsClient) getHandleResponse(resp *http.Response) (IscsiTargetsClientGetResponse, error) {
-	result := IscsiTargetsClientGetResponse{RawResponse: resp}
+	result := IscsiTargetsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IscsiTarget); err != nil {
 		return IscsiTargetsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByDiskPool - Get iSCSI Targets in a Disk pool.
+// NewListByDiskPoolPager - Get iSCSI Targets in a Disk pool.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // diskPoolName - The name of the Disk Pool.
 // options - IscsiTargetsClientListByDiskPoolOptions contains the optional parameters for the IscsiTargetsClient.ListByDiskPool
 // method.
-func (client *IscsiTargetsClient) ListByDiskPool(resourceGroupName string, diskPoolName string, options *IscsiTargetsClientListByDiskPoolOptions) *IscsiTargetsClientListByDiskPoolPager {
-	return &IscsiTargetsClientListByDiskPoolPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByDiskPoolCreateRequest(ctx, resourceGroupName, diskPoolName, options)
+func (client *IscsiTargetsClient) NewListByDiskPoolPager(resourceGroupName string, diskPoolName string, options *IscsiTargetsClientListByDiskPoolOptions) *runtime.Pager[IscsiTargetsClientListByDiskPoolResponse] {
+	return runtime.NewPager(runtime.PagingHandler[IscsiTargetsClientListByDiskPoolResponse]{
+		More: func(page IscsiTargetsClientListByDiskPoolResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp IscsiTargetsClientListByDiskPoolResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.IscsiTargetList.NextLink)
+		Fetcher: func(ctx context.Context, page *IscsiTargetsClientListByDiskPoolResponse) (IscsiTargetsClientListByDiskPoolResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByDiskPoolCreateRequest(ctx, resourceGroupName, diskPoolName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return IscsiTargetsClientListByDiskPoolResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return IscsiTargetsClientListByDiskPoolResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return IscsiTargetsClientListByDiskPoolResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByDiskPoolHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByDiskPoolCreateRequest creates the ListByDiskPool request.
@@ -294,13 +313,13 @@ func (client *IscsiTargetsClient) listByDiskPoolCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByDiskPoolHandleResponse handles the ListByDiskPool response.
 func (client *IscsiTargetsClient) listByDiskPoolHandleResponse(resp *http.Response) (IscsiTargetsClientListByDiskPoolResponse, error) {
-	result := IscsiTargetsClientListByDiskPoolResponse{RawResponse: resp}
+	result := IscsiTargetsClientListByDiskPoolResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.IscsiTargetList); err != nil {
 		return IscsiTargetsClientListByDiskPoolResponse{}, err
 	}
@@ -309,32 +328,30 @@ func (client *IscsiTargetsClient) listByDiskPoolHandleResponse(resp *http.Respon
 
 // BeginUpdate - Update an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // diskPoolName - The name of the Disk Pool.
 // iscsiTargetName - The name of the iSCSI Target.
 // iscsiTargetUpdatePayload - Request payload for iSCSI Target update operation.
 // options - IscsiTargetsClientBeginUpdateOptions contains the optional parameters for the IscsiTargetsClient.BeginUpdate
 // method.
-func (client *IscsiTargetsClient) BeginUpdate(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetUpdatePayload IscsiTargetUpdate, options *IscsiTargetsClientBeginUpdateOptions) (IscsiTargetsClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetUpdatePayload, options)
-	if err != nil {
-		return IscsiTargetsClientUpdatePollerResponse{}, err
+func (client *IscsiTargetsClient) BeginUpdate(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetUpdatePayload IscsiTargetUpdate, options *IscsiTargetsClientBeginUpdateOptions) (*runtime.Poller[IscsiTargetsClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetUpdatePayload, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[IscsiTargetsClientUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[IscsiTargetsClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := IscsiTargetsClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("IscsiTargetsClient.Update", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return IscsiTargetsClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &IscsiTargetsClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Update an iSCSI Target.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 func (client *IscsiTargetsClient) update(ctx context.Context, resourceGroupName string, diskPoolName string, iscsiTargetName string, iscsiTargetUpdatePayload IscsiTargetUpdate, options *IscsiTargetsClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, diskPoolName, iscsiTargetName, iscsiTargetUpdatePayload, options)
 	if err != nil {
@@ -376,6 +393,6 @@ func (client *IscsiTargetsClient) updateCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, iscsiTargetUpdatePayload)
 }

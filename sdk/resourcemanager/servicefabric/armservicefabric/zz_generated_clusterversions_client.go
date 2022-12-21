@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type ClusterVersionsClient struct {
 // subscriptionID - The customer subscription identifier.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewClusterVersionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ClusterVersionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewClusterVersionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ClusterVersionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ClusterVersionsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Get - Gets information about an available Service Fabric cluster code version.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The location for the cluster code versions. This is different from cluster location.
 // clusterVersion - The cluster code version.
 // options - ClusterVersionsClientGetOptions contains the optional parameters for the ClusterVersionsClient.Get method.
@@ -91,13 +97,13 @@ func (client *ClusterVersionsClient) getCreateRequest(ctx context.Context, locat
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ClusterVersionsClient) getHandleResponse(resp *http.Response) (ClusterVersionsClientGetResponse, error) {
-	result := ClusterVersionsClientGetResponse{RawResponse: resp}
+	result := ClusterVersionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterCodeVersionsListResult); err != nil {
 		return ClusterVersionsClientGetResponse{}, err
 	}
@@ -106,12 +112,13 @@ func (client *ClusterVersionsClient) getHandleResponse(resp *http.Response) (Clu
 
 // GetByEnvironment - Gets information about an available Service Fabric cluster code version by environment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The location for the cluster code versions. This is different from cluster location.
 // environment - The operating system of the cluster. The default means all.
 // clusterVersion - The cluster code version.
 // options - ClusterVersionsClientGetByEnvironmentOptions contains the optional parameters for the ClusterVersionsClient.GetByEnvironment
 // method.
-func (client *ClusterVersionsClient) GetByEnvironment(ctx context.Context, location string, environment Enum14, clusterVersion string, options *ClusterVersionsClientGetByEnvironmentOptions) (ClusterVersionsClientGetByEnvironmentResponse, error) {
+func (client *ClusterVersionsClient) GetByEnvironment(ctx context.Context, location string, environment ClusterVersionsEnvironment, clusterVersion string, options *ClusterVersionsClientGetByEnvironmentOptions) (ClusterVersionsClientGetByEnvironmentResponse, error) {
 	req, err := client.getByEnvironmentCreateRequest(ctx, location, environment, clusterVersion, options)
 	if err != nil {
 		return ClusterVersionsClientGetByEnvironmentResponse{}, err
@@ -127,7 +134,7 @@ func (client *ClusterVersionsClient) GetByEnvironment(ctx context.Context, locat
 }
 
 // getByEnvironmentCreateRequest creates the GetByEnvironment request.
-func (client *ClusterVersionsClient) getByEnvironmentCreateRequest(ctx context.Context, location string, environment Enum14, clusterVersion string, options *ClusterVersionsClientGetByEnvironmentOptions) (*policy.Request, error) {
+func (client *ClusterVersionsClient) getByEnvironmentCreateRequest(ctx context.Context, location string, environment ClusterVersionsEnvironment, clusterVersion string, options *ClusterVersionsClientGetByEnvironmentOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/providers/Microsoft.ServiceFabric/locations/{location}/environments/{environment}/clusterVersions/{clusterVersion}"
 	if location == "" {
 		return nil, errors.New("parameter location cannot be empty")
@@ -152,13 +159,13 @@ func (client *ClusterVersionsClient) getByEnvironmentCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getByEnvironmentHandleResponse handles the GetByEnvironment response.
 func (client *ClusterVersionsClient) getByEnvironmentHandleResponse(resp *http.Response) (ClusterVersionsClientGetByEnvironmentResponse, error) {
-	result := ClusterVersionsClientGetByEnvironmentResponse{RawResponse: resp}
+	result := ClusterVersionsClientGetByEnvironmentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterCodeVersionsListResult); err != nil {
 		return ClusterVersionsClientGetByEnvironmentResponse{}, err
 	}
@@ -167,6 +174,7 @@ func (client *ClusterVersionsClient) getByEnvironmentHandleResponse(resp *http.R
 
 // List - Gets all available code versions for Service Fabric cluster resources by location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The location for the cluster code versions. This is different from cluster location.
 // options - ClusterVersionsClientListOptions contains the optional parameters for the ClusterVersionsClient.List method.
 func (client *ClusterVersionsClient) List(ctx context.Context, location string, options *ClusterVersionsClientListOptions) (ClusterVersionsClientListResponse, error) {
@@ -202,13 +210,13 @@ func (client *ClusterVersionsClient) listCreateRequest(ctx context.Context, loca
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *ClusterVersionsClient) listHandleResponse(resp *http.Response) (ClusterVersionsClientListResponse, error) {
-	result := ClusterVersionsClientListResponse{RawResponse: resp}
+	result := ClusterVersionsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterCodeVersionsListResult); err != nil {
 		return ClusterVersionsClientListResponse{}, err
 	}
@@ -217,11 +225,12 @@ func (client *ClusterVersionsClient) listHandleResponse(resp *http.Response) (Cl
 
 // ListByEnvironment - Gets all available code versions for Service Fabric cluster resources by environment.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // location - The location for the cluster code versions. This is different from cluster location.
 // environment - The operating system of the cluster. The default means all.
 // options - ClusterVersionsClientListByEnvironmentOptions contains the optional parameters for the ClusterVersionsClient.ListByEnvironment
 // method.
-func (client *ClusterVersionsClient) ListByEnvironment(ctx context.Context, location string, environment Enum14, options *ClusterVersionsClientListByEnvironmentOptions) (ClusterVersionsClientListByEnvironmentResponse, error) {
+func (client *ClusterVersionsClient) ListByEnvironment(ctx context.Context, location string, environment ClusterVersionsEnvironment, options *ClusterVersionsClientListByEnvironmentOptions) (ClusterVersionsClientListByEnvironmentResponse, error) {
 	req, err := client.listByEnvironmentCreateRequest(ctx, location, environment, options)
 	if err != nil {
 		return ClusterVersionsClientListByEnvironmentResponse{}, err
@@ -237,7 +246,7 @@ func (client *ClusterVersionsClient) ListByEnvironment(ctx context.Context, loca
 }
 
 // listByEnvironmentCreateRequest creates the ListByEnvironment request.
-func (client *ClusterVersionsClient) listByEnvironmentCreateRequest(ctx context.Context, location string, environment Enum14, options *ClusterVersionsClientListByEnvironmentOptions) (*policy.Request, error) {
+func (client *ClusterVersionsClient) listByEnvironmentCreateRequest(ctx context.Context, location string, environment ClusterVersionsEnvironment, options *ClusterVersionsClientListByEnvironmentOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/providers/Microsoft.ServiceFabric/locations/{location}/environments/{environment}/clusterVersions"
 	if location == "" {
 		return nil, errors.New("parameter location cannot be empty")
@@ -258,13 +267,13 @@ func (client *ClusterVersionsClient) listByEnvironmentCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByEnvironmentHandleResponse handles the ListByEnvironment response.
 func (client *ClusterVersionsClient) listByEnvironmentHandleResponse(resp *http.Response) (ClusterVersionsClientListByEnvironmentResponse, error) {
-	result := ClusterVersionsClientListByEnvironmentResponse{RawResponse: resp}
+	result := ClusterVersionsClientListByEnvironmentResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ClusterCodeVersionsListResult); err != nil {
 		return ClusterVersionsClientListByEnvironmentResponse{}, err
 	}

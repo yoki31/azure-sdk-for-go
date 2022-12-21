@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type CapacitiesClient struct {
 // every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewCapacitiesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *CapacitiesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewCapacitiesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*CapacitiesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &CapacitiesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CheckNameAvailability - Check the name availability in the target location.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // location - The region name which the operation will lookup into.
 // capacityParameters - The name of the capacity.
 // options - CapacitiesClientCheckNameAvailabilityOptions contains the optional parameters for the CapacitiesClient.CheckNameAvailability
@@ -89,13 +95,13 @@ func (client *CapacitiesClient) checkNameAvailabilityCreateRequest(ctx context.C
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, capacityParameters)
 }
 
 // checkNameAvailabilityHandleResponse handles the CheckNameAvailability response.
 func (client *CapacitiesClient) checkNameAvailabilityHandleResponse(resp *http.Response) (CapacitiesClientCheckNameAvailabilityResponse, error) {
-	result := CapacitiesClientCheckNameAvailabilityResponse{RawResponse: resp}
+	result := CapacitiesClientCheckNameAvailabilityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CheckCapacityNameAvailabilityResult); err != nil {
 		return CapacitiesClientCheckNameAvailabilityResponse{}, err
 	}
@@ -104,31 +110,27 @@ func (client *CapacitiesClient) checkNameAvailabilityHandleResponse(resp *http.R
 
 // BeginCreate - Provisions the specified Dedicated capacity based on the configuration specified in the request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be a minimum of 3 characters, and a maximum of 63.
 // capacityParameters - Contains the information used to provision the Dedicated capacity.
 // options - CapacitiesClientBeginCreateOptions contains the optional parameters for the CapacitiesClient.BeginCreate method.
-func (client *CapacitiesClient) BeginCreate(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityParameters DedicatedCapacity, options *CapacitiesClientBeginCreateOptions) (CapacitiesClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, dedicatedCapacityName, capacityParameters, options)
-	if err != nil {
-		return CapacitiesClientCreatePollerResponse{}, err
+func (client *CapacitiesClient) BeginCreate(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityParameters DedicatedCapacity, options *CapacitiesClientBeginCreateOptions) (*runtime.Poller[CapacitiesClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, dedicatedCapacityName, capacityParameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CapacitiesClientCreateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CapacitiesClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CapacitiesClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CapacitiesClient.Create", "", resp, client.pl)
-	if err != nil {
-		return CapacitiesClientCreatePollerResponse{}, err
-	}
-	result.Poller = &CapacitiesClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Provisions the specified Dedicated capacity based on the configuration specified in the request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 func (client *CapacitiesClient) create(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityParameters DedicatedCapacity, options *CapacitiesClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, dedicatedCapacityName, capacityParameters, options)
 	if err != nil {
@@ -166,37 +168,33 @@ func (client *CapacitiesClient) createCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, capacityParameters)
 }
 
 // BeginDelete - Deletes the specified Dedicated capacity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than
 // 63.
 // options - CapacitiesClientBeginDeleteOptions contains the optional parameters for the CapacitiesClient.BeginDelete method.
-func (client *CapacitiesClient) BeginDelete(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginDeleteOptions) (CapacitiesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, dedicatedCapacityName, options)
-	if err != nil {
-		return CapacitiesClientDeletePollerResponse{}, err
+func (client *CapacitiesClient) BeginDelete(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginDeleteOptions) (*runtime.Poller[CapacitiesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, dedicatedCapacityName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CapacitiesClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CapacitiesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CapacitiesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CapacitiesClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return CapacitiesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &CapacitiesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the specified Dedicated capacity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 func (client *CapacitiesClient) deleteOperation(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, dedicatedCapacityName, options)
 	if err != nil {
@@ -234,12 +232,13 @@ func (client *CapacitiesClient) deleteCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // GetDetails - Gets details about the specified dedicated capacity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the dedicated capacity. It must be a minimum of 3 characters, and a maximum of 63.
@@ -281,35 +280,43 @@ func (client *CapacitiesClient) getDetailsCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getDetailsHandleResponse handles the GetDetails response.
 func (client *CapacitiesClient) getDetailsHandleResponse(resp *http.Response) (CapacitiesClientGetDetailsResponse, error) {
-	result := CapacitiesClientGetDetailsResponse{RawResponse: resp}
+	result := CapacitiesClientGetDetailsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DedicatedCapacity); err != nil {
 		return CapacitiesClientGetDetailsResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Lists all the Dedicated capacities for the given subscription.
+// NewListPager - Lists all the Dedicated capacities for the given subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // options - CapacitiesClientListOptions contains the optional parameters for the CapacitiesClient.List method.
-func (client *CapacitiesClient) List(ctx context.Context, options *CapacitiesClientListOptions) (CapacitiesClientListResponse, error) {
-	req, err := client.listCreateRequest(ctx, options)
-	if err != nil {
-		return CapacitiesClientListResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return CapacitiesClientListResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return CapacitiesClientListResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listHandleResponse(resp)
+func (client *CapacitiesClient) NewListPager(options *CapacitiesClientListOptions) *runtime.Pager[CapacitiesClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[CapacitiesClientListResponse]{
+		More: func(page CapacitiesClientListResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *CapacitiesClientListResponse) (CapacitiesClientListResponse, error) {
+			req, err := client.listCreateRequest(ctx, options)
+			if err != nil {
+				return CapacitiesClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return CapacitiesClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return CapacitiesClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
+		},
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -326,38 +333,46 @@ func (client *CapacitiesClient) listCreateRequest(ctx context.Context, options *
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *CapacitiesClient) listHandleResponse(resp *http.Response) (CapacitiesClientListResponse, error) {
-	result := CapacitiesClientListResponse{RawResponse: resp}
+	result := CapacitiesClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DedicatedCapacities); err != nil {
 		return CapacitiesClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets all the Dedicated capacities for the given resource group.
+// NewListByResourceGroupPager - Gets all the Dedicated capacities for the given resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // options - CapacitiesClientListByResourceGroupOptions contains the optional parameters for the CapacitiesClient.ListByResourceGroup
 // method.
-func (client *CapacitiesClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, options *CapacitiesClientListByResourceGroupOptions) (CapacitiesClientListByResourceGroupResponse, error) {
-	req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
-	if err != nil {
-		return CapacitiesClientListByResourceGroupResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return CapacitiesClientListByResourceGroupResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return CapacitiesClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listByResourceGroupHandleResponse(resp)
+func (client *CapacitiesClient) NewListByResourceGroupPager(resourceGroupName string, options *CapacitiesClientListByResourceGroupOptions) *runtime.Pager[CapacitiesClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[CapacitiesClientListByResourceGroupResponse]{
+		More: func(page CapacitiesClientListByResourceGroupResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *CapacitiesClientListByResourceGroupResponse) (CapacitiesClientListByResourceGroupResponse, error) {
+			req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			if err != nil {
+				return CapacitiesClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return CapacitiesClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return CapacitiesClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
+		},
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -378,13 +393,13 @@ func (client *CapacitiesClient) listByResourceGroupCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *CapacitiesClient) listByResourceGroupHandleResponse(resp *http.Response) (CapacitiesClientListByResourceGroupResponse, error) {
-	result := CapacitiesClientListByResourceGroupResponse{RawResponse: resp}
+	result := CapacitiesClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DedicatedCapacities); err != nil {
 		return CapacitiesClientListByResourceGroupResponse{}, err
 	}
@@ -393,6 +408,7 @@ func (client *CapacitiesClient) listByResourceGroupHandleResponse(resp *http.Res
 
 // ListSKUs - Lists eligible SKUs for PowerBI Dedicated resource provider.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // options - CapacitiesClientListSKUsOptions contains the optional parameters for the CapacitiesClient.ListSKUs method.
 func (client *CapacitiesClient) ListSKUs(ctx context.Context, options *CapacitiesClientListSKUsOptions) (CapacitiesClientListSKUsResponse, error) {
 	req, err := client.listSKUsCreateRequest(ctx, options)
@@ -423,13 +439,13 @@ func (client *CapacitiesClient) listSKUsCreateRequest(ctx context.Context, optio
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSKUsHandleResponse handles the ListSKUs response.
 func (client *CapacitiesClient) listSKUsHandleResponse(resp *http.Response) (CapacitiesClientListSKUsResponse, error) {
-	result := CapacitiesClientListSKUsResponse{RawResponse: resp}
+	result := CapacitiesClientListSKUsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SKUEnumerationForNewResourceResult); err != nil {
 		return CapacitiesClientListSKUsResponse{}, err
 	}
@@ -438,6 +454,7 @@ func (client *CapacitiesClient) listSKUsHandleResponse(resp *http.Response) (Cap
 
 // ListSKUsForCapacity - Lists eligible SKUs for a PowerBI Dedicated resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than
@@ -481,13 +498,13 @@ func (client *CapacitiesClient) listSKUsForCapacityCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listSKUsForCapacityHandleResponse handles the ListSKUsForCapacity response.
 func (client *CapacitiesClient) listSKUsForCapacityHandleResponse(resp *http.Response) (CapacitiesClientListSKUsForCapacityResponse, error) {
-	result := CapacitiesClientListSKUsForCapacityResponse{RawResponse: resp}
+	result := CapacitiesClientListSKUsForCapacityResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SKUEnumerationForExistingResourceResult); err != nil {
 		return CapacitiesClientListSKUsForCapacityResponse{}, err
 	}
@@ -496,31 +513,27 @@ func (client *CapacitiesClient) listSKUsForCapacityHandleResponse(resp *http.Res
 
 // BeginResume - Resumes operation of the specified Dedicated capacity instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than
 // 63.
 // options - CapacitiesClientBeginResumeOptions contains the optional parameters for the CapacitiesClient.BeginResume method.
-func (client *CapacitiesClient) BeginResume(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginResumeOptions) (CapacitiesClientResumePollerResponse, error) {
-	resp, err := client.resume(ctx, resourceGroupName, dedicatedCapacityName, options)
-	if err != nil {
-		return CapacitiesClientResumePollerResponse{}, err
+func (client *CapacitiesClient) BeginResume(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginResumeOptions) (*runtime.Poller[CapacitiesClientResumeResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.resume(ctx, resourceGroupName, dedicatedCapacityName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CapacitiesClientResumeResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CapacitiesClientResumeResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CapacitiesClientResumePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CapacitiesClient.Resume", "", resp, client.pl)
-	if err != nil {
-		return CapacitiesClientResumePollerResponse{}, err
-	}
-	result.Poller = &CapacitiesClientResumePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Resume - Resumes operation of the specified Dedicated capacity instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 func (client *CapacitiesClient) resume(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginResumeOptions) (*http.Response, error) {
 	req, err := client.resumeCreateRequest(ctx, resourceGroupName, dedicatedCapacityName, options)
 	if err != nil {
@@ -558,37 +571,33 @@ func (client *CapacitiesClient) resumeCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginSuspend - Suspends operation of the specified dedicated capacity instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than
 // 63.
 // options - CapacitiesClientBeginSuspendOptions contains the optional parameters for the CapacitiesClient.BeginSuspend method.
-func (client *CapacitiesClient) BeginSuspend(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginSuspendOptions) (CapacitiesClientSuspendPollerResponse, error) {
-	resp, err := client.suspend(ctx, resourceGroupName, dedicatedCapacityName, options)
-	if err != nil {
-		return CapacitiesClientSuspendPollerResponse{}, err
+func (client *CapacitiesClient) BeginSuspend(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginSuspendOptions) (*runtime.Poller[CapacitiesClientSuspendResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.suspend(ctx, resourceGroupName, dedicatedCapacityName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CapacitiesClientSuspendResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CapacitiesClientSuspendResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CapacitiesClientSuspendPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CapacitiesClient.Suspend", "", resp, client.pl)
-	if err != nil {
-		return CapacitiesClientSuspendPollerResponse{}, err
-	}
-	result.Poller = &CapacitiesClientSuspendPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Suspend - Suspends operation of the specified dedicated capacity instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 func (client *CapacitiesClient) suspend(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, options *CapacitiesClientBeginSuspendOptions) (*http.Response, error) {
 	req, err := client.suspendCreateRequest(ctx, resourceGroupName, dedicatedCapacityName, options)
 	if err != nil {
@@ -626,38 +635,34 @@ func (client *CapacitiesClient) suspendCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginUpdate - Updates the current state of the specified Dedicated capacity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // dedicatedCapacityName - The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than
 // 63.
 // capacityUpdateParameters - Request object that contains the updated information for the capacity.
 // options - CapacitiesClientBeginUpdateOptions contains the optional parameters for the CapacitiesClient.BeginUpdate method.
-func (client *CapacitiesClient) BeginUpdate(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityUpdateParameters DedicatedCapacityUpdateParameters, options *CapacitiesClientBeginUpdateOptions) (CapacitiesClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, dedicatedCapacityName, capacityUpdateParameters, options)
-	if err != nil {
-		return CapacitiesClientUpdatePollerResponse{}, err
+func (client *CapacitiesClient) BeginUpdate(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityUpdateParameters DedicatedCapacityUpdateParameters, options *CapacitiesClientBeginUpdateOptions) (*runtime.Poller[CapacitiesClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, dedicatedCapacityName, capacityUpdateParameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[CapacitiesClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[CapacitiesClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CapacitiesClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CapacitiesClient.Update", "", resp, client.pl)
-	if err != nil {
-		return CapacitiesClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &CapacitiesClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates the current state of the specified Dedicated capacity.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 func (client *CapacitiesClient) update(ctx context.Context, resourceGroupName string, dedicatedCapacityName string, capacityUpdateParameters DedicatedCapacityUpdateParameters, options *CapacitiesClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, dedicatedCapacityName, capacityUpdateParameters, options)
 	if err != nil {
@@ -695,6 +700,6 @@ func (client *CapacitiesClient) updateCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, capacityUpdateParameters)
 }

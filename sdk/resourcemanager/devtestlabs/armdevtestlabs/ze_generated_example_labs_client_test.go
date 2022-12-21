@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -19,266 +19,293 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/devtestlabs/armdevtestlabs"
 )
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListBySubscription.json
-func ExampleLabsClient_ListBySubscription() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListBySubscription.json
+func ExampleLabsClient_NewListBySubscriptionPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
-	pager := client.ListBySubscription(&armdevtestlabs.LabsClientListBySubscriptionOptions{Expand: nil,
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListBySubscriptionPager(&armdevtestlabs.LabsClientListBySubscriptionOptions{Expand: nil,
 		Filter:  nil,
 		Top:     nil,
 		Orderby: nil,
 	})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListByResourceGroup.json
-func ExampleLabsClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListByResourceGroup.json
+func ExampleLabsClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
-	pager := client.ListByResourceGroup("<resource-group-name>",
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByResourceGroupPager("resourceGroupName",
 		&armdevtestlabs.LabsClientListByResourceGroupOptions{Expand: nil,
 			Filter:  nil,
 			Top:     nil,
 			Orderby: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Get.json
 func ExampleLabsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		&armdevtestlabs.LabsClientGetOptions{Expand: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LabsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_CreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_CreateOrUpdate.json
 func ExampleLabsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		armdevtestlabs.Lab{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("{location}"),
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 			Properties: &armdevtestlabs.LabProperties{
-				LabStorageType: armdevtestlabs.StorageType("{Standard|Premium}").ToPtr(),
+				LabStorageType: to.Ptr(armdevtestlabs.StorageType("{Standard|Premium}")),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LabsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Delete.json
 func ExampleLabsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Update.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_Update.json
 func ExampleLabsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		armdevtestlabs.LabFragment{},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.LabsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_CreateEnvironment.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_CreateEnvironment.json
 func ExampleLabsClient_BeginCreateEnvironment() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateEnvironment(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		armdevtestlabs.LabVirtualMachineCreationParameter{
-			Name:     to.StringPtr("<name>"),
-			Location: to.StringPtr("<location>"),
+			Name:     to.Ptr("{vmName}"),
+			Location: to.Ptr("{location}"),
 			Properties: &armdevtestlabs.LabVirtualMachineCreationParameterProperties{
-				AllowClaim:              to.BoolPtr(true),
-				DisallowPublicIPAddress: to.BoolPtr(true),
+				AllowClaim:              to.Ptr(true),
+				DisallowPublicIPAddress: to.Ptr(true),
 				GalleryImageReference: &armdevtestlabs.GalleryImageReference{
-					Offer:     to.StringPtr("<offer>"),
-					OSType:    to.StringPtr("<ostype>"),
-					Publisher: to.StringPtr("<publisher>"),
-					SKU:       to.StringPtr("<sku>"),
-					Version:   to.StringPtr("<version>"),
+					Offer:     to.Ptr("UbuntuServer"),
+					OSType:    to.Ptr("Linux"),
+					Publisher: to.Ptr("Canonical"),
+					SKU:       to.Ptr("16.04-LTS"),
+					Version:   to.Ptr("Latest"),
 				},
-				LabSubnetName:       to.StringPtr("<lab-subnet-name>"),
-				LabVirtualNetworkID: to.StringPtr("<lab-virtual-network-id>"),
-				Password:            to.StringPtr("<password>"),
-				Size:                to.StringPtr("<size>"),
-				StorageType:         to.StringPtr("<storage-type>"),
-				UserName:            to.StringPtr("<user-name>"),
+				LabSubnetName:       to.Ptr("{virtualnetwork-subnet-name}"),
+				LabVirtualNetworkID: to.Ptr("/subscriptions/{subscriptionId}/resourcegroups/resourceGroupName/providers/microsoft.devtestlab/labs/{labName}/virtualnetworks/{virtualNetworkName}"),
+				Password:            to.Ptr("{userPassword}"),
+				Size:                to.Ptr("Standard_A2_v2"),
+				StorageType:         to.Ptr("Standard"),
+				UserName:            to.Ptr("{userName}"),
 			},
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ExportResourceUsage.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ExportResourceUsage.json
 func ExampleLabsClient_BeginExportResourceUsage() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginExportResourceUsage(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		armdevtestlabs.ExportResourceUsageParameters{
-			BlobStorageAbsoluteSasURI: to.StringPtr("<blob-storage-absolute-sas-uri>"),
-			UsageStartDate:            to.TimePtr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2020-12-01T00:00:00Z"); return t }()),
+			BlobStorageAbsoluteSasURI: to.Ptr("https://invalid.blob.core.windows.net/export.blob?sv=2015-07-08&sig={sas}&sp=rcw"),
+			UsageStartDate:            to.Ptr(func() time.Time { t, _ := time.Parse(time.RFC3339Nano, "2020-12-01T00:00:00Z"); return t }()),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ImportVirtualMachine.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ImportVirtualMachine.json
 func ExampleLabsClient_BeginImportVirtualMachine() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginImportVirtualMachine(ctx,
-		"<resource-group-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
 		armdevtestlabs.ImportLabVirtualMachineRequest{
-			DestinationVirtualMachineName:  to.StringPtr("<destination-virtual-machine-name>"),
-			SourceVirtualMachineResourceID: to.StringPtr("<source-virtual-machine-resource-id>"),
+			DestinationVirtualMachineName:  to.Ptr("{vmName}"),
+			SourceVirtualMachineResourceID: to.Ptr("/subscriptions/{subscriptionId}/resourceGroups/{otherResourceGroupName}/providers/Microsoft.Compute/virtualMachines/{vmName}"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListVhds.json
-func ExampleLabsClient_ListVhds() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Labs_ListVhds.json
+func ExampleLabsClient_NewListVhdsPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewLabsClient("<subscription-id>", cred, nil)
-	pager := client.ListVhds("<resource-group-name>",
-		"<name>",
+	client, err := armdevtestlabs.NewLabsClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListVhdsPager("resourceGroupName",
+		"{labName}",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

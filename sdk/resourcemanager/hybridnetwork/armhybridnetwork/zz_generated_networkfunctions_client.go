@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,51 +34,53 @@ type NetworkFunctionsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewNetworkFunctionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *NetworkFunctionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewNetworkFunctionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*NetworkFunctionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &NetworkFunctionsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a network function resource. This operation can take up to 6 hours to complete.
 // This is expected service behavior.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // networkFunctionName - Resource name for the network function resource.
 // parameters - Parameters supplied in the body to the create or update network function operation.
 // options - NetworkFunctionsClientBeginCreateOrUpdateOptions contains the optional parameters for the NetworkFunctionsClient.BeginCreateOrUpdate
 // method.
-func (client *NetworkFunctionsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters NetworkFunction, options *NetworkFunctionsClientBeginCreateOrUpdateOptions) (NetworkFunctionsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, networkFunctionName, parameters, options)
-	if err != nil {
-		return NetworkFunctionsClientCreateOrUpdatePollerResponse{}, err
+func (client *NetworkFunctionsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters NetworkFunction, options *NetworkFunctionsClientBeginCreateOrUpdateOptions) (*runtime.Poller[NetworkFunctionsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, networkFunctionName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[NetworkFunctionsClientCreateOrUpdateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[NetworkFunctionsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := NetworkFunctionsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("NetworkFunctionsClient.CreateOrUpdate", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return NetworkFunctionsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &NetworkFunctionsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a network function resource. This operation can take up to 6 hours to complete. This
 // is expected service behavior.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 func (client *NetworkFunctionsClient) createOrUpdate(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters NetworkFunction, options *NetworkFunctionsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, networkFunctionName, parameters, options)
 	if err != nil {
@@ -113,40 +116,38 @@ func (client *NetworkFunctionsClient) createOrUpdateCreateRequest(ctx context.Co
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes the specified network function resource. This operation can take up to 1 hour to complete. This is
 // expected service behavior.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // networkFunctionName - The name of the network function.
 // options - NetworkFunctionsClientBeginDeleteOptions contains the optional parameters for the NetworkFunctionsClient.BeginDelete
 // method.
-func (client *NetworkFunctionsClient) BeginDelete(ctx context.Context, resourceGroupName string, networkFunctionName string, options *NetworkFunctionsClientBeginDeleteOptions) (NetworkFunctionsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, networkFunctionName, options)
-	if err != nil {
-		return NetworkFunctionsClientDeletePollerResponse{}, err
+func (client *NetworkFunctionsClient) BeginDelete(ctx context.Context, resourceGroupName string, networkFunctionName string, options *NetworkFunctionsClientBeginDeleteOptions) (*runtime.Poller[NetworkFunctionsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, networkFunctionName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[NetworkFunctionsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[NetworkFunctionsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := NetworkFunctionsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("NetworkFunctionsClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return NetworkFunctionsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &NetworkFunctionsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the specified network function resource. This operation can take up to 1 hour to complete. This is expected
 // service behavior.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 func (client *NetworkFunctionsClient) deleteOperation(ctx context.Context, resourceGroupName string, networkFunctionName string, options *NetworkFunctionsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, networkFunctionName, options)
 	if err != nil {
@@ -182,14 +183,81 @@ func (client *NetworkFunctionsClient) deleteCreateRequest(ctx context.Context, r
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
+}
+
+// BeginExecuteRequest - Execute a request to services on a network function.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// networkFunctionName - The name of the network function.
+// parameters - Payload for execute request post call.
+// options - NetworkFunctionsClientBeginExecuteRequestOptions contains the optional parameters for the NetworkFunctionsClient.BeginExecuteRequest
+// method.
+func (client *NetworkFunctionsClient) BeginExecuteRequest(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters ExecuteRequestParameters, options *NetworkFunctionsClientBeginExecuteRequestOptions) (*runtime.Poller[NetworkFunctionsClientExecuteRequestResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.executeRequest(ctx, resourceGroupName, networkFunctionName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[NetworkFunctionsClientExecuteRequestResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[NetworkFunctionsClientExecuteRequestResponse](options.ResumeToken, client.pl, nil)
+	}
+}
+
+// ExecuteRequest - Execute a request to services on a network function.
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
+func (client *NetworkFunctionsClient) executeRequest(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters ExecuteRequestParameters, options *NetworkFunctionsClientBeginExecuteRequestOptions) (*http.Response, error) {
+	req, err := client.executeRequestCreateRequest(ctx, resourceGroupName, networkFunctionName, parameters, options)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.pl.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusAccepted) {
+		return nil, runtime.NewResponseError(resp)
+	}
+	return resp, nil
+}
+
+// executeRequestCreateRequest creates the ExecuteRequest request.
+func (client *NetworkFunctionsClient) executeRequestCreateRequest(ctx context.Context, resourceGroupName string, networkFunctionName string, parameters ExecuteRequestParameters, options *NetworkFunctionsClientBeginExecuteRequestOptions) (*policy.Request, error) {
+	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HybridNetwork/networkFunctions/{networkFunctionName}/executeRequest"
+	if resourceGroupName == "" {
+		return nil, errors.New("parameter resourceGroupName cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{resourceGroupName}", url.PathEscape(resourceGroupName))
+	if networkFunctionName == "" {
+		return nil, errors.New("parameter networkFunctionName cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{networkFunctionName}", url.PathEscape(networkFunctionName))
+	if client.subscriptionID == "" {
+		return nil, errors.New("parameter client.subscriptionID cannot be empty")
+	}
+	urlPath = strings.ReplaceAll(urlPath, "{subscriptionId}", url.PathEscape(client.subscriptionID))
+	req, err := runtime.NewRequest(ctx, http.MethodPost, runtime.JoinPaths(client.host, urlPath))
+	if err != nil {
+		return nil, err
+	}
+	reqQP := req.Raw().URL.Query()
+	reqQP.Set("api-version", "2022-01-01-preview")
+	req.Raw().URL.RawQuery = reqQP.Encode()
+	req.Raw().Header["Accept"] = []string{"application/json"}
+	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // Get - Gets information about the specified network function resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // networkFunctionName - The name of the network function resource.
 // options - NetworkFunctionsClientGetOptions contains the optional parameters for the NetworkFunctionsClient.Get method.
@@ -228,36 +296,53 @@ func (client *NetworkFunctionsClient) getCreateRequest(ctx context.Context, reso
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *NetworkFunctionsClient) getHandleResponse(resp *http.Response) (NetworkFunctionsClientGetResponse, error) {
-	result := NetworkFunctionsClientGetResponse{RawResponse: resp}
+	result := NetworkFunctionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkFunction); err != nil {
 		return NetworkFunctionsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Lists all the network function resources in a resource group.
+// NewListByResourceGroupPager - Lists all the network function resources in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - NetworkFunctionsClientListByResourceGroupOptions contains the optional parameters for the NetworkFunctionsClient.ListByResourceGroup
 // method.
-func (client *NetworkFunctionsClient) ListByResourceGroup(resourceGroupName string, options *NetworkFunctionsClientListByResourceGroupOptions) *NetworkFunctionsClientListByResourceGroupPager {
-	return &NetworkFunctionsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *NetworkFunctionsClient) NewListByResourceGroupPager(resourceGroupName string, options *NetworkFunctionsClientListByResourceGroupOptions) *runtime.Pager[NetworkFunctionsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[NetworkFunctionsClientListByResourceGroupResponse]{
+		More: func(page NetworkFunctionsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp NetworkFunctionsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.NetworkFunctionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *NetworkFunctionsClientListByResourceGroupResponse) (NetworkFunctionsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return NetworkFunctionsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return NetworkFunctionsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return NetworkFunctionsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -276,35 +361,52 @@ func (client *NetworkFunctionsClient) listByResourceGroupCreateRequest(ctx conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *NetworkFunctionsClient) listByResourceGroupHandleResponse(resp *http.Response) (NetworkFunctionsClientListByResourceGroupResponse, error) {
-	result := NetworkFunctionsClientListByResourceGroupResponse{RawResponse: resp}
+	result := NetworkFunctionsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkFunctionListResult); err != nil {
 		return NetworkFunctionsClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Lists all the network functions in a subscription.
+// NewListBySubscriptionPager - Lists all the network functions in a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // options - NetworkFunctionsClientListBySubscriptionOptions contains the optional parameters for the NetworkFunctionsClient.ListBySubscription
 // method.
-func (client *NetworkFunctionsClient) ListBySubscription(options *NetworkFunctionsClientListBySubscriptionOptions) *NetworkFunctionsClientListBySubscriptionPager {
-	return &NetworkFunctionsClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *NetworkFunctionsClient) NewListBySubscriptionPager(options *NetworkFunctionsClientListBySubscriptionOptions) *runtime.Pager[NetworkFunctionsClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[NetworkFunctionsClientListBySubscriptionResponse]{
+		More: func(page NetworkFunctionsClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp NetworkFunctionsClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.NetworkFunctionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *NetworkFunctionsClientListBySubscriptionResponse) (NetworkFunctionsClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return NetworkFunctionsClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return NetworkFunctionsClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return NetworkFunctionsClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -319,15 +421,15 @@ func (client *NetworkFunctionsClient) listBySubscriptionCreateRequest(ctx contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *NetworkFunctionsClient) listBySubscriptionHandleResponse(resp *http.Response) (NetworkFunctionsClientListBySubscriptionResponse, error) {
-	result := NetworkFunctionsClientListBySubscriptionResponse{RawResponse: resp}
+	result := NetworkFunctionsClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkFunctionListResult); err != nil {
 		return NetworkFunctionsClientListBySubscriptionResponse{}, err
 	}
@@ -336,6 +438,7 @@ func (client *NetworkFunctionsClient) listBySubscriptionHandleResponse(resp *htt
 
 // UpdateTags - Updates the tags for the network function resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // networkFunctionName - Resource name for the network function resource.
 // parameters - Parameters supplied to the update network function tags operation.
@@ -376,15 +479,15 @@ func (client *NetworkFunctionsClient) updateTagsCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-05-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateTagsHandleResponse handles the UpdateTags response.
 func (client *NetworkFunctionsClient) updateTagsHandleResponse(resp *http.Response) (NetworkFunctionsClientUpdateTagsResponse, error) {
-	result := NetworkFunctionsClientUpdateTagsResponse{RawResponse: resp}
+	result := NetworkFunctionsClientUpdateTagsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NetworkFunction); err != nil {
 		return NetworkFunctionsClientUpdateTagsResponse{}, err
 	}

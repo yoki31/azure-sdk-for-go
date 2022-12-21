@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type OutboundNetworkDependenciesEndpointsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewOutboundNetworkDependenciesEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *OutboundNetworkDependenciesEndpointsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewOutboundNetworkDependenciesEndpointsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*OutboundNetworkDependenciesEndpointsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &OutboundNetworkDependenciesEndpointsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // ListByService - Gets the network endpoints of all outbound dependencies of a ApiManagement service.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - OutboundNetworkDependenciesEndpointsClientListByServiceOptions contains the optional parameters for the OutboundNetworkDependenciesEndpointsClient.ListByService
@@ -93,13 +99,13 @@ func (client *OutboundNetworkDependenciesEndpointsClient) listByServiceCreateReq
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *OutboundNetworkDependenciesEndpointsClient) listByServiceHandleResponse(resp *http.Response) (OutboundNetworkDependenciesEndpointsClientListByServiceResponse, error) {
-	result := OutboundNetworkDependenciesEndpointsClientListByServiceResponse{RawResponse: resp}
+	result := OutboundNetworkDependenciesEndpointsClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.OutboundEnvironmentEndpointList); err != nil {
 		return OutboundNetworkDependenciesEndpointsClientListByServiceResponse{}, err
 	}

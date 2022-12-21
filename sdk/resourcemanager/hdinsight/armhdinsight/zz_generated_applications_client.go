@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,50 +35,52 @@ type ApplicationsClient struct {
 // forms part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewApplicationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ApplicationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewApplicationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ApplicationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ApplicationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Creates applications for the HDInsight cluster.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster.
 // applicationName - The constant value for the application name.
 // parameters - The application create request.
 // options - ApplicationsClientBeginCreateOptions contains the optional parameters for the ApplicationsClient.BeginCreate
 // method.
-func (client *ApplicationsClient) BeginCreate(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, parameters Application, options *ApplicationsClientBeginCreateOptions) (ApplicationsClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, clusterName, applicationName, parameters, options)
-	if err != nil {
-		return ApplicationsClientCreatePollerResponse{}, err
+func (client *ApplicationsClient) BeginCreate(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, parameters Application, options *ApplicationsClientBeginCreateOptions) (*runtime.Poller[ApplicationsClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, clusterName, applicationName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ApplicationsClientCreateResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ApplicationsClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ApplicationsClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ApplicationsClient.Create", "location", resp, client.pl)
-	if err != nil {
-		return ApplicationsClientCreatePollerResponse{}, err
-	}
-	result.Poller = &ApplicationsClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Creates applications for the HDInsight cluster.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *ApplicationsClient) create(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, parameters Application, options *ApplicationsClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, clusterName, applicationName, parameters, options)
 	if err != nil {
@@ -119,37 +122,35 @@ func (client *ApplicationsClient) createCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes the specified application on the HDInsight cluster.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster.
 // applicationName - The constant value for the application name.
 // options - ApplicationsClientBeginDeleteOptions contains the optional parameters for the ApplicationsClient.BeginDelete
 // method.
-func (client *ApplicationsClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, options *ApplicationsClientBeginDeleteOptions) (ApplicationsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, applicationName, options)
-	if err != nil {
-		return ApplicationsClientDeletePollerResponse{}, err
+func (client *ApplicationsClient) BeginDelete(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, options *ApplicationsClientBeginDeleteOptions) (*runtime.Poller[ApplicationsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, clusterName, applicationName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[ApplicationsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[ApplicationsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := ApplicationsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("ApplicationsClient.Delete", "location", resp, client.pl)
-	if err != nil {
-		return ApplicationsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &ApplicationsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes the specified application on the HDInsight cluster.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 func (client *ApplicationsClient) deleteOperation(ctx context.Context, resourceGroupName string, clusterName string, applicationName string, options *ApplicationsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, clusterName, applicationName, options)
 	if err != nil {
@@ -191,12 +192,13 @@ func (client *ApplicationsClient) deleteCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets properties of the specified application.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster.
 // applicationName - The constant value for the application name.
@@ -242,13 +244,13 @@ func (client *ApplicationsClient) getCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ApplicationsClient) getHandleResponse(resp *http.Response) (ApplicationsClientGetResponse, error) {
-	result := ApplicationsClientGetResponse{RawResponse: resp}
+	result := ApplicationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Application); err != nil {
 		return ApplicationsClientGetResponse{}, err
 	}
@@ -257,6 +259,7 @@ func (client *ApplicationsClient) getHandleResponse(resp *http.Response) (Applic
 
 // GetAzureAsyncOperationStatus - Gets the async operation status.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster.
 // applicationName - The constant value for the application name.
@@ -308,35 +311,52 @@ func (client *ApplicationsClient) getAzureAsyncOperationStatusCreateRequest(ctx 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAzureAsyncOperationStatusHandleResponse handles the GetAzureAsyncOperationStatus response.
 func (client *ApplicationsClient) getAzureAsyncOperationStatusHandleResponse(resp *http.Response) (ApplicationsClientGetAzureAsyncOperationStatusResponse, error) {
-	result := ApplicationsClientGetAzureAsyncOperationStatusResponse{RawResponse: resp}
+	result := ApplicationsClientGetAzureAsyncOperationStatusResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AsyncOperationResult); err != nil {
 		return ApplicationsClientGetAzureAsyncOperationStatusResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByCluster - Lists all of the applications for the HDInsight cluster.
+// NewListByClusterPager - Lists all of the applications for the HDInsight cluster.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group.
 // clusterName - The name of the cluster.
 // options - ApplicationsClientListByClusterOptions contains the optional parameters for the ApplicationsClient.ListByCluster
 // method.
-func (client *ApplicationsClient) ListByCluster(resourceGroupName string, clusterName string, options *ApplicationsClientListByClusterOptions) *ApplicationsClientListByClusterPager {
-	return &ApplicationsClientListByClusterPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByClusterCreateRequest(ctx, resourceGroupName, clusterName, options)
+func (client *ApplicationsClient) NewListByClusterPager(resourceGroupName string, clusterName string, options *ApplicationsClientListByClusterOptions) *runtime.Pager[ApplicationsClientListByClusterResponse] {
+	return runtime.NewPager(runtime.PagingHandler[ApplicationsClientListByClusterResponse]{
+		More: func(page ApplicationsClientListByClusterResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp ApplicationsClientListByClusterResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.ApplicationListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *ApplicationsClientListByClusterResponse) (ApplicationsClientListByClusterResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByClusterCreateRequest(ctx, resourceGroupName, clusterName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return ApplicationsClientListByClusterResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return ApplicationsClientListByClusterResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return ApplicationsClientListByClusterResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByClusterHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByClusterCreateRequest creates the ListByCluster request.
@@ -361,13 +381,13 @@ func (client *ApplicationsClient) listByClusterCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByClusterHandleResponse handles the ListByCluster response.
 func (client *ApplicationsClient) listByClusterHandleResponse(resp *http.Response) (ApplicationsClientListByClusterResponse, error) {
-	result := ApplicationsClientListByClusterResponse{RawResponse: resp}
+	result := ApplicationsClientListByClusterResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ApplicationListResult); err != nil {
 		return ApplicationsClientListByClusterResponse{}, err
 	}

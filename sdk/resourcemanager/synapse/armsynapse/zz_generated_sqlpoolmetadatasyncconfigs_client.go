@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type SQLPoolMetadataSyncConfigsClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSQLPoolMetadataSyncConfigsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SQLPoolMetadataSyncConfigsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSQLPoolMetadataSyncConfigsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SQLPoolMetadataSyncConfigsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SQLPoolMetadataSyncConfigsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Set the metadata sync configuration for a SQL pool
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // sqlPoolName - SQL pool name
@@ -98,13 +104,13 @@ func (client *SQLPoolMetadataSyncConfigsClient) createCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, metadataSyncConfiguration)
 }
 
 // createHandleResponse handles the Create response.
 func (client *SQLPoolMetadataSyncConfigsClient) createHandleResponse(resp *http.Response) (SQLPoolMetadataSyncConfigsClientCreateResponse, error) {
-	result := SQLPoolMetadataSyncConfigsClientCreateResponse{RawResponse: resp}
+	result := SQLPoolMetadataSyncConfigsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MetadataSyncConfig); err != nil {
 		return SQLPoolMetadataSyncConfigsClientCreateResponse{}, err
 	}
@@ -113,6 +119,7 @@ func (client *SQLPoolMetadataSyncConfigsClient) createHandleResponse(resp *http.
 
 // Get - Get the metadata sync configuration for a SQL pool
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-06-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - The name of the workspace.
 // sqlPoolName - SQL pool name
@@ -159,13 +166,13 @@ func (client *SQLPoolMetadataSyncConfigsClient) getCreateRequest(ctx context.Con
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-06-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SQLPoolMetadataSyncConfigsClient) getHandleResponse(resp *http.Response) (SQLPoolMetadataSyncConfigsClientGetResponse, error) {
-	result := SQLPoolMetadataSyncConfigsClientGetResponse{RawResponse: resp}
+	result := SQLPoolMetadataSyncConfigsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.MetadataSyncConfig); err != nil {
 		return SQLPoolMetadataSyncConfigsClientGetResponse{}, err
 	}

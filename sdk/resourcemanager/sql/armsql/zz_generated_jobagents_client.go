@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type JobAgentsClient struct {
 // subscriptionID - The subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewJobAgentsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *JobAgentsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewJobAgentsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*JobAgentsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &JobAgentsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -58,26 +64,21 @@ func NewJobAgentsClient(subscriptionID string, credential azcore.TokenCredential
 // parameters - The requested job agent resource state.
 // options - JobAgentsClientBeginCreateOrUpdateOptions contains the optional parameters for the JobAgentsClient.BeginCreateOrUpdate
 // method.
-func (client *JobAgentsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgent, options *JobAgentsClientBeginCreateOrUpdateOptions) (JobAgentsClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
-	if err != nil {
-		return JobAgentsClientCreateOrUpdatePollerResponse{}, err
+func (client *JobAgentsClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgent, options *JobAgentsClientBeginCreateOrUpdateOptions) (*runtime.Poller[JobAgentsClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[JobAgentsClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[JobAgentsClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := JobAgentsClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("JobAgentsClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return JobAgentsClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &JobAgentsClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *JobAgentsClient) createOrUpdate(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgent, options *JobAgentsClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
 	if err != nil {
@@ -119,37 +120,33 @@ func (client *JobAgentsClient) createOrUpdateCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // jobAgentName - The name of the job agent to be deleted.
 // options - JobAgentsClientBeginDeleteOptions contains the optional parameters for the JobAgentsClient.BeginDelete method.
-func (client *JobAgentsClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, options *JobAgentsClientBeginDeleteOptions) (JobAgentsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, jobAgentName, options)
-	if err != nil {
-		return JobAgentsClientDeletePollerResponse{}, err
+func (client *JobAgentsClient) BeginDelete(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, options *JobAgentsClientBeginDeleteOptions) (*runtime.Poller[JobAgentsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, serverName, jobAgentName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[JobAgentsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[JobAgentsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := JobAgentsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("JobAgentsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return JobAgentsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &JobAgentsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *JobAgentsClient) deleteOperation(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, options *JobAgentsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, serverName, jobAgentName, options)
 	if err != nil {
@@ -196,6 +193,7 @@ func (client *JobAgentsClient) deleteCreateRequest(ctx context.Context, resource
 
 // Get - Gets a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
@@ -242,35 +240,52 @@ func (client *JobAgentsClient) getCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *JobAgentsClient) getHandleResponse(resp *http.Response) (JobAgentsClientGetResponse, error) {
-	result := JobAgentsClientGetResponse{RawResponse: resp}
+	result := JobAgentsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JobAgent); err != nil {
 		return JobAgentsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByServer - Gets a list of job agents in a server.
+// NewListByServerPager - Gets a list of job agents in a server.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // options - JobAgentsClientListByServerOptions contains the optional parameters for the JobAgentsClient.ListByServer method.
-func (client *JobAgentsClient) ListByServer(resourceGroupName string, serverName string, options *JobAgentsClientListByServerOptions) *JobAgentsClientListByServerPager {
-	return &JobAgentsClientListByServerPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+func (client *JobAgentsClient) NewListByServerPager(resourceGroupName string, serverName string, options *JobAgentsClientListByServerOptions) *runtime.Pager[JobAgentsClientListByServerResponse] {
+	return runtime.NewPager(runtime.PagingHandler[JobAgentsClientListByServerResponse]{
+		More: func(page JobAgentsClientListByServerResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp JobAgentsClientListByServerResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.JobAgentListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *JobAgentsClientListByServerResponse) (JobAgentsClientListByServerResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServerCreateRequest(ctx, resourceGroupName, serverName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return JobAgentsClientListByServerResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return JobAgentsClientListByServerResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return JobAgentsClientListByServerResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServerHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServerCreateRequest creates the ListByServer request.
@@ -295,13 +310,13 @@ func (client *JobAgentsClient) listByServerCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServerHandleResponse handles the ListByServer response.
 func (client *JobAgentsClient) listByServerHandleResponse(resp *http.Response) (JobAgentsClientListByServerResponse, error) {
-	result := JobAgentsClientListByServerResponse{RawResponse: resp}
+	result := JobAgentsClientListByServerResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.JobAgentListResult); err != nil {
 		return JobAgentsClientListByServerResponse{}, err
 	}
@@ -310,32 +325,28 @@ func (client *JobAgentsClient) listByServerHandleResponse(resp *http.Response) (
 
 // BeginUpdate - Updates a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 // resourceGroupName - The name of the resource group that contains the resource. You can obtain this value from the Azure
 // Resource Manager API or the portal.
 // serverName - The name of the server.
 // jobAgentName - The name of the job agent to be updated.
 // parameters - The update to the job agent.
 // options - JobAgentsClientBeginUpdateOptions contains the optional parameters for the JobAgentsClient.BeginUpdate method.
-func (client *JobAgentsClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgentUpdate, options *JobAgentsClientBeginUpdateOptions) (JobAgentsClientUpdatePollerResponse, error) {
-	resp, err := client.update(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
-	if err != nil {
-		return JobAgentsClientUpdatePollerResponse{}, err
+func (client *JobAgentsClient) BeginUpdate(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgentUpdate, options *JobAgentsClientBeginUpdateOptions) (*runtime.Poller[JobAgentsClientUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.update(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[JobAgentsClientUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[JobAgentsClientUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := JobAgentsClientUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("JobAgentsClient.Update", "", resp, client.pl)
-	if err != nil {
-		return JobAgentsClientUpdatePollerResponse{}, err
-	}
-	result.Poller = &JobAgentsClientUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Update - Updates a job agent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-11-01-preview
 func (client *JobAgentsClient) update(ctx context.Context, resourceGroupName string, serverName string, jobAgentName string, parameters JobAgentUpdate, options *JobAgentsClientBeginUpdateOptions) (*http.Response, error) {
 	req, err := client.updateCreateRequest(ctx, resourceGroupName, serverName, jobAgentName, parameters, options)
 	if err != nil {
@@ -377,6 +388,6 @@ func (client *JobAgentsClient) updateCreateRequest(ctx context.Context, resource
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }

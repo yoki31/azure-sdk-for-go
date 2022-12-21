@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type SubscriptionsClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSubscriptionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SubscriptionsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSubscriptionsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SubscriptionsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SubscriptionsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates a topic subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // topicName - The topic name.
@@ -103,15 +109,15 @@ func (client *SubscriptionsClient) createOrUpdateCreateRequest(ctx context.Conte
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SubscriptionsClient) createOrUpdateHandleResponse(resp *http.Response) (SubscriptionsClientCreateOrUpdateResponse, error) {
-	result := SubscriptionsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SubscriptionsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SBSubscription); err != nil {
 		return SubscriptionsClientCreateOrUpdateResponse{}, err
 	}
@@ -120,6 +126,7 @@ func (client *SubscriptionsClient) createOrUpdateHandleResponse(resp *http.Respo
 
 // Delete - Deletes a subscription from the specified topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // topicName - The topic name.
@@ -137,7 +144,7 @@ func (client *SubscriptionsClient) Delete(ctx context.Context, resourceGroupName
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return SubscriptionsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SubscriptionsClientDeleteResponse{RawResponse: resp}, nil
+	return SubscriptionsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -168,14 +175,15 @@ func (client *SubscriptionsClient) deleteCreateRequest(ctx context.Context, reso
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Returns a subscription description for the specified topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // topicName - The topic name.
@@ -224,38 +232,55 @@ func (client *SubscriptionsClient) getCreateRequest(ctx context.Context, resourc
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SubscriptionsClient) getHandleResponse(resp *http.Response) (SubscriptionsClientGetResponse, error) {
-	result := SubscriptionsClientGetResponse{RawResponse: resp}
+	result := SubscriptionsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SBSubscription); err != nil {
 		return SubscriptionsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByTopic - List all the subscriptions under a specified topic.
+// NewListByTopicPager - List all the subscriptions under a specified topic.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-01-01-preview
 // resourceGroupName - Name of the Resource group within the Azure subscription.
 // namespaceName - The namespace name
 // topicName - The topic name.
 // options - SubscriptionsClientListByTopicOptions contains the optional parameters for the SubscriptionsClient.ListByTopic
 // method.
-func (client *SubscriptionsClient) ListByTopic(resourceGroupName string, namespaceName string, topicName string, options *SubscriptionsClientListByTopicOptions) *SubscriptionsClientListByTopicPager {
-	return &SubscriptionsClientListByTopicPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByTopicCreateRequest(ctx, resourceGroupName, namespaceName, topicName, options)
+func (client *SubscriptionsClient) NewListByTopicPager(resourceGroupName string, namespaceName string, topicName string, options *SubscriptionsClientListByTopicOptions) *runtime.Pager[SubscriptionsClientListByTopicResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SubscriptionsClientListByTopicResponse]{
+		More: func(page SubscriptionsClientListByTopicResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SubscriptionsClientListByTopicResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SBSubscriptionListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SubscriptionsClientListByTopicResponse) (SubscriptionsClientListByTopicResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByTopicCreateRequest(ctx, resourceGroupName, namespaceName, topicName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SubscriptionsClientListByTopicResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SubscriptionsClientListByTopicResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SubscriptionsClientListByTopicResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByTopicHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByTopicCreateRequest creates the ListByTopic request.
@@ -282,7 +307,7 @@ func (client *SubscriptionsClient) listByTopicCreateRequest(ctx context.Context,
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-11-01")
+	reqQP.Set("api-version", "2022-01-01-preview")
 	if options != nil && options.Skip != nil {
 		reqQP.Set("$skip", strconv.FormatInt(int64(*options.Skip), 10))
 	}
@@ -290,13 +315,13 @@ func (client *SubscriptionsClient) listByTopicCreateRequest(ctx context.Context,
 		reqQP.Set("$top", strconv.FormatInt(int64(*options.Top), 10))
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByTopicHandleResponse handles the ListByTopic response.
 func (client *SubscriptionsClient) listByTopicHandleResponse(resp *http.Response) (SubscriptionsClientListByTopicResponse, error) {
-	result := SubscriptionsClientListByTopicResponse{RawResponse: resp}
+	result := SubscriptionsClientListByTopicResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SBSubscriptionListResult); err != nil {
 		return SubscriptionsClientListByTopicResponse{}, err
 	}

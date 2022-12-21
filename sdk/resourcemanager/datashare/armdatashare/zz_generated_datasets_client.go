@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type DataSetsClient struct {
 // subscriptionID - The subscription identifier
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewDataSetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *DataSetsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewDataSetsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*DataSetsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &DataSetsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Create a DataSet
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share to add the data set to.
@@ -102,13 +108,13 @@ func (client *DataSetsClient) createCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, dataSet)
 }
 
 // createHandleResponse handles the Create response.
 func (client *DataSetsClient) createHandleResponse(resp *http.Response) (DataSetsClientCreateResponse, error) {
-	result := DataSetsClientCreateResponse{RawResponse: resp}
+	result := DataSetsClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return DataSetsClientCreateResponse{}, err
 	}
@@ -117,31 +123,27 @@ func (client *DataSetsClient) createHandleResponse(resp *http.Response) (DataSet
 
 // BeginDelete - Delete a DataSet in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
 // dataSetName - The name of the dataSet.
 // options - DataSetsClientBeginDeleteOptions contains the optional parameters for the DataSetsClient.BeginDelete method.
-func (client *DataSetsClient) BeginDelete(ctx context.Context, resourceGroupName string, accountName string, shareName string, dataSetName string, options *DataSetsClientBeginDeleteOptions) (DataSetsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, accountName, shareName, dataSetName, options)
-	if err != nil {
-		return DataSetsClientDeletePollerResponse{}, err
+func (client *DataSetsClient) BeginDelete(ctx context.Context, resourceGroupName string, accountName string, shareName string, dataSetName string, options *DataSetsClientBeginDeleteOptions) (*runtime.Poller[DataSetsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, accountName, shareName, dataSetName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[DataSetsClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[DataSetsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := DataSetsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("DataSetsClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return DataSetsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &DataSetsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Delete a DataSet in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 func (client *DataSetsClient) deleteOperation(ctx context.Context, resourceGroupName string, accountName string, shareName string, dataSetName string, options *DataSetsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, accountName, shareName, dataSetName, options)
 	if err != nil {
@@ -187,12 +189,13 @@ func (client *DataSetsClient) deleteCreateRequest(ctx context.Context, resourceG
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get a DataSet in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
@@ -243,35 +246,52 @@ func (client *DataSetsClient) getCreateRequest(ctx context.Context, resourceGrou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-09-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *DataSetsClient) getHandleResponse(resp *http.Response) (DataSetsClientGetResponse, error) {
-	result := DataSetsClientGetResponse{RawResponse: resp}
+	result := DataSetsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result); err != nil {
 		return DataSetsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByShare - List DataSets in a share
+// NewListBySharePager - List DataSets in a share
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-09-01
 // resourceGroupName - The resource group name.
 // accountName - The name of the share account.
 // shareName - The name of the share.
 // options - DataSetsClientListByShareOptions contains the optional parameters for the DataSetsClient.ListByShare method.
-func (client *DataSetsClient) ListByShare(resourceGroupName string, accountName string, shareName string, options *DataSetsClientListByShareOptions) *DataSetsClientListBySharePager {
-	return &DataSetsClientListBySharePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByShareCreateRequest(ctx, resourceGroupName, accountName, shareName, options)
+func (client *DataSetsClient) NewListBySharePager(resourceGroupName string, accountName string, shareName string, options *DataSetsClientListByShareOptions) *runtime.Pager[DataSetsClientListByShareResponse] {
+	return runtime.NewPager(runtime.PagingHandler[DataSetsClientListByShareResponse]{
+		More: func(page DataSetsClientListByShareResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp DataSetsClientListByShareResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.DataSetList.NextLink)
+		Fetcher: func(ctx context.Context, page *DataSetsClientListByShareResponse) (DataSetsClientListByShareResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByShareCreateRequest(ctx, resourceGroupName, accountName, shareName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return DataSetsClientListByShareResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return DataSetsClientListByShareResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return DataSetsClientListByShareResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByShareHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByShareCreateRequest creates the ListByShare request.
@@ -309,13 +329,13 @@ func (client *DataSetsClient) listByShareCreateRequest(ctx context.Context, reso
 		reqQP.Set("$orderby", *options.Orderby)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByShareHandleResponse handles the ListByShare response.
 func (client *DataSetsClient) listByShareHandleResponse(resp *http.Response) (DataSetsClientListByShareResponse, error) {
-	result := DataSetsClientListByShareResponse{RawResponse: resp}
+	result := DataSetsClientListByShareResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.DataSetList); err != nil {
 		return DataSetsClientListByShareResponse{}, err
 	}

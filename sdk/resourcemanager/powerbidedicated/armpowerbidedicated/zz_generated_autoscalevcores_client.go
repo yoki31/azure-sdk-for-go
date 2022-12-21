@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type AutoScaleVCoresClient struct {
 // every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewAutoScaleVCoresClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *AutoScaleVCoresClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewAutoScaleVCoresClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*AutoScaleVCoresClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &AutoScaleVCoresClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // Create - Provisions the specified auto scale v-core based on the configuration specified in the request.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // vcoreName - The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63.
@@ -94,13 +100,13 @@ func (client *AutoScaleVCoresClient) createCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, vCoreParameters)
 }
 
 // createHandleResponse handles the Create response.
 func (client *AutoScaleVCoresClient) createHandleResponse(resp *http.Response) (AutoScaleVCoresClientCreateResponse, error) {
-	result := AutoScaleVCoresClientCreateResponse{RawResponse: resp}
+	result := AutoScaleVCoresClientCreateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AutoScaleVCore); err != nil {
 		return AutoScaleVCoresClientCreateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *AutoScaleVCoresClient) createHandleResponse(resp *http.Response) (
 
 // Delete - Deletes the specified auto scale v-core.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // vcoreName - The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63.
@@ -125,7 +132,7 @@ func (client *AutoScaleVCoresClient) Delete(ctx context.Context, resourceGroupNa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return AutoScaleVCoresClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return AutoScaleVCoresClientDeleteResponse{RawResponse: resp}, nil
+	return AutoScaleVCoresClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -150,12 +157,13 @@ func (client *AutoScaleVCoresClient) deleteCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets details about the specified auto scale v-core.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // vcoreName - The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63.
@@ -197,38 +205,46 @@ func (client *AutoScaleVCoresClient) getCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *AutoScaleVCoresClient) getHandleResponse(resp *http.Response) (AutoScaleVCoresClientGetResponse, error) {
-	result := AutoScaleVCoresClientGetResponse{RawResponse: resp}
+	result := AutoScaleVCoresClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AutoScaleVCore); err != nil {
 		return AutoScaleVCoresClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets all the auto scale v-cores for the given resource group.
+// NewListByResourceGroupPager - Gets all the auto scale v-cores for the given resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // options - AutoScaleVCoresClientListByResourceGroupOptions contains the optional parameters for the AutoScaleVCoresClient.ListByResourceGroup
 // method.
-func (client *AutoScaleVCoresClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, options *AutoScaleVCoresClientListByResourceGroupOptions) (AutoScaleVCoresClientListByResourceGroupResponse, error) {
-	req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
-	if err != nil {
-		return AutoScaleVCoresClientListByResourceGroupResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return AutoScaleVCoresClientListByResourceGroupResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return AutoScaleVCoresClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listByResourceGroupHandleResponse(resp)
+func (client *AutoScaleVCoresClient) NewListByResourceGroupPager(resourceGroupName string, options *AutoScaleVCoresClientListByResourceGroupOptions) *runtime.Pager[AutoScaleVCoresClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[AutoScaleVCoresClientListByResourceGroupResponse]{
+		More: func(page AutoScaleVCoresClientListByResourceGroupResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *AutoScaleVCoresClientListByResourceGroupResponse) (AutoScaleVCoresClientListByResourceGroupResponse, error) {
+			req, err := client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			if err != nil {
+				return AutoScaleVCoresClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return AutoScaleVCoresClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return AutoScaleVCoresClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
+		},
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -249,36 +265,44 @@ func (client *AutoScaleVCoresClient) listByResourceGroupCreateRequest(ctx contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *AutoScaleVCoresClient) listByResourceGroupHandleResponse(resp *http.Response) (AutoScaleVCoresClientListByResourceGroupResponse, error) {
-	result := AutoScaleVCoresClientListByResourceGroupResponse{RawResponse: resp}
+	result := AutoScaleVCoresClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AutoScaleVCoreListResult); err != nil {
 		return AutoScaleVCoresClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Lists all the auto scale v-cores for the given subscription.
+// NewListBySubscriptionPager - Lists all the auto scale v-cores for the given subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // options - AutoScaleVCoresClientListBySubscriptionOptions contains the optional parameters for the AutoScaleVCoresClient.ListBySubscription
 // method.
-func (client *AutoScaleVCoresClient) ListBySubscription(ctx context.Context, options *AutoScaleVCoresClientListBySubscriptionOptions) (AutoScaleVCoresClientListBySubscriptionResponse, error) {
-	req, err := client.listBySubscriptionCreateRequest(ctx, options)
-	if err != nil {
-		return AutoScaleVCoresClientListBySubscriptionResponse{}, err
-	}
-	resp, err := client.pl.Do(req)
-	if err != nil {
-		return AutoScaleVCoresClientListBySubscriptionResponse{}, err
-	}
-	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return AutoScaleVCoresClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
-	}
-	return client.listBySubscriptionHandleResponse(resp)
+func (client *AutoScaleVCoresClient) NewListBySubscriptionPager(options *AutoScaleVCoresClientListBySubscriptionOptions) *runtime.Pager[AutoScaleVCoresClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[AutoScaleVCoresClientListBySubscriptionResponse]{
+		More: func(page AutoScaleVCoresClientListBySubscriptionResponse) bool {
+			return false
+		},
+		Fetcher: func(ctx context.Context, page *AutoScaleVCoresClientListBySubscriptionResponse) (AutoScaleVCoresClientListBySubscriptionResponse, error) {
+			req, err := client.listBySubscriptionCreateRequest(ctx, options)
+			if err != nil {
+				return AutoScaleVCoresClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return AutoScaleVCoresClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return AutoScaleVCoresClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
+		},
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -295,13 +319,13 @@ func (client *AutoScaleVCoresClient) listBySubscriptionCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *AutoScaleVCoresClient) listBySubscriptionHandleResponse(resp *http.Response) (AutoScaleVCoresClientListBySubscriptionResponse, error) {
-	result := AutoScaleVCoresClientListBySubscriptionResponse{RawResponse: resp}
+	result := AutoScaleVCoresClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AutoScaleVCoreListResult); err != nil {
 		return AutoScaleVCoresClientListBySubscriptionResponse{}, err
 	}
@@ -310,6 +334,7 @@ func (client *AutoScaleVCoresClient) listBySubscriptionHandleResponse(resp *http
 
 // Update - Updates the current state of the specified auto scale v-core.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-01-01
 // resourceGroupName - The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name
 // must be at least 1 character in length, and no more than 90.
 // vcoreName - The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63.
@@ -352,13 +377,13 @@ func (client *AutoScaleVCoresClient) updateCreateRequest(ctx context.Context, re
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-01-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, vCoreUpdateParameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *AutoScaleVCoresClient) updateHandleResponse(resp *http.Response) (AutoScaleVCoresClientUpdateResponse, error) {
-	result := AutoScaleVCoresClientUpdateResponse{RawResponse: resp}
+	result := AutoScaleVCoresClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.AutoScaleVCore); err != nil {
 		return AutoScaleVCoresClientUpdateResponse{}, err
 	}

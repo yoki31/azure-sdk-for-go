@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,163 +12,177 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/devtestlabs/armdevtestlabs"
 )
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_List.json
-func ExampleFormulasClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_List.json
+func ExampleFormulasClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewFormulasClient("<subscription-id>", cred, nil)
-	pager := client.List("<resource-group-name>",
-		"<lab-name>",
+	client, err := armdevtestlabs.NewFormulasClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListPager("resourceGroupName",
+		"{labName}",
 		&armdevtestlabs.FormulasClientListOptions{Expand: nil,
 			Filter:  nil,
 			Top:     nil,
 			Orderby: nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Get.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Get.json
 func ExampleFormulasClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewFormulasClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewFormulasClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{formulaName}",
 		&armdevtestlabs.FormulasClientGetOptions{Expand: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FormulasClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_CreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_CreateOrUpdate.json
 func ExampleFormulasClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewFormulasClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewFormulasClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{formulaName}",
 		armdevtestlabs.Formula{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("{location}"),
 			Properties: &armdevtestlabs.FormulaProperties{
-				Description: to.StringPtr("<description>"),
+				Description: to.Ptr("Formula using a Linux base"),
 				FormulaContent: &armdevtestlabs.LabVirtualMachineCreationParameter{
-					Location: to.StringPtr("<location>"),
+					Location: to.Ptr("{location}"),
 					Properties: &armdevtestlabs.LabVirtualMachineCreationParameterProperties{
-						AllowClaim: to.BoolPtr(false),
+						AllowClaim: to.Ptr(false),
 						Artifacts: []*armdevtestlabs.ArtifactInstallProperties{
 							{
-								ArtifactID: to.StringPtr("<artifact-id>"),
+								ArtifactID: to.Ptr("/artifactsources/{artifactSourceName}/artifacts/linux-install-nodejs"),
 								Parameters: []*armdevtestlabs.ArtifactParameterProperties{},
 							}},
-						DisallowPublicIPAddress: to.BoolPtr(true),
+						DisallowPublicIPAddress: to.Ptr(true),
 						GalleryImageReference: &armdevtestlabs.GalleryImageReference{
-							Offer:     to.StringPtr("<offer>"),
-							OSType:    to.StringPtr("<ostype>"),
-							Publisher: to.StringPtr("<publisher>"),
-							SKU:       to.StringPtr("<sku>"),
-							Version:   to.StringPtr("<version>"),
+							Offer:     to.Ptr("0001-com-ubuntu-server-groovy"),
+							OSType:    to.Ptr("Linux"),
+							Publisher: to.Ptr("canonical"),
+							SKU:       to.Ptr("20_10"),
+							Version:   to.Ptr("latest"),
 						},
-						IsAuthenticationWithSSHKey: to.BoolPtr(false),
-						LabSubnetName:              to.StringPtr("<lab-subnet-name>"),
-						LabVirtualNetworkID:        to.StringPtr("<lab-virtual-network-id>"),
+						IsAuthenticationWithSSHKey: to.Ptr(false),
+						LabSubnetName:              to.Ptr("Dtl{labName}Subnet"),
+						LabVirtualNetworkID:        to.Ptr("/virtualnetworks/dtl{labName}"),
 						NetworkInterface: &armdevtestlabs.NetworkInterfaceProperties{
 							SharedPublicIPAddressConfiguration: &armdevtestlabs.SharedPublicIPAddressConfiguration{
 								InboundNatRules: []*armdevtestlabs.InboundNatRule{
 									{
-										BackendPort:       to.Int32Ptr(22),
-										TransportProtocol: armdevtestlabs.TransportProtocol("Tcp").ToPtr(),
+										BackendPort:       to.Ptr[int32](22),
+										TransportProtocol: to.Ptr(armdevtestlabs.TransportProtocolTCP),
 									}},
 							},
 						},
-						Notes:       to.StringPtr("<notes>"),
-						Size:        to.StringPtr("<size>"),
-						StorageType: to.StringPtr("<storage-type>"),
-						UserName:    to.StringPtr("<user-name>"),
+						Notes:       to.Ptr("Ubuntu Server 20.10"),
+						Size:        to.Ptr("Standard_B1ms"),
+						StorageType: to.Ptr("Standard"),
+						UserName:    to.Ptr("user"),
 					},
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FormulasClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Delete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Delete.json
 func ExampleFormulasClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewFormulasClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewFormulasClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{formulaName}",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Update.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/devtestlabs/resource-manager/Microsoft.DevTestLab/stable/2018-09-15/examples/Formulas_Update.json
 func ExampleFormulasClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armdevtestlabs.NewFormulasClient("<subscription-id>", cred, nil)
+	client, err := armdevtestlabs.NewFormulasClient("{subscriptionId}", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<lab-name>",
-		"<name>",
+		"resourceGroupName",
+		"{labName}",
+		"{formulaName}",
 		armdevtestlabs.FormulaFragment{
 			Tags: map[string]*string{
-				"tagName1": to.StringPtr("tagValue1"),
+				"tagName1": to.Ptr("tagValue1"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.FormulasClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }

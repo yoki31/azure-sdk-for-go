@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -10,7 +10,7 @@ package armvirtualmachineimagebuilder
 
 const (
 	moduleName    = "armvirtualmachineimagebuilder"
-	moduleVersion = "v0.2.0"
+	moduleVersion = "v1.1.0"
 )
 
 // CreatedByType - The type of identity that created the resource.
@@ -33,11 +33,6 @@ func PossibleCreatedByTypeValues() []CreatedByType {
 	}
 }
 
-// ToPtr returns a *CreatedByType pointing to the current value.
-func (c CreatedByType) ToPtr() *CreatedByType {
-	return &c
-}
-
 // ProvisioningErrorCode - Error code of the provisioning failure
 type ProvisioningErrorCode string
 
@@ -49,10 +44,14 @@ const (
 	ProvisioningErrorCodeBadSharedImageDistribute    ProvisioningErrorCode = "BadSharedImageDistribute"
 	ProvisioningErrorCodeBadSharedImageVersionSource ProvisioningErrorCode = "BadSharedImageVersionSource"
 	ProvisioningErrorCodeBadSourceType               ProvisioningErrorCode = "BadSourceType"
+	ProvisioningErrorCodeBadStagingResourceGroup     ProvisioningErrorCode = "BadStagingResourceGroup"
+	ProvisioningErrorCodeBadValidatorType            ProvisioningErrorCode = "BadValidatorType"
 	ProvisioningErrorCodeNoCustomizerScript          ProvisioningErrorCode = "NoCustomizerScript"
+	ProvisioningErrorCodeNoValidatorScript           ProvisioningErrorCode = "NoValidatorScript"
 	ProvisioningErrorCodeOther                       ProvisioningErrorCode = "Other"
 	ProvisioningErrorCodeServerError                 ProvisioningErrorCode = "ServerError"
 	ProvisioningErrorCodeUnsupportedCustomizerType   ProvisioningErrorCode = "UnsupportedCustomizerType"
+	ProvisioningErrorCodeUnsupportedValidatorType    ProvisioningErrorCode = "UnsupportedValidatorType"
 )
 
 // PossibleProvisioningErrorCodeValues returns the possible values for the ProvisioningErrorCode const type.
@@ -65,16 +64,15 @@ func PossibleProvisioningErrorCodeValues() []ProvisioningErrorCode {
 		ProvisioningErrorCodeBadSharedImageDistribute,
 		ProvisioningErrorCodeBadSharedImageVersionSource,
 		ProvisioningErrorCodeBadSourceType,
+		ProvisioningErrorCodeBadStagingResourceGroup,
+		ProvisioningErrorCodeBadValidatorType,
 		ProvisioningErrorCodeNoCustomizerScript,
+		ProvisioningErrorCodeNoValidatorScript,
 		ProvisioningErrorCodeOther,
 		ProvisioningErrorCodeServerError,
 		ProvisioningErrorCodeUnsupportedCustomizerType,
+		ProvisioningErrorCodeUnsupportedValidatorType,
 	}
-}
-
-// ToPtr returns a *ProvisioningErrorCode pointing to the current value.
-func (c ProvisioningErrorCode) ToPtr() *ProvisioningErrorCode {
-	return &c
 }
 
 // ProvisioningState - Provisioning state of the resource
@@ -99,11 +97,6 @@ func PossibleProvisioningStateValues() []ProvisioningState {
 	}
 }
 
-// ToPtr returns a *ProvisioningState pointing to the current value.
-func (c ProvisioningState) ToPtr() *ProvisioningState {
-	return &c
-}
-
 // ResourceIdentityType - The type of identity used for the image template. The type 'None' will remove any identities from
 // the image template.
 type ResourceIdentityType string
@@ -119,11 +112,6 @@ func PossibleResourceIdentityTypeValues() []ResourceIdentityType {
 		ResourceIdentityTypeUserAssigned,
 		ResourceIdentityTypeNone,
 	}
-}
-
-// ToPtr returns a *ResourceIdentityType pointing to the current value.
-func (c ResourceIdentityType) ToPtr() *ResourceIdentityType {
-	return &c
 }
 
 // RunState - State of the last run
@@ -150,11 +138,6 @@ func PossibleRunStateValues() []RunState {
 	}
 }
 
-// ToPtr returns a *RunState pointing to the current value.
-func (c RunState) ToPtr() *RunState {
-	return &c
-}
-
 // RunSubState - Sub-state of the last run
 type RunSubState string
 
@@ -162,6 +145,7 @@ const (
 	RunSubStateQueued       RunSubState = "Queued"
 	RunSubStateBuilding     RunSubState = "Building"
 	RunSubStateCustomizing  RunSubState = "Customizing"
+	RunSubStateValidating   RunSubState = "Validating"
 	RunSubStateDistributing RunSubState = "Distributing"
 )
 
@@ -171,13 +155,9 @@ func PossibleRunSubStateValues() []RunSubState {
 		RunSubStateQueued,
 		RunSubStateBuilding,
 		RunSubStateCustomizing,
+		RunSubStateValidating,
 		RunSubStateDistributing,
 	}
-}
-
-// ToPtr returns a *RunSubState pointing to the current value.
-func (c RunSubState) ToPtr() *RunSubState {
-	return &c
 }
 
 // SharedImageStorageAccountType - Storage account type to be used to store the shared image. Omit to use the default (Standard_LRS).
@@ -194,9 +174,4 @@ func PossibleSharedImageStorageAccountTypeValues() []SharedImageStorageAccountTy
 		SharedImageStorageAccountTypeStandardLRS,
 		SharedImageStorageAccountTypeStandardZRS,
 	}
-}
-
-// ToPtr returns a *SharedImageStorageAccountType pointing to the current value.
-func (c SharedImageStorageAccountType) ToPtr() *SharedImageStorageAccountType {
-	return &c
 }

@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -35,24 +36,29 @@ type LoggerClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewLoggerClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *LoggerClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewLoggerClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*LoggerClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &LoggerClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or Updates a logger.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // loggerID - Logger identifier. Must be unique in the API Management service instance.
@@ -100,15 +106,15 @@ func (client *LoggerClient) createOrUpdateCreateRequest(ctx context.Context, res
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *LoggerClient) createOrUpdateHandleResponse(resp *http.Response) (LoggerClientCreateOrUpdateResponse, error) {
-	result := LoggerClientCreateOrUpdateResponse{RawResponse: resp}
+	result := LoggerClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -120,6 +126,7 @@ func (client *LoggerClient) createOrUpdateHandleResponse(resp *http.Response) (L
 
 // Delete - Deletes the specified logger.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // loggerID - Logger identifier. Must be unique in the API Management service instance.
@@ -138,7 +145,7 @@ func (client *LoggerClient) Delete(ctx context.Context, resourceGroupName string
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return LoggerClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return LoggerClientDeleteResponse{RawResponse: resp}, nil
+	return LoggerClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -167,13 +174,14 @@ func (client *LoggerClient) deleteCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the details of the logger specified by its identifier.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // loggerID - Logger identifier. Must be unique in the API Management service instance.
@@ -219,13 +227,13 @@ func (client *LoggerClient) getCreateRequest(ctx context.Context, resourceGroupN
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *LoggerClient) getHandleResponse(resp *http.Response) (LoggerClientGetResponse, error) {
-	result := LoggerClientGetResponse{RawResponse: resp}
+	result := LoggerClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -236,6 +244,7 @@ func (client *LoggerClient) getHandleResponse(resp *http.Response) (LoggerClient
 }
 
 // GetEntityTag - Gets the entity state (Etag) version of the logger specified by its identifier.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // loggerID - Logger identifier. Must be unique in the API Management service instance.
@@ -248,6 +257,9 @@ func (client *LoggerClient) GetEntityTag(ctx context.Context, resourceGroupName 
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return LoggerClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return LoggerClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -278,37 +290,52 @@ func (client *LoggerClient) getEntityTagCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *LoggerClient) getEntityTagHandleResponse(resp *http.Response) (LoggerClientGetEntityTagResponse, error) {
-	result := LoggerClientGetEntityTagResponse{RawResponse: resp}
+	result := LoggerClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
-// ListByService - Lists a collection of loggers in the specified service instance.
+// NewListByServicePager - Lists a collection of loggers in the specified service instance.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // options - LoggerClientListByServiceOptions contains the optional parameters for the LoggerClient.ListByService method.
-func (client *LoggerClient) ListByService(resourceGroupName string, serviceName string, options *LoggerClientListByServiceOptions) *LoggerClientListByServicePager {
-	return &LoggerClientListByServicePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+func (client *LoggerClient) NewListByServicePager(resourceGroupName string, serviceName string, options *LoggerClientListByServiceOptions) *runtime.Pager[LoggerClientListByServiceResponse] {
+	return runtime.NewPager(runtime.PagingHandler[LoggerClientListByServiceResponse]{
+		More: func(page LoggerClientListByServiceResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp LoggerClientListByServiceResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.LoggerCollection.NextLink)
+		Fetcher: func(ctx context.Context, page *LoggerClientListByServiceResponse) (LoggerClientListByServiceResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByServiceCreateRequest(ctx, resourceGroupName, serviceName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return LoggerClientListByServiceResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return LoggerClientListByServiceResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return LoggerClientListByServiceResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByServiceHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByServiceCreateRequest creates the ListByService request.
@@ -342,13 +369,13 @@ func (client *LoggerClient) listByServiceCreateRequest(ctx context.Context, reso
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByServiceHandleResponse handles the ListByService response.
 func (client *LoggerClient) listByServiceHandleResponse(resp *http.Response) (LoggerClientListByServiceResponse, error) {
-	result := LoggerClientListByServiceResponse{RawResponse: resp}
+	result := LoggerClientListByServiceResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.LoggerCollection); err != nil {
 		return LoggerClientListByServiceResponse{}, err
 	}
@@ -357,6 +384,7 @@ func (client *LoggerClient) listByServiceHandleResponse(resp *http.Response) (Lo
 
 // Update - Updates an existing logger.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // loggerID - Logger identifier. Must be unique in the API Management service instance.
@@ -405,14 +433,14 @@ func (client *LoggerClient) updateCreateRequest(ctx context.Context, resourceGro
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *LoggerClient) updateHandleResponse(resp *http.Response) (LoggerClientUpdateResponse, error) {
-	result := LoggerClientUpdateResponse{RawResponse: resp}
+	result := LoggerClientUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}

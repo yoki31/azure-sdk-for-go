@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,120 +17,144 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/maintenance/armmaintenance"
 )
 
-// x-ms-original-file: specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_GetForResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_GetForResource.json
 func ExampleConfigurationsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armmaintenance.NewConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armmaintenance.NewConfigurationsClient("5b4b650e-28b9-4790-b3ab-ddbd88d727c4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"examplerg",
+		"configuration1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ConfigurationsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_CreateOrUpdateForResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_CreateOrUpdateForResource.json
 func ExampleConfigurationsClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armmaintenance.NewConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armmaintenance.NewConfigurationsClient("5b4b650e-28b9-4790-b3ab-ddbd88d727c4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"examplerg",
+		"configuration1",
 		armmaintenance.Configuration{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("westus2"),
 			Properties: &armmaintenance.ConfigurationProperties{
-				MaintenanceScope: armmaintenance.MaintenanceScope("OSImage").ToPtr(),
+				MaintenanceScope: to.Ptr(armmaintenance.MaintenanceScopeOSImage),
 				MaintenanceWindow: &armmaintenance.Window{
-					Duration:           to.StringPtr("<duration>"),
-					ExpirationDateTime: to.StringPtr("<expiration-date-time>"),
-					RecurEvery:         to.StringPtr("<recur-every>"),
-					StartDateTime:      to.StringPtr("<start-date-time>"),
-					TimeZone:           to.StringPtr("<time-zone>"),
+					Duration:           to.Ptr("05:00"),
+					ExpirationDateTime: to.Ptr("9999-12-31 00:00"),
+					RecurEvery:         to.Ptr("Day"),
+					StartDateTime:      to.Ptr("2020-04-30 08:00"),
+					TimeZone:           to.Ptr("Pacific Standard Time"),
 				},
-				Namespace:  to.StringPtr("<namespace>"),
-				Visibility: armmaintenance.Visibility("Custom").ToPtr(),
+				Namespace:  to.Ptr("Microsoft.Maintenance"),
+				Visibility: to.Ptr(armmaintenance.VisibilityCustom),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ConfigurationsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_DeleteForResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_DeleteForResource.json
 func ExampleConfigurationsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armmaintenance.NewConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armmaintenance.NewConfigurationsClient("5b4b650e-28b9-4790-b3ab-ddbd88d727c4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Delete(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"examplerg",
+		"example1",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ConfigurationsClientDeleteResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_UpdateForResource.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_UpdateForResource.json
 func ExampleConfigurationsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armmaintenance.NewConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armmaintenance.NewConfigurationsClient("5b4b650e-28b9-4790-b3ab-ddbd88d727c4", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"examplerg",
+		"configuration1",
 		armmaintenance.Configuration{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("westus2"),
 			Properties: &armmaintenance.ConfigurationProperties{
-				MaintenanceScope: armmaintenance.MaintenanceScope("OSImage").ToPtr(),
+				MaintenanceScope: to.Ptr(armmaintenance.MaintenanceScopeOSImage),
 				MaintenanceWindow: &armmaintenance.Window{
-					Duration:           to.StringPtr("<duration>"),
-					ExpirationDateTime: to.StringPtr("<expiration-date-time>"),
-					RecurEvery:         to.StringPtr("<recur-every>"),
-					StartDateTime:      to.StringPtr("<start-date-time>"),
-					TimeZone:           to.StringPtr("<time-zone>"),
+					Duration:           to.Ptr("05:00"),
+					ExpirationDateTime: to.Ptr("9999-12-31 00:00"),
+					RecurEvery:         to.Ptr("Month Third Sunday"),
+					StartDateTime:      to.Ptr("2020-04-30 08:00"),
+					TimeZone:           to.Ptr("Pacific Standard Time"),
 				},
-				Namespace:  to.StringPtr("<namespace>"),
-				Visibility: armmaintenance.Visibility("Custom").ToPtr(),
+				Namespace:  to.Ptr("Microsoft.Maintenance"),
+				Visibility: to.Ptr(armmaintenance.VisibilityCustom),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ConfigurationsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_List.json
-func ExampleConfigurationsClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/maintenance/resource-manager/Microsoft.Maintenance/preview/2021-09-01-preview/examples/MaintenanceConfigurations_List.json
+func ExampleConfigurationsClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armmaintenance.NewConfigurationsClient("<subscription-id>", cred, nil)
-	res, err := client.List(ctx,
-		nil)
+	client, err := armmaintenance.NewConfigurationsClient("5b4b650e-28b9-4790-b3ab-ddbd88d727c4", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ConfigurationsClientListResult)
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }

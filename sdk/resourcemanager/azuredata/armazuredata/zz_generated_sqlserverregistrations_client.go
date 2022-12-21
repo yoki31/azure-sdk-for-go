@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type SQLServerRegistrationsClient struct {
 // subscriptionID - Subscription ID that identifies an Azure subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewSQLServerRegistrationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *SQLServerRegistrationsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewSQLServerRegistrationsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*SQLServerRegistrationsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &SQLServerRegistrationsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates a SQL Server registration.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // resourceGroupName - Name of the resource group that contains the resource. You can obtain this value from the Azure Resource
 // Manager API or the portal.
 // sqlServerRegistrationName - Name of the SQL Server registration.
@@ -94,13 +100,13 @@ func (client *SQLServerRegistrationsClient) createOrUpdateCreateRequest(ctx cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *SQLServerRegistrationsClient) createOrUpdateHandleResponse(resp *http.Response) (SQLServerRegistrationsClientCreateOrUpdateResponse, error) {
-	result := SQLServerRegistrationsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := SQLServerRegistrationsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SQLServerRegistration); err != nil {
 		return SQLServerRegistrationsClientCreateOrUpdateResponse{}, err
 	}
@@ -109,6 +115,7 @@ func (client *SQLServerRegistrationsClient) createOrUpdateHandleResponse(resp *h
 
 // Delete - Deletes a SQL Server registration.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // resourceGroupName - Name of the resource group that contains the resource. You can obtain this value from the Azure Resource
 // Manager API or the portal.
 // sqlServerRegistrationName - Name of the SQL Server registration.
@@ -126,7 +133,7 @@ func (client *SQLServerRegistrationsClient) Delete(ctx context.Context, resource
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return SQLServerRegistrationsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return SQLServerRegistrationsClientDeleteResponse{RawResponse: resp}, nil
+	return SQLServerRegistrationsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -151,12 +158,13 @@ func (client *SQLServerRegistrationsClient) deleteCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a SQL Server registration.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // resourceGroupName - Name of the resource group that contains the resource. You can obtain this value from the Azure Resource
 // Manager API or the portal.
 // sqlServerRegistrationName - Name of the SQL Server registration.
@@ -199,33 +207,50 @@ func (client *SQLServerRegistrationsClient) getCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *SQLServerRegistrationsClient) getHandleResponse(resp *http.Response) (SQLServerRegistrationsClientGetResponse, error) {
-	result := SQLServerRegistrationsClientGetResponse{RawResponse: resp}
+	result := SQLServerRegistrationsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SQLServerRegistration); err != nil {
 		return SQLServerRegistrationsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// List - Gets all SQL Server registrations in a subscription.
+// NewListPager - Gets all SQL Server registrations in a subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // options - SQLServerRegistrationsClientListOptions contains the optional parameters for the SQLServerRegistrationsClient.List
 // method.
-func (client *SQLServerRegistrationsClient) List(options *SQLServerRegistrationsClientListOptions) *SQLServerRegistrationsClientListPager {
-	return &SQLServerRegistrationsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *SQLServerRegistrationsClient) NewListPager(options *SQLServerRegistrationsClientListOptions) *runtime.Pager[SQLServerRegistrationsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SQLServerRegistrationsClientListResponse]{
+		More: func(page SQLServerRegistrationsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SQLServerRegistrationsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SQLServerRegistrationListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SQLServerRegistrationsClientListResponse) (SQLServerRegistrationsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SQLServerRegistrationsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SQLServerRegistrationsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SQLServerRegistrationsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -242,35 +267,52 @@ func (client *SQLServerRegistrationsClient) listCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *SQLServerRegistrationsClient) listHandleResponse(resp *http.Response) (SQLServerRegistrationsClientListResponse, error) {
-	result := SQLServerRegistrationsClientListResponse{RawResponse: resp}
+	result := SQLServerRegistrationsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SQLServerRegistrationListResult); err != nil {
 		return SQLServerRegistrationsClientListResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Gets all SQL Server registrations in a resource group.
+// NewListByResourceGroupPager - Gets all SQL Server registrations in a resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // resourceGroupName - Name of the resource group that contains the resource. You can obtain this value from the Azure Resource
 // Manager API or the portal.
 // options - SQLServerRegistrationsClientListByResourceGroupOptions contains the optional parameters for the SQLServerRegistrationsClient.ListByResourceGroup
 // method.
-func (client *SQLServerRegistrationsClient) ListByResourceGroup(resourceGroupName string, options *SQLServerRegistrationsClientListByResourceGroupOptions) *SQLServerRegistrationsClientListByResourceGroupPager {
-	return &SQLServerRegistrationsClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *SQLServerRegistrationsClient) NewListByResourceGroupPager(resourceGroupName string, options *SQLServerRegistrationsClientListByResourceGroupOptions) *runtime.Pager[SQLServerRegistrationsClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[SQLServerRegistrationsClientListByResourceGroupResponse]{
+		More: func(page SQLServerRegistrationsClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp SQLServerRegistrationsClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.SQLServerRegistrationListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *SQLServerRegistrationsClientListByResourceGroupResponse) (SQLServerRegistrationsClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return SQLServerRegistrationsClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return SQLServerRegistrationsClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return SQLServerRegistrationsClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -291,13 +333,13 @@ func (client *SQLServerRegistrationsClient) listByResourceGroupCreateRequest(ctx
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *SQLServerRegistrationsClient) listByResourceGroupHandleResponse(resp *http.Response) (SQLServerRegistrationsClientListByResourceGroupResponse, error) {
-	result := SQLServerRegistrationsClientListByResourceGroupResponse{RawResponse: resp}
+	result := SQLServerRegistrationsClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SQLServerRegistrationListResult); err != nil {
 		return SQLServerRegistrationsClientListByResourceGroupResponse{}, err
 	}
@@ -306,6 +348,7 @@ func (client *SQLServerRegistrationsClient) listByResourceGroupHandleResponse(re
 
 // Update - Updates SQL Server Registration tags.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2019-07-24-preview
 // resourceGroupName - Name of the resource group that contains the resource. You can obtain this value from the Azure Resource
 // Manager API or the portal.
 // sqlServerRegistrationName - Name of the SQL Server registration.
@@ -349,13 +392,13 @@ func (client *SQLServerRegistrationsClient) updateCreateRequest(ctx context.Cont
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-07-24-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *SQLServerRegistrationsClient) updateHandleResponse(resp *http.Response) (SQLServerRegistrationsClientUpdateResponse, error) {
-	result := SQLServerRegistrationsClientUpdateResponse{RawResponse: resp}
+	result := SQLServerRegistrationsClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.SQLServerRegistration); err != nil {
 		return SQLServerRegistrationsClientUpdateResponse{}, err
 	}

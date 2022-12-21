@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,85 +14,103 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/applicationinsights/armapplicationinsights"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/applicationinsights/armapplicationinsights/v2"
 )
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplatesList.json
-func ExampleWorkbookTemplatesClient_ListByResourceGroup() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplatesList.json
+func ExampleWorkbookTemplatesClient_NewListByResourceGroupPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewWorkbookTemplatesClient("<subscription-id>", cred, nil)
-	res, err := client.ListByResourceGroup(ctx,
-		"<resource-group-name>",
-		nil)
+	client, err := armapplicationinsights.NewWorkbookTemplatesClient("6b643656-33eb-422f-aee8-3ac145d124af", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkbookTemplatesClientListByResourceGroupResult)
+	pager := client.NewListByResourceGroupPager("my-resource-group",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateGet.json
 func ExampleWorkbookTemplatesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewWorkbookTemplatesClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewWorkbookTemplatesClient("6b643656-33eb-422f-aee8-3ac145d124af", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"my-resource-name",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkbookTemplatesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateDelete.json
 func ExampleWorkbookTemplatesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewWorkbookTemplatesClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewWorkbookTemplatesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"my-template-resource",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateAdd.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateAdd.json
 func ExampleWorkbookTemplatesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewWorkbookTemplatesClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewWorkbookTemplatesClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"testtemplate2",
 		armapplicationinsights.WorkbookTemplate{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("west us"),
 			Properties: &armapplicationinsights.WorkbookTemplateProperties{
-				Author: to.StringPtr("<author>"),
+				Author: to.Ptr("Contoso"),
 				Galleries: []*armapplicationinsights.WorkbookTemplateGallery{
 					{
-						Name:         to.StringPtr("<name>"),
-						Type:         to.StringPtr("<type>"),
-						Category:     to.StringPtr("<category>"),
-						Order:        to.Int32Ptr(100),
-						ResourceType: to.StringPtr("<resource-type>"),
+						Name:         to.Ptr("Simple Template"),
+						Type:         to.Ptr("tsg"),
+						Category:     to.Ptr("Failures"),
+						Order:        to.Ptr[int32](100),
+						ResourceType: to.Ptr("microsoft.insights/components"),
 					}},
-				Priority: to.Int32Ptr(1),
+				Priority: to.Ptr[int32](1),
 				TemplateData: map[string]interface{}{
 					"$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
 					"items": []interface{}{
@@ -123,25 +141,30 @@ func ExampleWorkbookTemplatesClient_CreateOrUpdate() {
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkbookTemplatesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2020-11-20/examples/WorkbookTemplateUpdate.json
 func ExampleWorkbookTemplatesClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewWorkbookTemplatesClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewWorkbookTemplatesClient("6b643656-33eb-422f-aee8-3ac145d124af", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"my-template-resource",
 		&armapplicationinsights.WorkbookTemplatesClientUpdateOptions{WorkbookTemplateUpdateParameters: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.WorkbookTemplatesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }

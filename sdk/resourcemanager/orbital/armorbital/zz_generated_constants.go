@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -10,8 +10,25 @@ package armorbital
 
 const (
 	moduleName    = "armorbital"
-	moduleVersion = "v0.2.0"
+	moduleVersion = "v1.0.0"
 )
+
+type APIVersionParameter string
+
+const (
+	APIVersionParameterTwoThousandTwenty0901Preview    APIVersionParameter = "2020-09-01-preview"
+	APIVersionParameterTwoThousandTwentyOne0404Preview APIVersionParameter = "2021-04-04-preview"
+	APIVersionParameterTwoThousandTwentyTwo0301        APIVersionParameter = "2022-03-01"
+)
+
+// PossibleAPIVersionParameterValues returns the possible values for the APIVersionParameter const type.
+func PossibleAPIVersionParameterValues() []APIVersionParameter {
+	return []APIVersionParameter{
+		APIVersionParameterTwoThousandTwenty0901Preview,
+		APIVersionParameterTwoThousandTwentyOne0404Preview,
+		APIVersionParameterTwoThousandTwentyTwo0301,
+	}
+}
 
 // ActionType - Enum. Indicates the action type. "Internal" refers to actions that are for internal only APIs.
 type ActionType string
@@ -25,34 +42,6 @@ func PossibleActionTypeValues() []ActionType {
 	return []ActionType{
 		ActionTypeInternal,
 	}
-}
-
-// ToPtr returns a *ActionType pointing to the current value.
-func (c ActionType) ToPtr() *ActionType {
-	return &c
-}
-
-// AuthorizationStatus - Authorization status of spacecraft.
-type AuthorizationStatus string
-
-const (
-	AuthorizationStatusAllowed AuthorizationStatus = "Allowed"
-	AuthorizationStatusPending AuthorizationStatus = "Pending"
-	AuthorizationStatusDenied  AuthorizationStatus = "Denied"
-)
-
-// PossibleAuthorizationStatusValues returns the possible values for the AuthorizationStatus const type.
-func PossibleAuthorizationStatusValues() []AuthorizationStatus {
-	return []AuthorizationStatus{
-		AuthorizationStatusAllowed,
-		AuthorizationStatusPending,
-		AuthorizationStatusDenied,
-	}
-}
-
-// ToPtr returns a *AuthorizationStatus pointing to the current value.
-func (c AuthorizationStatus) ToPtr() *AuthorizationStatus {
-	return &c
 }
 
 // AutoTrackingConfiguration - Auto track configuration.
@@ -73,11 +62,6 @@ func PossibleAutoTrackingConfigurationValues() []AutoTrackingConfiguration {
 	}
 }
 
-// ToPtr returns a *AutoTrackingConfiguration pointing to the current value.
-func (c AutoTrackingConfiguration) ToPtr() *AutoTrackingConfiguration {
-	return &c
-}
-
 // Capability - Capability of the Ground Station.
 type Capability string
 
@@ -94,29 +78,89 @@ func PossibleCapabilityValues() []Capability {
 	}
 }
 
-// ToPtr returns a *Capability pointing to the current value.
-func (c Capability) ToPtr() *Capability {
-	return &c
-}
-
-type CapabilityType string
+type CapabilityParameter string
 
 const (
-	CapabilityTypeCommunication    CapabilityType = "Communication"
-	CapabilityTypeEarthObservation CapabilityType = "EarthObservation"
+	CapabilityParameterCommunication    CapabilityParameter = "Communication"
+	CapabilityParameterEarthObservation CapabilityParameter = "EarthObservation"
 )
 
-// PossibleCapabilityTypeValues returns the possible values for the CapabilityType const type.
-func PossibleCapabilityTypeValues() []CapabilityType {
-	return []CapabilityType{
-		CapabilityTypeCommunication,
-		CapabilityTypeEarthObservation,
+// PossibleCapabilityParameterValues returns the possible values for the CapabilityParameter const type.
+func PossibleCapabilityParameterValues() []CapabilityParameter {
+	return []CapabilityParameter{
+		CapabilityParameterCommunication,
+		CapabilityParameterEarthObservation,
 	}
 }
 
-// ToPtr returns a *CapabilityType pointing to the current value.
-func (c CapabilityType) ToPtr() *CapabilityType {
-	return &c
+// ContactProfilesPropertiesProvisioningState - The current state of the resource's creation, deletion, or modification
+type ContactProfilesPropertiesProvisioningState string
+
+const (
+	ContactProfilesPropertiesProvisioningStateCanceled  ContactProfilesPropertiesProvisioningState = "Canceled"
+	ContactProfilesPropertiesProvisioningStateCreating  ContactProfilesPropertiesProvisioningState = "Creating"
+	ContactProfilesPropertiesProvisioningStateDeleting  ContactProfilesPropertiesProvisioningState = "Deleting"
+	ContactProfilesPropertiesProvisioningStateFailed    ContactProfilesPropertiesProvisioningState = "Failed"
+	ContactProfilesPropertiesProvisioningStateSucceeded ContactProfilesPropertiesProvisioningState = "Succeeded"
+	ContactProfilesPropertiesProvisioningStateUpdating  ContactProfilesPropertiesProvisioningState = "Updating"
+)
+
+// PossibleContactProfilesPropertiesProvisioningStateValues returns the possible values for the ContactProfilesPropertiesProvisioningState const type.
+func PossibleContactProfilesPropertiesProvisioningStateValues() []ContactProfilesPropertiesProvisioningState {
+	return []ContactProfilesPropertiesProvisioningState{
+		ContactProfilesPropertiesProvisioningStateCanceled,
+		ContactProfilesPropertiesProvisioningStateCreating,
+		ContactProfilesPropertiesProvisioningStateDeleting,
+		ContactProfilesPropertiesProvisioningStateFailed,
+		ContactProfilesPropertiesProvisioningStateSucceeded,
+		ContactProfilesPropertiesProvisioningStateUpdating,
+	}
+}
+
+// ContactsPropertiesProvisioningState - The current state of the resource's creation, deletion, or modification
+type ContactsPropertiesProvisioningState string
+
+const (
+	ContactsPropertiesProvisioningStateCanceled  ContactsPropertiesProvisioningState = "Canceled"
+	ContactsPropertiesProvisioningStateCreating  ContactsPropertiesProvisioningState = "Creating"
+	ContactsPropertiesProvisioningStateDeleting  ContactsPropertiesProvisioningState = "Deleting"
+	ContactsPropertiesProvisioningStateFailed    ContactsPropertiesProvisioningState = "Failed"
+	ContactsPropertiesProvisioningStateSucceeded ContactsPropertiesProvisioningState = "Succeeded"
+	ContactsPropertiesProvisioningStateUpdating  ContactsPropertiesProvisioningState = "Updating"
+)
+
+// PossibleContactsPropertiesProvisioningStateValues returns the possible values for the ContactsPropertiesProvisioningState const type.
+func PossibleContactsPropertiesProvisioningStateValues() []ContactsPropertiesProvisioningState {
+	return []ContactsPropertiesProvisioningState{
+		ContactsPropertiesProvisioningStateCanceled,
+		ContactsPropertiesProvisioningStateCreating,
+		ContactsPropertiesProvisioningStateDeleting,
+		ContactsPropertiesProvisioningStateFailed,
+		ContactsPropertiesProvisioningStateSucceeded,
+		ContactsPropertiesProvisioningStateUpdating,
+	}
+}
+
+// ContactsStatus - Status of a contact.
+type ContactsStatus string
+
+const (
+	ContactsStatusScheduled         ContactsStatus = "scheduled"
+	ContactsStatusCancelled         ContactsStatus = "cancelled"
+	ContactsStatusSucceeded         ContactsStatus = "succeeded"
+	ContactsStatusFailed            ContactsStatus = "failed"
+	ContactsStatusProviderCancelled ContactsStatus = "providerCancelled"
+)
+
+// PossibleContactsStatusValues returns the possible values for the ContactsStatus const type.
+func PossibleContactsStatusValues() []ContactsStatus {
+	return []ContactsStatus{
+		ContactsStatusScheduled,
+		ContactsStatusCancelled,
+		ContactsStatusSucceeded,
+		ContactsStatusFailed,
+		ContactsStatusProviderCancelled,
+	}
 }
 
 // CreatedByType - The type of identity that created the resource.
@@ -139,11 +183,6 @@ func PossibleCreatedByTypeValues() []CreatedByType {
 	}
 }
 
-// ToPtr returns a *CreatedByType pointing to the current value.
-func (c CreatedByType) ToPtr() *CreatedByType {
-	return &c
-}
-
 // Direction - Direction (uplink or downlink)
 type Direction string
 
@@ -158,11 +197,6 @@ func PossibleDirectionValues() []Direction {
 		DirectionDownlink,
 		DirectionUplink,
 	}
-}
-
-// ToPtr returns a *Direction pointing to the current value.
-func (c Direction) ToPtr() *Direction {
-	return &c
 }
 
 // Origin - The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default
@@ -184,16 +218,10 @@ func PossibleOriginValues() []Origin {
 	}
 }
 
-// ToPtr returns a *Origin pointing to the current value.
-func (c Origin) ToPtr() *Origin {
-	return &c
-}
-
 // Polarization - polarization. eg (RHCP, LHCP)
 type Polarization string
 
 const (
-	PolarizationDualRhcpLhcp     Polarization = "dualRhcpLhcp"
 	PolarizationLHCP             Polarization = "LHCP"
 	PolarizationLinearHorizontal Polarization = "linearHorizontal"
 	PolarizationLinearVertical   Polarization = "linearVertical"
@@ -203,17 +231,11 @@ const (
 // PossiblePolarizationValues returns the possible values for the Polarization const type.
 func PossiblePolarizationValues() []Polarization {
 	return []Polarization{
-		PolarizationDualRhcpLhcp,
 		PolarizationLHCP,
 		PolarizationLinearHorizontal,
 		PolarizationLinearVertical,
 		PolarizationRHCP,
 	}
-}
-
-// ToPtr returns a *Polarization pointing to the current value.
-func (c Polarization) ToPtr() *Polarization {
-	return &c
 }
 
 // Protocol - Protocol either UDP or TCP.
@@ -232,34 +254,86 @@ func PossibleProtocolValues() []Protocol {
 	}
 }
 
-// ToPtr returns a *Protocol pointing to the current value.
-func (c Protocol) ToPtr() *Protocol {
-	return &c
+// ProvisioningState - The current state of the resource's creation, deletion, or modification
+type ProvisioningState string
+
+const (
+	ProvisioningStateCanceled  ProvisioningState = "Canceled"
+	ProvisioningStateCreating  ProvisioningState = "Creating"
+	ProvisioningStateDeleting  ProvisioningState = "Deleting"
+	ProvisioningStateFailed    ProvisioningState = "Failed"
+	ProvisioningStateSucceeded ProvisioningState = "Succeeded"
+	ProvisioningStateUpdating  ProvisioningState = "Updating"
+)
+
+// PossibleProvisioningStateValues returns the possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{
+		ProvisioningStateCanceled,
+		ProvisioningStateCreating,
+		ProvisioningStateDeleting,
+		ProvisioningStateFailed,
+		ProvisioningStateSucceeded,
+		ProvisioningStateUpdating,
+	}
 }
 
-// Status - Status of a contact.
+// ReleaseMode - Release Status of a ground station
+type ReleaseMode string
+
+const (
+	ReleaseModeGA      ReleaseMode = "GA"
+	ReleaseModePreview ReleaseMode = "Preview"
+)
+
+// PossibleReleaseModeValues returns the possible values for the ReleaseMode const type.
+func PossibleReleaseModeValues() []ReleaseMode {
+	return []ReleaseMode{
+		ReleaseModeGA,
+		ReleaseModePreview,
+	}
+}
+
+// SpacecraftsPropertiesProvisioningState - The current state of the resource's creation, deletion, or modification
+type SpacecraftsPropertiesProvisioningState string
+
+const (
+	SpacecraftsPropertiesProvisioningStateCanceled  SpacecraftsPropertiesProvisioningState = "Canceled"
+	SpacecraftsPropertiesProvisioningStateCreating  SpacecraftsPropertiesProvisioningState = "Creating"
+	SpacecraftsPropertiesProvisioningStateDeleting  SpacecraftsPropertiesProvisioningState = "Deleting"
+	SpacecraftsPropertiesProvisioningStateFailed    SpacecraftsPropertiesProvisioningState = "Failed"
+	SpacecraftsPropertiesProvisioningStateSucceeded SpacecraftsPropertiesProvisioningState = "Succeeded"
+	SpacecraftsPropertiesProvisioningStateUpdating  SpacecraftsPropertiesProvisioningState = "Updating"
+)
+
+// PossibleSpacecraftsPropertiesProvisioningStateValues returns the possible values for the SpacecraftsPropertiesProvisioningState const type.
+func PossibleSpacecraftsPropertiesProvisioningStateValues() []SpacecraftsPropertiesProvisioningState {
+	return []SpacecraftsPropertiesProvisioningState{
+		SpacecraftsPropertiesProvisioningStateCanceled,
+		SpacecraftsPropertiesProvisioningStateCreating,
+		SpacecraftsPropertiesProvisioningStateDeleting,
+		SpacecraftsPropertiesProvisioningStateFailed,
+		SpacecraftsPropertiesProvisioningStateSucceeded,
+		SpacecraftsPropertiesProvisioningStateUpdating,
+	}
+}
+
+// Status - The status of operation.
 type Status string
 
 const (
-	StatusScheduled         Status = "scheduled"
-	StatusCancelled         Status = "cancelled"
-	StatusSucceeded         Status = "succeeded"
-	StatusFailed            Status = "failed"
-	StatusProviderCancelled Status = "providerCancelled"
+	StatusCanceled  Status = "Canceled"
+	StatusFailed    Status = "Failed"
+	StatusRunning   Status = "Running"
+	StatusSucceeded Status = "Succeeded"
 )
 
 // PossibleStatusValues returns the possible values for the Status const type.
 func PossibleStatusValues() []Status {
 	return []Status{
-		StatusScheduled,
-		StatusCancelled,
-		StatusSucceeded,
+		StatusCanceled,
 		StatusFailed,
-		StatusProviderCancelled,
+		StatusRunning,
+		StatusSucceeded,
 	}
-}
-
-// ToPtr returns a *Status pointing to the current value.
-func (c Status) ToPtr() *Status {
-	return &c
 }

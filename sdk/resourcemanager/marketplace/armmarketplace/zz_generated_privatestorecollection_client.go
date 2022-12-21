@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -31,23 +32,28 @@ type PrivateStoreCollectionClient struct {
 // NewPrivateStoreCollectionClient creates a new instance of PrivateStoreCollectionClient with the specified values.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewPrivateStoreCollectionClient(credential azcore.TokenCredential, options *arm.ClientOptions) *PrivateStoreCollectionClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewPrivateStoreCollectionClient(credential azcore.TokenCredential, options *arm.ClientOptions) (*PrivateStoreCollectionClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &PrivateStoreCollectionClient{
-		host: string(cp.Endpoint),
-		pl:   armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host: ep,
+		pl:   pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Create or update private store collection
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // collectionID - The collection ID
 // options - PrivateStoreCollectionClientCreateOrUpdateOptions contains the optional parameters for the PrivateStoreCollectionClient.CreateOrUpdate
@@ -83,9 +89,9 @@ func (client *PrivateStoreCollectionClient) createOrUpdateCreateRequest(ctx cont
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -94,7 +100,7 @@ func (client *PrivateStoreCollectionClient) createOrUpdateCreateRequest(ctx cont
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *PrivateStoreCollectionClient) createOrUpdateHandleResponse(resp *http.Response) (PrivateStoreCollectionClientCreateOrUpdateResponse, error) {
-	result := PrivateStoreCollectionClientCreateOrUpdateResponse{RawResponse: resp}
+	result := PrivateStoreCollectionClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Collection); err != nil {
 		return PrivateStoreCollectionClientCreateOrUpdateResponse{}, err
 	}
@@ -103,6 +109,7 @@ func (client *PrivateStoreCollectionClient) createOrUpdateHandleResponse(resp *h
 
 // Delete - Delete a collection from the given private store.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // collectionID - The collection ID
 // options - PrivateStoreCollectionClientDeleteOptions contains the optional parameters for the PrivateStoreCollectionClient.Delete
@@ -119,7 +126,7 @@ func (client *PrivateStoreCollectionClient) Delete(ctx context.Context, privateS
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return PrivateStoreCollectionClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreCollectionClientDeleteResponse{RawResponse: resp}, nil
+	return PrivateStoreCollectionClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -138,14 +145,15 @@ func (client *PrivateStoreCollectionClient) deleteCreateRequest(ctx context.Cont
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets private store collection
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // collectionID - The collection ID
 // options - PrivateStoreCollectionClientGetOptions contains the optional parameters for the PrivateStoreCollectionClient.Get
@@ -181,15 +189,15 @@ func (client *PrivateStoreCollectionClient) getCreateRequest(ctx context.Context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *PrivateStoreCollectionClient) getHandleResponse(resp *http.Response) (PrivateStoreCollectionClientGetResponse, error) {
-	result := PrivateStoreCollectionClientGetResponse{RawResponse: resp}
+	result := PrivateStoreCollectionClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Collection); err != nil {
 		return PrivateStoreCollectionClientGetResponse{}, err
 	}
@@ -198,6 +206,7 @@ func (client *PrivateStoreCollectionClient) getHandleResponse(resp *http.Respons
 
 // List - Gets private store collections list
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // options - PrivateStoreCollectionClientListOptions contains the optional parameters for the PrivateStoreCollectionClient.List
 // method.
@@ -228,15 +237,15 @@ func (client *PrivateStoreCollectionClient) listCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *PrivateStoreCollectionClient) listHandleResponse(resp *http.Response) (PrivateStoreCollectionClientListResponse, error) {
-	result := PrivateStoreCollectionClientListResponse{RawResponse: resp}
+	result := PrivateStoreCollectionClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CollectionsList); err != nil {
 		return PrivateStoreCollectionClientListResponse{}, err
 	}
@@ -245,6 +254,7 @@ func (client *PrivateStoreCollectionClient) listHandleResponse(resp *http.Respon
 
 // Post - Delete Private store collection. This is a workaround.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // collectionID - The collection ID
 // options - PrivateStoreCollectionClientPostOptions contains the optional parameters for the PrivateStoreCollectionClient.Post
@@ -261,7 +271,7 @@ func (client *PrivateStoreCollectionClient) Post(ctx context.Context, privateSto
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return PrivateStoreCollectionClientPostResponse{}, runtime.NewResponseError(resp)
 	}
-	return PrivateStoreCollectionClientPostResponse{RawResponse: resp}, nil
+	return PrivateStoreCollectionClientPostResponse{}, nil
 }
 
 // postCreateRequest creates the Post request.
@@ -280,9 +290,9 @@ func (client *PrivateStoreCollectionClient) postCreateRequest(ctx context.Contex
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -291,6 +301,7 @@ func (client *PrivateStoreCollectionClient) postCreateRequest(ctx context.Contex
 
 // TransferOffers - transferring offers (copy or move) from source collection to target collection(s)
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-12-01
 // privateStoreID - The store ID - must use the tenant ID
 // collectionID - The collection ID
 // options - PrivateStoreCollectionClientTransferOffersOptions contains the optional parameters for the PrivateStoreCollectionClient.TransferOffers
@@ -326,9 +337,9 @@ func (client *PrivateStoreCollectionClient) transferOffersCreateRequest(ctx cont
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-06-01")
+	reqQP.Set("api-version", "2021-12-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Payload != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Payload)
 	}
@@ -337,7 +348,7 @@ func (client *PrivateStoreCollectionClient) transferOffersCreateRequest(ctx cont
 
 // transferOffersHandleResponse handles the TransferOffers response.
 func (client *PrivateStoreCollectionClient) transferOffersHandleResponse(resp *http.Response) (PrivateStoreCollectionClientTransferOffersResponse, error) {
-	result := PrivateStoreCollectionClientTransferOffersResponse{RawResponse: resp}
+	result := PrivateStoreCollectionClientTransferOffersResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TransferOffersResponse); err != nil {
 		return PrivateStoreCollectionClientTransferOffersResponse{}, err
 	}

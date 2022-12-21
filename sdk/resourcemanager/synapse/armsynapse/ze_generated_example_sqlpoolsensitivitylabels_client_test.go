@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,236 +17,258 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/ListSqlPoolsSensitivityLabelsWithSourceCurrent.json
-func ExampleSQLPoolSensitivityLabelsClient_ListCurrent() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/ListSqlPoolsSensitivityLabelsWithSourceCurrent.json
+func ExampleSQLPoolSensitivityLabelsClient_NewListCurrentPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
-	pager := client.ListCurrent("<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListCurrentPager("myRG",
+		"myServer",
+		"myDatabase",
 		&armsynapse.SQLPoolSensitivityLabelsClientListCurrentOptions{Filter: nil})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/SensitivityLabelsCurrentUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/SensitivityLabelsCurrentUpdate.json
 func ExampleSQLPoolSensitivityLabelsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Update(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
+		"myRG",
+		"myWorkspace",
+		"mySqlPool",
 		armsynapse.SensitivityLabelUpdateList{
 			Operations: []*armsynapse.SensitivityLabelUpdate{
 				{
 					Properties: &armsynapse.SensitivityLabelUpdateProperties{
-						Schema: to.StringPtr("<schema>"),
-						Column: to.StringPtr("<column>"),
-						Op:     armsynapse.SensitivityLabelUpdateKindSet.ToPtr(),
+						Schema: to.Ptr("dbo"),
+						Column: to.Ptr("column1"),
+						Op:     to.Ptr(armsynapse.SensitivityLabelUpdateKindSet),
 						SensitivityLabel: &armsynapse.SensitivityLabel{
 							Properties: &armsynapse.SensitivityLabelProperties{
-								InformationType:   to.StringPtr("<information-type>"),
-								InformationTypeID: to.StringPtr("<information-type-id>"),
-								LabelID:           to.StringPtr("<label-id>"),
-								LabelName:         to.StringPtr("<label-name>"),
-								Rank:              armsynapse.SensitivityLabelRankLow.ToPtr(),
+								InformationType:   to.Ptr("Financial"),
+								InformationTypeID: to.Ptr("1D3652D6-422C-4115-82F1-65DAEBC665C8"),
+								LabelID:           to.Ptr("3A477B16-9423-432B-AA97-6069B481CEC3"),
+								LabelName:         to.Ptr("Highly Confidential"),
+								Rank:              to.Ptr(armsynapse.SensitivityLabelRankLow),
 							},
 						},
-						Table: to.StringPtr("<table>"),
+						Table: to.Ptr("table1"),
 					},
 				},
 				{
 					Properties: &armsynapse.SensitivityLabelUpdateProperties{
-						Schema: to.StringPtr("<schema>"),
-						Column: to.StringPtr("<column>"),
-						Op:     armsynapse.SensitivityLabelUpdateKindSet.ToPtr(),
+						Schema: to.Ptr("dbo"),
+						Column: to.Ptr("column2"),
+						Op:     to.Ptr(armsynapse.SensitivityLabelUpdateKindSet),
 						SensitivityLabel: &armsynapse.SensitivityLabel{
 							Properties: &armsynapse.SensitivityLabelProperties{
-								InformationType:   to.StringPtr("<information-type>"),
-								InformationTypeID: to.StringPtr("<information-type-id>"),
-								LabelID:           to.StringPtr("<label-id>"),
-								LabelName:         to.StringPtr("<label-name>"),
-								Rank:              armsynapse.SensitivityLabelRankCritical.ToPtr(),
+								InformationType:   to.Ptr("PhoneNumber"),
+								InformationTypeID: to.Ptr("d22fa6e9-5ee4-3bde-4c2b-a409604c4646"),
+								LabelID:           to.Ptr("bf91e08c-f4f0-478a-b016-25164b2a65ff"),
+								LabelName:         to.Ptr("PII"),
+								Rank:              to.Ptr(armsynapse.SensitivityLabelRankCritical),
 							},
 						},
-						Table: to.StringPtr("<table>"),
+						Table: to.Ptr("table2"),
 					},
 				},
 				{
 					Properties: &armsynapse.SensitivityLabelUpdateProperties{
-						Schema: to.StringPtr("<schema>"),
-						Column: to.StringPtr("<column>"),
-						Op:     armsynapse.SensitivityLabelUpdateKindRemove.ToPtr(),
-						Table:  to.StringPtr("<table>"),
+						Schema: to.Ptr("dbo"),
+						Column: to.Ptr("Column3"),
+						Op:     to.Ptr(armsynapse.SensitivityLabelUpdateKindRemove),
+						Table:  to.Ptr("Table1"),
 					},
 				}},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/ListSqlPoolSensitivityLabelsWithSourceRecommended.json
-func ExampleSQLPoolSensitivityLabelsClient_ListRecommended() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/ListSqlPoolSensitivityLabelsWithSourceRecommended.json
+func ExampleSQLPoolSensitivityLabelsClient_NewListRecommendedPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
-	pager := client.ListRecommended("<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListRecommendedPager("myRG",
+		"myServer",
+		"myDatabase",
 		&armsynapse.SQLPoolSensitivityLabelsClientListRecommendedOptions{IncludeDisabledRecommendations: nil,
 			SkipToken: nil,
 			Filter:    nil,
 		})
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/CreateOrUpdateSqlPoolColumnSensitivityLabelWithAllParameters.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/CreateOrUpdateSqlPoolColumnSensitivityLabelWithAllParameters.json
 func ExampleSQLPoolSensitivityLabelsClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		"<schema-name>",
-		"<table-name>",
-		"<column-name>",
+		"myRG",
+		"myServer",
+		"myDatabase",
+		"dbo",
+		"myTable",
+		"myColumn",
 		armsynapse.SensitivityLabel{
 			Properties: &armsynapse.SensitivityLabelProperties{
-				InformationType:   to.StringPtr("<information-type>"),
-				InformationTypeID: to.StringPtr("<information-type-id>"),
-				LabelID:           to.StringPtr("<label-id>"),
-				LabelName:         to.StringPtr("<label-name>"),
+				InformationType:   to.Ptr("PhoneNumber"),
+				InformationTypeID: to.Ptr("d22fa6e9-5ee4-3bde-4c2b-a409604c4646"),
+				LabelID:           to.Ptr("bf91e08c-f4f0-478a-b016-25164b2a65ff"),
+				LabelName:         to.Ptr("PII"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.SQLPoolSensitivityLabelsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/DeleteSqlPoolColumnSensitivityLabel.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/DeleteSqlPoolColumnSensitivityLabel.json
 func ExampleSQLPoolSensitivityLabelsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		"<schema-name>",
-		"<table-name>",
-		"<column-name>",
+		"myRG",
+		"myServer",
+		"myDatabase",
+		"dbo",
+		"myTable",
+		"myColumn",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/GetSqlPoolColumnSensitivityLabelGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/GetSqlPoolColumnSensitivityLabelGet.json
 func ExampleSQLPoolSensitivityLabelsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		"<schema-name>",
-		"<table-name>",
-		"<column-name>",
+		"myRG",
+		"myServer",
+		"myDatabase",
+		"dbo",
+		"myTable",
+		"myColumn",
 		armsynapse.SensitivityLabelSourceCurrent,
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.SQLPoolSensitivityLabelsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/RecommendedColumnSensitivityLabelEnable.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/RecommendedColumnSensitivityLabelEnable.json
 func ExampleSQLPoolSensitivityLabelsClient_EnableRecommendation() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.EnableRecommendation(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		"<schema-name>",
-		"<table-name>",
-		"<column-name>",
+		"myRG",
+		"myServer",
+		"myDatabase",
+		"dbo",
+		"myTable",
+		"myColumn",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/RecommendedColumnSensitivityLabelDisable.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/stable/2021-06-01/examples/RecommendedColumnSensitivityLabelDisable.json
 func ExampleSQLPoolSensitivityLabelsClient_DisableRecommendation() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewSQLPoolSensitivityLabelsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewSQLPoolSensitivityLabelsClient("00000000-1111-2222-3333-444444444444", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.DisableRecommendation(ctx,
-		"<resource-group-name>",
-		"<workspace-name>",
-		"<sql-pool-name>",
-		"<schema-name>",
-		"<table-name>",
-		"<column-name>",
+		"myRG",
+		"myServer",
+		"myDatabase",
+		"dbo",
+		"myTable",
+		"myColumn",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }

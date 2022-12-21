@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,126 +12,147 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/synapse/armsynapse"
 )
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsCheckNameAvailability.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsCheckNameAvailability.json
 func ExampleKustoPoolPrincipalAssignmentsClient_CheckNameAvailability() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolPrincipalAssignmentsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolPrincipalAssignmentsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CheckNameAvailability(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustorptest",
 		armsynapse.ClusterPrincipalAssignmentCheckNameRequest{
-			Name: to.StringPtr("<name>"),
-			Type: to.StringPtr("<type>"),
+			Name: to.Ptr("kustoprincipal1"),
+			Type: to.Ptr("Microsoft.Synapse/workspaces/kustoPools/principalAssignments"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolPrincipalAssignmentsClientCheckNameAvailabilityResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsList.json
-func ExampleKustoPoolPrincipalAssignmentsClient_List() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsList.json
+func ExampleKustoPoolPrincipalAssignmentsClient_NewListPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolPrincipalAssignmentsClient("<subscription-id>", cred, nil)
-	res, err := client.List(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<resource-group-name>",
-		nil)
+	client, err := armsynapse.NewKustoPoolPrincipalAssignmentsClient("12345678-1234-1234-1234-123456789098", cred, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create client: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolPrincipalAssignmentsClientListResult)
+	pager := client.NewListPager("synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustorptest",
+		nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			log.Fatalf("failed to advance page: %v", err)
+		}
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
+		}
+	}
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsGet.json
 func ExampleKustoPoolPrincipalAssignmentsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolPrincipalAssignmentsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolPrincipalAssignmentsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<principal-assignment-name>",
-		"<resource-group-name>",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustoprincipal1",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolPrincipalAssignmentsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsCreateOrUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsCreateOrUpdate.json
 func ExampleKustoPoolPrincipalAssignmentsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolPrincipalAssignmentsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolPrincipalAssignmentsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<principal-assignment-name>",
-		"<resource-group-name>",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustoprincipal1",
+		"kustorptest",
 		armsynapse.ClusterPrincipalAssignment{
 			Properties: &armsynapse.ClusterPrincipalProperties{
-				PrincipalID:   to.StringPtr("<principal-id>"),
-				PrincipalType: armsynapse.PrincipalType("App").ToPtr(),
-				Role:          armsynapse.ClusterPrincipalRole("AllDatabasesAdmin").ToPtr(),
-				TenantID:      to.StringPtr("<tenant-id>"),
+				PrincipalID:   to.Ptr("87654321-1234-1234-1234-123456789123"),
+				PrincipalType: to.Ptr(armsynapse.PrincipalTypeApp),
+				Role:          to.Ptr(armsynapse.ClusterPrincipalRoleAllDatabasesAdmin),
+				TenantID:      to.Ptr("12345678-1234-1234-1234-123456789123"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.KustoPoolPrincipalAssignmentsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/synapse/resource-manager/Microsoft.Synapse/preview/2021-06-01-preview/examples/KustoPoolPrincipalAssignmentsDelete.json
 func ExampleKustoPoolPrincipalAssignmentsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsynapse.NewKustoPoolPrincipalAssignmentsClient("<subscription-id>", cred, nil)
+	client, err := armsynapse.NewKustoPoolPrincipalAssignmentsClient("12345678-1234-1234-1234-123456789098", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<workspace-name>",
-		"<kusto-pool-name>",
-		"<principal-assignment-name>",
-		"<resource-group-name>",
+		"synapseWorkspaceName",
+		"kustoclusterrptest4",
+		"kustoprincipal1",
+		"kustorptest",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }

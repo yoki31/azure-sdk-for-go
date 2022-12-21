@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,24 +34,29 @@ type KeyValuesClient struct {
 // subscriptionID - The Microsoft Azure subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewKeyValuesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *KeyValuesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewKeyValuesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*KeyValuesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &KeyValuesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates a key-value.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-01
 // resourceGroupName - The name of the resource group to which the container registry belongs.
 // configStoreName - The name of the configuration store.
 // keyValueName - Identifier of key and label combination. Key and label are joined by $ character. Label is optional.
@@ -95,9 +101,9 @@ func (client *KeyValuesClient) createOrUpdateCreateRequest(ctx context.Context, 
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-03-01-preview")
+	reqQP.Set("api-version", "2022-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.KeyValueParameters != nil {
 		return req, runtime.MarshalAsJSON(req, *options.KeyValueParameters)
 	}
@@ -106,7 +112,7 @@ func (client *KeyValuesClient) createOrUpdateCreateRequest(ctx context.Context, 
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *KeyValuesClient) createOrUpdateHandleResponse(resp *http.Response) (KeyValuesClientCreateOrUpdateResponse, error) {
-	result := KeyValuesClientCreateOrUpdateResponse{RawResponse: resp}
+	result := KeyValuesClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.KeyValue); err != nil {
 		return KeyValuesClientCreateOrUpdateResponse{}, err
 	}
@@ -115,30 +121,26 @@ func (client *KeyValuesClient) createOrUpdateHandleResponse(resp *http.Response)
 
 // BeginDelete - Deletes a key-value.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-01
 // resourceGroupName - The name of the resource group to which the container registry belongs.
 // configStoreName - The name of the configuration store.
 // keyValueName - Identifier of key and label combination. Key and label are joined by $ character. Label is optional.
 // options - KeyValuesClientBeginDeleteOptions contains the optional parameters for the KeyValuesClient.BeginDelete method.
-func (client *KeyValuesClient) BeginDelete(ctx context.Context, resourceGroupName string, configStoreName string, keyValueName string, options *KeyValuesClientBeginDeleteOptions) (KeyValuesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, configStoreName, keyValueName, options)
-	if err != nil {
-		return KeyValuesClientDeletePollerResponse{}, err
+func (client *KeyValuesClient) BeginDelete(ctx context.Context, resourceGroupName string, configStoreName string, keyValueName string, options *KeyValuesClientBeginDeleteOptions) (*runtime.Poller[KeyValuesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, configStoreName, keyValueName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[KeyValuesClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[KeyValuesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := KeyValuesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("KeyValuesClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return KeyValuesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &KeyValuesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a key-value.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-01
 func (client *KeyValuesClient) deleteOperation(ctx context.Context, resourceGroupName string, configStoreName string, keyValueName string, options *KeyValuesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, configStoreName, keyValueName, options)
 	if err != nil {
@@ -178,14 +180,15 @@ func (client *KeyValuesClient) deleteCreateRequest(ctx context.Context, resource
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-03-01-preview")
+	reqQP.Set("api-version", "2022-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets the properties of the specified key-value.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-01
 // resourceGroupName - The name of the resource group to which the container registry belongs.
 // configStoreName - The name of the configuration store.
 // keyValueName - Identifier of key and label combination. Key and label are joined by $ character. Label is optional.
@@ -229,37 +232,54 @@ func (client *KeyValuesClient) getCreateRequest(ctx context.Context, resourceGro
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-03-01-preview")
+	reqQP.Set("api-version", "2022-05-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *KeyValuesClient) getHandleResponse(resp *http.Response) (KeyValuesClientGetResponse, error) {
-	result := KeyValuesClientGetResponse{RawResponse: resp}
+	result := KeyValuesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.KeyValue); err != nil {
 		return KeyValuesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByConfigurationStore - Lists the key-values for a given configuration store.
+// NewListByConfigurationStorePager - Lists the key-values for a given configuration store.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2022-05-01
 // resourceGroupName - The name of the resource group to which the container registry belongs.
 // configStoreName - The name of the configuration store.
 // options - KeyValuesClientListByConfigurationStoreOptions contains the optional parameters for the KeyValuesClient.ListByConfigurationStore
 // method.
-func (client *KeyValuesClient) ListByConfigurationStore(resourceGroupName string, configStoreName string, options *KeyValuesClientListByConfigurationStoreOptions) *KeyValuesClientListByConfigurationStorePager {
-	return &KeyValuesClientListByConfigurationStorePager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByConfigurationStoreCreateRequest(ctx, resourceGroupName, configStoreName, options)
+func (client *KeyValuesClient) NewListByConfigurationStorePager(resourceGroupName string, configStoreName string, options *KeyValuesClientListByConfigurationStoreOptions) *runtime.Pager[KeyValuesClientListByConfigurationStoreResponse] {
+	return runtime.NewPager(runtime.PagingHandler[KeyValuesClientListByConfigurationStoreResponse]{
+		More: func(page KeyValuesClientListByConfigurationStoreResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp KeyValuesClientListByConfigurationStoreResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.KeyValueListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *KeyValuesClientListByConfigurationStoreResponse) (KeyValuesClientListByConfigurationStoreResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByConfigurationStoreCreateRequest(ctx, resourceGroupName, configStoreName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return KeyValuesClientListByConfigurationStoreResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return KeyValuesClientListByConfigurationStoreResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return KeyValuesClientListByConfigurationStoreResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByConfigurationStoreHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByConfigurationStoreCreateRequest creates the ListByConfigurationStore request.
@@ -282,18 +302,18 @@ func (client *KeyValuesClient) listByConfigurationStoreCreateRequest(ctx context
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
-	reqQP.Set("api-version", "2021-03-01-preview")
+	reqQP.Set("api-version", "2022-05-01")
 	if options != nil && options.SkipToken != nil {
 		reqQP.Set("$skipToken", *options.SkipToken)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByConfigurationStoreHandleResponse handles the ListByConfigurationStore response.
 func (client *KeyValuesClient) listByConfigurationStoreHandleResponse(resp *http.Response) (KeyValuesClientListByConfigurationStoreResponse, error) {
-	result := KeyValuesClientListByConfigurationStoreResponse{RawResponse: resp}
+	result := KeyValuesClientListByConfigurationStoreResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.KeyValueListResult); err != nil {
 		return KeyValuesClientListByConfigurationStoreResponse{}, err
 	}

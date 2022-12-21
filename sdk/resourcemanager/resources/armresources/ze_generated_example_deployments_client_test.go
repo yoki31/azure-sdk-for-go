@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,304 +12,341 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtScope.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtScope.json
 func ExampleDeploymentsClient_BeginCreateOrUpdateAtScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdateAtScope(ctx,
-		"<scope>",
-		"<deployment-name>",
+		"providers/Microsoft.Management/managementGroups/my-management-group-id",
+		"my-deployment",
 		armresources.Deployment{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentProperties{
-				Mode:       armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:       to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters: map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{
-					URI: to.StringPtr("<uri>"),
+					URI: to.Ptr("https://example.com/exampleTemplate.json"),
 				},
 			},
 			Tags: map[string]*string{
-				"tagKey1": to.StringPtr("tag-value-1"),
-				"tagKey2": to.StringPtr("tag-value-2"),
+				"tagKey1": to.Ptr("tag-value-1"),
+				"tagKey2": to.Ptr("tag-value-2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCreateOrUpdateAtScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtTenant.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtTenant.json
 func ExampleDeploymentsClient_BeginCreateOrUpdateAtTenantScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdateAtTenantScope(ctx,
-		"<deployment-name>",
+		"tenant-dep01",
 		armresources.ScopedDeployment{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentProperties{
-				Mode:       armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:       to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters: map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{
-					URI: to.StringPtr("<uri>"),
+					URI: to.Ptr("https://example.com/exampleTemplate.json"),
 				},
 			},
 			Tags: map[string]*string{
-				"tagKey1": to.StringPtr("tag-value-1"),
-				"tagKey2": to.StringPtr("tag-value-2"),
+				"tagKey1": to.Ptr("tag-value-1"),
+				"tagKey2": to.Ptr("tag-value-2"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCreateOrUpdateAtTenantScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnTenant.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnTenant.json
 func ExampleDeploymentsClient_BeginWhatIfAtTenantScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginWhatIfAtTenantScope(ctx,
-		"<deployment-name>",
+		"exampleDeploymentName",
 		armresources.ScopedDeploymentWhatIf{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentWhatIfProperties{
-				Mode:         armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:         to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters:   map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientWhatIfAtTenantScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtManagementGroup.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentAtManagementGroup.json
 func ExampleDeploymentsClient_BeginCreateOrUpdateAtManagementGroupScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdateAtManagementGroupScope(ctx,
-		"<group-id>",
-		"<deployment-name>",
+		"my-management-group-id",
+		"my-deployment",
 		armresources.ScopedDeployment{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentProperties{
-				Mode:       armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:       to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters: map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{
-					URI: to.StringPtr("<uri>"),
+					URI: to.Ptr("https://example.com/exampleTemplate.json"),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCreateOrUpdateAtManagementGroupScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnManagementGroup.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnManagementGroup.json
 func ExampleDeploymentsClient_BeginWhatIfAtManagementGroupScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginWhatIfAtManagementGroupScope(ctx,
-		"<group-id>",
-		"<deployment-name>",
+		"myManagementGruop",
+		"exampleDeploymentName",
 		armresources.ScopedDeploymentWhatIf{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentWhatIfProperties{
-				Mode:         armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:         to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters:   map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientWhatIfAtManagementGroupScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentSubscriptionTemplateSpecsWithId.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentSubscriptionTemplateSpecsWithId.json
 func ExampleDeploymentsClient_BeginCreateOrUpdateAtSubscriptionScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("00000000-0000-0000-0000-000000000001", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdateAtSubscriptionScope(ctx,
-		"<deployment-name>",
+		"my-deployment",
 		armresources.Deployment{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("eastus"),
 			Properties: &armresources.DeploymentProperties{
-				Mode:       armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:       to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters: map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{
-					ID: to.StringPtr("<id>"),
+					ID: to.Ptr("/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/my-resource-group/providers/Microsoft.Resources/TemplateSpecs/TemplateSpec-Name/versions/v1"),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCreateOrUpdateAtSubscriptionScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnSubscription.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnSubscription.json
 func ExampleDeploymentsClient_BeginWhatIfAtSubscriptionScope() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("00000000-0000-0000-0000-000000000001", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginWhatIfAtSubscriptionScope(ctx,
-		"<deployment-name>",
+		"my-deployment",
 		armresources.DeploymentWhatIf{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("westus"),
 			Properties: &armresources.DeploymentWhatIfProperties{
-				Mode:         armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:         to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters:   map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientWhatIfAtSubscriptionScopeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentResourceGroup.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PutDeploymentResourceGroup.json
 func ExampleDeploymentsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("00000000-0000-0000-0000-000000000001", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<deployment-name>",
+		"my-resource-group",
+		"my-deployment",
 		armresources.Deployment{
 			Properties: &armresources.DeploymentProperties{
-				Mode:       armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:       to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters: map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{
-					QueryString: to.StringPtr("<query-string>"),
-					URI:         to.StringPtr("<uri>"),
+					QueryString: to.Ptr("sv=2019-02-02&st=2019-04-29T22%3A18%3A26Z&se=2019-04-30T02%3A23%3A26Z&sr=b&sp=rw&sip=168.1.5.60-168.1.5.70&spr=https&sig=xxxxxxxx0xxxxxxxxxxxxx%2bxxxxxxxxxxxxxxxxxxxx%3d"),
+					URI:         to.Ptr("https://example.com/exampleTemplate.json"),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnResourceGroup.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/PostDeploymentWhatIfOnResourceGroup.json
 func ExampleDeploymentsClient_BeginWhatIf() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("00000000-0000-0000-0000-000000000001", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginWhatIf(ctx,
-		"<resource-group-name>",
-		"<deployment-name>",
+		"my-resource-group",
+		"my-deployment",
 		armresources.DeploymentWhatIf{
 			Properties: &armresources.DeploymentWhatIfProperties{
-				Mode:         armresources.DeploymentModeIncremental.ToPtr(),
+				Mode:         to.Ptr(armresources.DeploymentModeIncremental),
 				Parameters:   map[string]interface{}{},
 				TemplateLink: &armresources.TemplateLink{},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientWhatIfResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/CalculateTemplateHash.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/resources/resource-manager/Microsoft.Resources/stable/2021-04-01/examples/CalculateTemplateHash.json
 func ExampleDeploymentsClient_CalculateTemplateHash() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	client, err := armresources.NewDeploymentsClient("<subscription-id>", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CalculateTemplateHash(ctx,
 		map[string]interface{}{
 			"$schema":        "http://schemas.management.azure.com/deploymentTemplate?api-version=2014-04-01-preview",
@@ -346,7 +383,8 @@ func ExampleDeploymentsClient_CalculateTemplateHash() {
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DeploymentsClientCalculateTemplateHashResult)
+	// TODO: use response item
+	_ = res
 }

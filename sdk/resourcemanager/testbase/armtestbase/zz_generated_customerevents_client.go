@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,50 +34,52 @@ type CustomerEventsClient struct {
 // subscriptionID - The Azure subscription ID. This is a GUID-formatted string.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewCustomerEventsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *CustomerEventsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewCustomerEventsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*CustomerEventsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &CustomerEventsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreate - Create or replace a Test Base Customer Event.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 // resourceGroupName - The name of the resource group that contains the resource.
 // testBaseAccountName - The resource name of the Test Base Account.
 // customerEventName - The resource name of the Test Base Customer event.
 // parameters - Parameters supplied to create a Test Base CustomerEvent.
 // options - CustomerEventsClientBeginCreateOptions contains the optional parameters for the CustomerEventsClient.BeginCreate
 // method.
-func (client *CustomerEventsClient) BeginCreate(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, parameters CustomerEventResource, options *CustomerEventsClientBeginCreateOptions) (CustomerEventsClientCreatePollerResponse, error) {
-	resp, err := client.create(ctx, resourceGroupName, testBaseAccountName, customerEventName, parameters, options)
-	if err != nil {
-		return CustomerEventsClientCreatePollerResponse{}, err
+func (client *CustomerEventsClient) BeginCreate(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, parameters CustomerEventResource, options *CustomerEventsClientBeginCreateOptions) (*runtime.Poller[CustomerEventsClientCreateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.create(ctx, resourceGroupName, testBaseAccountName, customerEventName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[CustomerEventsClientCreateResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[CustomerEventsClientCreateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CustomerEventsClientCreatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CustomerEventsClient.Create", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return CustomerEventsClientCreatePollerResponse{}, err
-	}
-	result.Poller = &CustomerEventsClientCreatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Create - Create or replace a Test Base Customer Event.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 func (client *CustomerEventsClient) create(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, parameters CustomerEventResource, options *CustomerEventsClientBeginCreateOptions) (*http.Response, error) {
 	req, err := client.createCreateRequest(ctx, resourceGroupName, testBaseAccountName, customerEventName, parameters, options)
 	if err != nil {
@@ -118,37 +121,35 @@ func (client *CustomerEventsClient) createCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-12-16-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a Test Base Customer Event.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 // resourceGroupName - The name of the resource group that contains the resource.
 // testBaseAccountName - The resource name of the Test Base Account.
 // customerEventName - The resource name of the Test Base Customer event.
 // options - CustomerEventsClientBeginDeleteOptions contains the optional parameters for the CustomerEventsClient.BeginDelete
 // method.
-func (client *CustomerEventsClient) BeginDelete(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, options *CustomerEventsClientBeginDeleteOptions) (CustomerEventsClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, testBaseAccountName, customerEventName, options)
-	if err != nil {
-		return CustomerEventsClientDeletePollerResponse{}, err
+func (client *CustomerEventsClient) BeginDelete(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, options *CustomerEventsClientBeginDeleteOptions) (*runtime.Poller[CustomerEventsClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, testBaseAccountName, customerEventName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[CustomerEventsClientDeleteResponse]{
+			FinalStateVia: runtime.FinalStateViaAzureAsyncOp,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[CustomerEventsClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := CustomerEventsClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("CustomerEventsClient.Delete", "azure-async-operation", resp, client.pl)
-	if err != nil {
-		return CustomerEventsClientDeletePollerResponse{}, err
-	}
-	result.Poller = &CustomerEventsClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a Test Base Customer Event.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 func (client *CustomerEventsClient) deleteOperation(ctx context.Context, resourceGroupName string, testBaseAccountName string, customerEventName string, options *CustomerEventsClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, testBaseAccountName, customerEventName, options)
 	if err != nil {
@@ -190,12 +191,13 @@ func (client *CustomerEventsClient) deleteCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-12-16-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Gets a Test Base CustomerEvent.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 // resourceGroupName - The name of the resource group that contains the resource.
 // testBaseAccountName - The resource name of the Test Base Account.
 // customerEventName - The resource name of the Test Base Customer event.
@@ -241,35 +243,52 @@ func (client *CustomerEventsClient) getCreateRequest(ctx context.Context, resour
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-12-16-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *CustomerEventsClient) getHandleResponse(resp *http.Response) (CustomerEventsClientGetResponse, error) {
-	result := CustomerEventsClientGetResponse{RawResponse: resp}
+	result := CustomerEventsClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CustomerEventResource); err != nil {
 		return CustomerEventsClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByTestBaseAccount - Lists all notification events subscribed under a Test Base Account.
+// NewListByTestBaseAccountPager - Lists all notification events subscribed under a Test Base Account.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2020-12-16-preview
 // resourceGroupName - The name of the resource group that contains the resource.
 // testBaseAccountName - The resource name of the Test Base Account.
 // options - CustomerEventsClientListByTestBaseAccountOptions contains the optional parameters for the CustomerEventsClient.ListByTestBaseAccount
 // method.
-func (client *CustomerEventsClient) ListByTestBaseAccount(resourceGroupName string, testBaseAccountName string, options *CustomerEventsClientListByTestBaseAccountOptions) *CustomerEventsClientListByTestBaseAccountPager {
-	return &CustomerEventsClientListByTestBaseAccountPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByTestBaseAccountCreateRequest(ctx, resourceGroupName, testBaseAccountName, options)
+func (client *CustomerEventsClient) NewListByTestBaseAccountPager(resourceGroupName string, testBaseAccountName string, options *CustomerEventsClientListByTestBaseAccountOptions) *runtime.Pager[CustomerEventsClientListByTestBaseAccountResponse] {
+	return runtime.NewPager(runtime.PagingHandler[CustomerEventsClientListByTestBaseAccountResponse]{
+		More: func(page CustomerEventsClientListByTestBaseAccountResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp CustomerEventsClientListByTestBaseAccountResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.CustomerEventListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *CustomerEventsClientListByTestBaseAccountResponse) (CustomerEventsClientListByTestBaseAccountResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByTestBaseAccountCreateRequest(ctx, resourceGroupName, testBaseAccountName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return CustomerEventsClientListByTestBaseAccountResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return CustomerEventsClientListByTestBaseAccountResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return CustomerEventsClientListByTestBaseAccountResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByTestBaseAccountHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByTestBaseAccountCreateRequest creates the ListByTestBaseAccount request.
@@ -294,13 +313,13 @@ func (client *CustomerEventsClient) listByTestBaseAccountCreateRequest(ctx conte
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2020-12-16-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByTestBaseAccountHandleResponse handles the ListByTestBaseAccount response.
 func (client *CustomerEventsClient) listByTestBaseAccountHandleResponse(resp *http.Response) (CustomerEventsClientListByTestBaseAccountResponse, error) {
-	result := CustomerEventsClientListByTestBaseAccountResponse{RawResponse: resp}
+	result := CustomerEventsClientListByTestBaseAccountResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.CustomerEventListResult); err != nil {
 		return CustomerEventsClientListByTestBaseAccountResponse{}, err
 	}

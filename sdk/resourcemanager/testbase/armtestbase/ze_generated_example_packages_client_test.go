@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,208 +12,214 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/testbase/armtestbase"
 )
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackagesList.json
-func ExamplePackagesClient_ListByTestBaseAccount() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackagesList.json
+func ExamplePackagesClient_NewListByTestBaseAccountPager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
-	pager := client.ListByTestBaseAccount("<resource-group-name>",
-		"<test-base-account-name>",
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByTestBaseAccountPager("contoso-rg1",
+		"contoso-testBaseAccount1",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageCreate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageCreate.json
 func ExamplePackagesClient_BeginCreate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreate(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		armtestbase.PackageResource{
-			Location: to.StringPtr("<location>"),
+			Location: to.Ptr("westus"),
 			Tags:     map[string]*string{},
 			Properties: &armtestbase.PackageProperties{
-				ApplicationName: to.StringPtr("<application-name>"),
-				BlobPath:        to.StringPtr("<blob-path>"),
-				FlightingRing:   to.StringPtr("<flighting-ring>"),
+				ApplicationName: to.Ptr("contoso-package2"),
+				BlobPath:        to.Ptr("storageAccountPath/package.zip"),
+				FlightingRing:   to.Ptr("Insider Beta Channel"),
 				TargetOSList: []*armtestbase.TargetOSInfo{
 					{
-						OSUpdateType: to.StringPtr("<osupdate-type>"),
+						OSUpdateType: to.Ptr("Security updates"),
 						TargetOSs: []*string{
-							to.StringPtr("Windows 10 2004"),
-							to.StringPtr("Windows 10 1903")},
+							to.Ptr("Windows 10 2004"),
+							to.Ptr("Windows 10 1903")},
 					}},
 				Tests: []*armtestbase.Test{
 					{
-						IsActive: to.BoolPtr(true),
-						TestType: armtestbase.TestType("OutOfBoxTest").ToPtr(),
+						IsActive: to.Ptr(true),
+						TestType: to.Ptr(armtestbase.TestTypeOutOfBoxTest),
 						Commands: []*armtestbase.Command{
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Install").ToPtr(),
-								AlwaysRun:         to.BoolPtr(true),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(true),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Install"),
+								Action:            to.Ptr(armtestbase.ActionInstall),
+								AlwaysRun:         to.Ptr(true),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/install/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(true),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Launch").ToPtr(),
-								AlwaysRun:         to.BoolPtr(false),
-								ApplyUpdateBefore: to.BoolPtr(true),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Launch"),
+								Action:            to.Ptr(armtestbase.ActionLaunch),
+								AlwaysRun:         to.Ptr(false),
+								ApplyUpdateBefore: to.Ptr(true),
+								Content:           to.Ptr("app/scripts/launch/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Close").ToPtr(),
-								AlwaysRun:         to.BoolPtr(false),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Close"),
+								Action:            to.Ptr(armtestbase.ActionClose),
+								AlwaysRun:         to.Ptr(false),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/close/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Uninstall").ToPtr(),
-								AlwaysRun:         to.BoolPtr(true),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Uninstall"),
+								Action:            to.Ptr(armtestbase.ActionUninstall),
+								AlwaysRun:         to.Ptr(true),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/uninstall/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							}},
 					}},
-				Version: to.StringPtr("<version>"),
+				Version: to.Ptr("1.0.0"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PackagesClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageUpdate.json
 func ExamplePackagesClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		armtestbase.PackageUpdateParameters{
 			Properties: &armtestbase.PackageUpdateParameterProperties{
-				BlobPath:      to.StringPtr("<blob-path>"),
-				FlightingRing: to.StringPtr("<flighting-ring>"),
-				IsEnabled:     to.BoolPtr(false),
+				BlobPath:      to.Ptr("storageAccountPath/package.zip"),
+				FlightingRing: to.Ptr("Insider Beta Channel"),
+				IsEnabled:     to.Ptr(false),
 				TargetOSList: []*armtestbase.TargetOSInfo{
 					{
-						OSUpdateType: to.StringPtr("<osupdate-type>"),
+						OSUpdateType: to.Ptr("Security updates"),
 						TargetOSs: []*string{
-							to.StringPtr("Windows 10 2004"),
-							to.StringPtr("Windows 10 1903")},
+							to.Ptr("Windows 10 2004"),
+							to.Ptr("Windows 10 1903")},
 					}},
 				Tests: []*armtestbase.Test{
 					{
-						IsActive: to.BoolPtr(true),
-						TestType: armtestbase.TestType("OutOfBoxTest").ToPtr(),
+						IsActive: to.Ptr(true),
+						TestType: to.Ptr(armtestbase.TestTypeOutOfBoxTest),
 						Commands: []*armtestbase.Command{
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Install").ToPtr(),
-								AlwaysRun:         to.BoolPtr(true),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(true),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Install"),
+								Action:            to.Ptr(armtestbase.ActionInstall),
+								AlwaysRun:         to.Ptr(true),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/install/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(true),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Launch").ToPtr(),
-								AlwaysRun:         to.BoolPtr(false),
-								ApplyUpdateBefore: to.BoolPtr(true),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Launch"),
+								Action:            to.Ptr(armtestbase.ActionLaunch),
+								AlwaysRun:         to.Ptr(false),
+								ApplyUpdateBefore: to.Ptr(true),
+								Content:           to.Ptr("app/scripts/launch/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Close").ToPtr(),
-								AlwaysRun:         to.BoolPtr(false),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Close"),
+								Action:            to.Ptr(armtestbase.ActionClose),
+								AlwaysRun:         to.Ptr(false),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/close/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							},
 							{
-								Name:              to.StringPtr("<name>"),
-								Action:            armtestbase.Action("Uninstall").ToPtr(),
-								AlwaysRun:         to.BoolPtr(true),
-								ApplyUpdateBefore: to.BoolPtr(false),
-								Content:           to.StringPtr("<content>"),
-								ContentType:       armtestbase.ContentType("Path").ToPtr(),
-								MaxRunTime:        to.Int32Ptr(1800),
-								RestartAfter:      to.BoolPtr(false),
-								RunAsInteractive:  to.BoolPtr(true),
-								RunElevated:       to.BoolPtr(true),
+								Name:              to.Ptr("Uninstall"),
+								Action:            to.Ptr(armtestbase.ActionUninstall),
+								AlwaysRun:         to.Ptr(true),
+								ApplyUpdateBefore: to.Ptr(false),
+								Content:           to.Ptr("app/scripts/uninstall/job.ps1"),
+								ContentType:       to.Ptr(armtestbase.ContentTypePath),
+								MaxRunTime:        to.Ptr[int32](1800),
+								RestartAfter:      to.Ptr(false),
+								RunAsInteractive:  to.Ptr(true),
+								RunElevated:       to.Ptr(true),
 							}},
 					}},
 			},
@@ -221,93 +227,108 @@ func ExamplePackagesClient_BeginUpdate() {
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PackagesClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageDelete.json
 func ExamplePackagesClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageGet.json
 func ExamplePackagesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PackagesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageHardDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageHardDelete.json
 func ExamplePackagesClient_BeginHardDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginHardDelete(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	_, err = poller.PollUntilDone(ctx, 30*time.Second)
+	_, err = poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageGetDownloadURL.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/testbase/resource-manager/Microsoft.TestBase/preview/2020-12-16-preview/examples/PackageGetDownloadURL.json
 func ExamplePackagesClient_GetDownloadURL() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armtestbase.NewPackagesClient("<subscription-id>", cred, nil)
+	client, err := armtestbase.NewPackagesClient("476f61a4-952c-422a-b4db-568a828f35df", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GetDownloadURL(ctx,
-		"<resource-group-name>",
-		"<test-base-account-name>",
-		"<package-name>",
+		"contoso-rg1",
+		"contoso-testBaseAccount1",
+		"contoso-package2",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PackagesClientGetDownloadURLResult)
+	// TODO: use response item
+	_ = res
 }

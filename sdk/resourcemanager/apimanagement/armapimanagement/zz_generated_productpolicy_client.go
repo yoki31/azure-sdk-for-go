@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -34,24 +35,29 @@ type ProductPolicyClient struct {
 // part of the URI for every service call.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewProductPolicyClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *ProductPolicyClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewProductPolicyClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*ProductPolicyClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &ProductPolicyClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - Creates or updates policy configuration for the Product.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -105,15 +111,15 @@ func (client *ProductPolicyClient) createOrUpdateCreateRequest(ctx context.Conte
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
 	if options != nil && options.IfMatch != nil {
-		req.Raw().Header.Set("If-Match", *options.IfMatch)
+		req.Raw().Header["If-Match"] = []string{*options.IfMatch}
 	}
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *ProductPolicyClient) createOrUpdateHandleResponse(resp *http.Response) (ProductPolicyClientCreateOrUpdateResponse, error) {
-	result := ProductPolicyClientCreateOrUpdateResponse{RawResponse: resp}
+	result := ProductPolicyClientCreateOrUpdateResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -125,6 +131,7 @@ func (client *ProductPolicyClient) createOrUpdateHandleResponse(resp *http.Respo
 
 // Delete - Deletes the policy configuration at the Product.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -144,7 +151,7 @@ func (client *ProductPolicyClient) Delete(ctx context.Context, resourceGroupName
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return ProductPolicyClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return ProductPolicyClientDeleteResponse{RawResponse: resp}, nil
+	return ProductPolicyClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -177,13 +184,14 @@ func (client *ProductPolicyClient) deleteCreateRequest(ctx context.Context, reso
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("If-Match", ifMatch)
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["If-Match"] = []string{ifMatch}
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Get - Get the policy configuration at the Product level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -237,13 +245,13 @@ func (client *ProductPolicyClient) getCreateRequest(ctx context.Context, resourc
 	}
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *ProductPolicyClient) getHandleResponse(resp *http.Response) (ProductPolicyClientGetResponse, error) {
-	result := ProductPolicyClientGetResponse{RawResponse: resp}
+	result := ProductPolicyClientGetResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
@@ -254,6 +262,7 @@ func (client *ProductPolicyClient) getHandleResponse(resp *http.Response) (Produ
 }
 
 // GetEntityTag - Get the ETag of the policy configuration at the Product level.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -268,6 +277,9 @@ func (client *ProductPolicyClient) GetEntityTag(ctx context.Context, resourceGro
 	resp, err := client.pl.Do(req)
 	if err != nil {
 		return ProductPolicyClientGetEntityTagResponse{}, err
+	}
+	if !runtime.HasStatusCode(resp, http.StatusOK) {
+		return ProductPolicyClientGetEntityTagResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getEntityTagHandleResponse(resp)
 }
@@ -302,24 +314,23 @@ func (client *ProductPolicyClient) getEntityTagCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getEntityTagHandleResponse handles the GetEntityTag response.
 func (client *ProductPolicyClient) getEntityTagHandleResponse(resp *http.Response) (ProductPolicyClientGetEntityTagResponse, error) {
-	result := ProductPolicyClientGetEntityTagResponse{RawResponse: resp}
+	result := ProductPolicyClientGetEntityTagResponse{}
 	if val := resp.Header.Get("ETag"); val != "" {
 		result.ETag = &val
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result.Success = true
-	}
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return result, nil
 }
 
 // ListByProduct - Get the policy configuration at the Product level.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-08-01
 // resourceGroupName - The name of the resource group.
 // serviceName - The name of the API Management service.
 // productID - Product identifier. Must be unique in the current API Management service instance.
@@ -366,13 +377,13 @@ func (client *ProductPolicyClient) listByProductCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-08-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByProductHandleResponse handles the ListByProduct response.
 func (client *ProductPolicyClient) listByProductHandleResponse(resp *http.Response) (ProductPolicyClientListByProductResponse, error) {
-	result := ProductPolicyClientListByProductResponse{RawResponse: resp}
+	result := ProductPolicyClientListByProductResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.PolicyCollection); err != nil {
 		return ProductPolicyClientListByProductResponse{}, err
 	}

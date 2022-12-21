@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,26 +34,31 @@ type TagsClient struct {
 // subscriptionID - The Microsoft Azure subscription ID.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewTagsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *TagsClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewTagsClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*TagsClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &TagsClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // CreateOrUpdate - This operation allows adding a name to the list of predefined tag names for the given subscription. A
 // tag name can have a maximum of 512 characters and is case-insensitive. Tag names cannot have the
 // following prefixes which are reserved for Azure use: 'microsoft', 'azure', 'windows'.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // tagName - The name of the tag to create.
 // options - TagsClientCreateOrUpdateOptions contains the optional parameters for the TagsClient.CreateOrUpdate method.
 func (client *TagsClient) CreateOrUpdate(ctx context.Context, tagName string, options *TagsClientCreateOrUpdateOptions) (TagsClientCreateOrUpdateResponse, error) {
@@ -88,13 +94,13 @@ func (client *TagsClient) createOrUpdateCreateRequest(ctx context.Context, tagNa
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // createOrUpdateHandleResponse handles the CreateOrUpdate response.
 func (client *TagsClient) createOrUpdateHandleResponse(resp *http.Response) (TagsClientCreateOrUpdateResponse, error) {
-	result := TagsClientCreateOrUpdateResponse{RawResponse: resp}
+	result := TagsClientCreateOrUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagDetails); err != nil {
 		return TagsClientCreateOrUpdateResponse{}, err
 	}
@@ -104,6 +110,7 @@ func (client *TagsClient) createOrUpdateHandleResponse(resp *http.Response) (Tag
 // CreateOrUpdateAtScope - This operation allows adding or replacing the entire set of tags on the specified resource or subscription.
 // The specified entity can have a maximum of 50 tags.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // options - TagsClientCreateOrUpdateAtScopeOptions contains the optional parameters for the TagsClient.CreateOrUpdateAtScope
 // method.
@@ -133,13 +140,13 @@ func (client *TagsClient) createOrUpdateAtScopeCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // createOrUpdateAtScopeHandleResponse handles the CreateOrUpdateAtScope response.
 func (client *TagsClient) createOrUpdateAtScopeHandleResponse(resp *http.Response) (TagsClientCreateOrUpdateAtScopeResponse, error) {
-	result := TagsClientCreateOrUpdateAtScopeResponse{RawResponse: resp}
+	result := TagsClientCreateOrUpdateAtScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagsResource); err != nil {
 		return TagsClientCreateOrUpdateAtScopeResponse{}, err
 	}
@@ -149,6 +156,7 @@ func (client *TagsClient) createOrUpdateAtScopeHandleResponse(resp *http.Respons
 // CreateOrUpdateValue - This operation allows adding a value to the list of predefined values for an existing predefined
 // tag name. A tag value can have a maximum of 256 characters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // tagName - The name of the tag.
 // tagValue - The value of the tag to create.
 // options - TagsClientCreateOrUpdateValueOptions contains the optional parameters for the TagsClient.CreateOrUpdateValue
@@ -190,13 +198,13 @@ func (client *TagsClient) createOrUpdateValueCreateRequest(ctx context.Context, 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // createOrUpdateValueHandleResponse handles the CreateOrUpdateValue response.
 func (client *TagsClient) createOrUpdateValueHandleResponse(resp *http.Response) (TagsClientCreateOrUpdateValueResponse, error) {
-	result := TagsClientCreateOrUpdateValueResponse{RawResponse: resp}
+	result := TagsClientCreateOrUpdateValueResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagValue); err != nil {
 		return TagsClientCreateOrUpdateValueResponse{}, err
 	}
@@ -207,6 +215,7 @@ func (client *TagsClient) createOrUpdateValueHandleResponse(resp *http.Response)
 // being deleted must not be in use as a tag name for any resource. All predefined values
 // for the given name must have already been deleted.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // tagName - The name of the tag.
 // options - TagsClientDeleteOptions contains the optional parameters for the TagsClient.Delete method.
 func (client *TagsClient) Delete(ctx context.Context, tagName string, options *TagsClientDeleteOptions) (TagsClientDeleteResponse, error) {
@@ -221,7 +230,7 @@ func (client *TagsClient) Delete(ctx context.Context, tagName string, options *T
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return TagsClientDeleteResponse{}, runtime.NewResponseError(resp)
 	}
-	return TagsClientDeleteResponse{RawResponse: resp}, nil
+	return TagsClientDeleteResponse{}, nil
 }
 
 // deleteCreateRequest creates the Delete request.
@@ -242,12 +251,13 @@ func (client *TagsClient) deleteCreateRequest(ctx context.Context, tagName strin
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // DeleteAtScope - Deletes the entire set of tags on a resource or subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // options - TagsClientDeleteAtScopeOptions contains the optional parameters for the TagsClient.DeleteAtScope method.
 func (client *TagsClient) DeleteAtScope(ctx context.Context, scope string, options *TagsClientDeleteAtScopeOptions) (TagsClientDeleteAtScopeResponse, error) {
@@ -262,7 +272,7 @@ func (client *TagsClient) DeleteAtScope(ctx context.Context, scope string, optio
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
 		return TagsClientDeleteAtScopeResponse{}, runtime.NewResponseError(resp)
 	}
-	return TagsClientDeleteAtScopeResponse{RawResponse: resp}, nil
+	return TagsClientDeleteAtScopeResponse{}, nil
 }
 
 // deleteAtScopeCreateRequest creates the DeleteAtScope request.
@@ -276,7 +286,7 @@ func (client *TagsClient) deleteAtScopeCreateRequest(ctx context.Context, scope 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
@@ -284,6 +294,7 @@ func (client *TagsClient) deleteAtScopeCreateRequest(ctx context.Context, scope 
 // name. The value being deleted must not be in use as a tag value for the given tag name for any
 // resource.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // tagName - The name of the tag.
 // tagValue - The value of the tag to delete.
 // options - TagsClientDeleteValueOptions contains the optional parameters for the TagsClient.DeleteValue method.
@@ -299,7 +310,7 @@ func (client *TagsClient) DeleteValue(ctx context.Context, tagName string, tagVa
 	if !runtime.HasStatusCode(resp, http.StatusOK, http.StatusNoContent) {
 		return TagsClientDeleteValueResponse{}, runtime.NewResponseError(resp)
 	}
-	return TagsClientDeleteValueResponse{RawResponse: resp}, nil
+	return TagsClientDeleteValueResponse{}, nil
 }
 
 // deleteValueCreateRequest creates the DeleteValue request.
@@ -324,12 +335,13 @@ func (client *TagsClient) deleteValueCreateRequest(ctx context.Context, tagName 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // GetAtScope - Gets the entire set of tags on a resource or subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // options - TagsClientGetAtScopeOptions contains the optional parameters for the TagsClient.GetAtScope method.
 func (client *TagsClient) GetAtScope(ctx context.Context, scope string, options *TagsClientGetAtScopeOptions) (TagsClientGetAtScopeResponse, error) {
@@ -358,34 +370,51 @@ func (client *TagsClient) getAtScopeCreateRequest(ctx context.Context, scope str
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getAtScopeHandleResponse handles the GetAtScope response.
 func (client *TagsClient) getAtScopeHandleResponse(resp *http.Response) (TagsClientGetAtScopeResponse, error) {
-	result := TagsClientGetAtScopeResponse{RawResponse: resp}
+	result := TagsClientGetAtScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagsResource); err != nil {
 		return TagsClientGetAtScopeResponse{}, err
 	}
 	return result, nil
 }
 
-// List - This operation performs a union of predefined tags, resource tags, resource group tags and subscription tags, and
-// returns a summary of usage for each tag name and value under the given subscription.
+// NewListPager - This operation performs a union of predefined tags, resource tags, resource group tags and subscription
+// tags, and returns a summary of usage for each tag name and value under the given subscription.
 // In case of a large number of tags, this operation may return a previously cached result.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // options - TagsClientListOptions contains the optional parameters for the TagsClient.List method.
-func (client *TagsClient) List(options *TagsClientListOptions) *TagsClientListPager {
-	return &TagsClientListPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listCreateRequest(ctx, options)
+func (client *TagsClient) NewListPager(options *TagsClientListOptions) *runtime.Pager[TagsClientListResponse] {
+	return runtime.NewPager(runtime.PagingHandler[TagsClientListResponse]{
+		More: func(page TagsClientListResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp TagsClientListResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.TagsListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *TagsClientListResponse) (TagsClientListResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return TagsClientListResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return TagsClientListResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return TagsClientListResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listCreateRequest creates the List request.
@@ -402,13 +431,13 @@ func (client *TagsClient) listCreateRequest(ctx context.Context, options *TagsCl
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listHandleResponse handles the List response.
 func (client *TagsClient) listHandleResponse(resp *http.Response) (TagsClientListResponse, error) {
-	result := TagsClientListResponse{RawResponse: resp}
+	result := TagsClientListResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagsListResult); err != nil {
 		return TagsClientListResponse{}, err
 	}
@@ -421,6 +450,7 @@ func (client *TagsClient) listHandleResponse(resp *http.Response) (TagsClientLis
 // names and updating the values of tags with existing names. The 'delete' option
 // allows selectively deleting tags based on given names or name/value pairs.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-04-01
 // scope - The resource scope.
 // options - TagsClientUpdateAtScopeOptions contains the optional parameters for the TagsClient.UpdateAtScope method.
 func (client *TagsClient) UpdateAtScope(ctx context.Context, scope string, parameters TagsPatchResource, options *TagsClientUpdateAtScopeOptions) (TagsClientUpdateAtScopeResponse, error) {
@@ -449,13 +479,13 @@ func (client *TagsClient) updateAtScopeCreateRequest(ctx context.Context, scope 
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-04-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateAtScopeHandleResponse handles the UpdateAtScope response.
 func (client *TagsClient) updateAtScopeHandleResponse(resp *http.Response) (TagsClientUpdateAtScopeResponse, error) {
-	result := TagsClientUpdateAtScopeResponse{RawResponse: resp}
+	result := TagsClientUpdateAtScopeResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.TagsResource); err != nil {
 		return TagsClientUpdateAtScopeResponse{}, err
 	}

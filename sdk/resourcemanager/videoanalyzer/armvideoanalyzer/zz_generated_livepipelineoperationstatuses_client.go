@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -11,10 +11,10 @@ package armvideoanalyzer
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -25,42 +25,61 @@ import (
 // LivePipelineOperationStatusesClient contains the methods for the LivePipelineOperationStatuses group.
 // Don't use this type directly, use NewLivePipelineOperationStatusesClient() instead.
 type LivePipelineOperationStatusesClient struct {
-	ep             string
-	pl             runtime.Pipeline
+	host           string
 	subscriptionID string
+	pl             runtime.Pipeline
 }
 
 // NewLivePipelineOperationStatusesClient creates a new instance of LivePipelineOperationStatusesClient with the specified values.
-func NewLivePipelineOperationStatusesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *LivePipelineOperationStatusesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+// subscriptionID - The ID of the target subscription.
+// credential - used to authorize requests. Usually a credential from azidentity.
+// options - pass nil to accept the default values.
+func NewLivePipelineOperationStatusesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*LivePipelineOperationStatusesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Host) == 0 {
-		cp.Host = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
 	}
-	return &LivePipelineOperationStatusesClient{subscriptionID: subscriptionID, ep: string(cp.Host), pl: armruntime.NewPipeline(module, version, credential, &cp)}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
+	}
+	client := &LivePipelineOperationStatusesClient{
+		subscriptionID: subscriptionID,
+		host:           ep,
+		pl:             pl,
+	}
+	return client, nil
 }
 
 // Get - Get the operation status of a live pipeline.
-// If the operation fails it returns the *ErrorResponse error type.
-func (client *LivePipelineOperationStatusesClient) Get(ctx context.Context, resourceGroupName string, accountName string, livePipelineName string, operationID string, options *LivePipelineOperationStatusesGetOptions) (LivePipelineOperationStatusesGetResponse, error) {
+// If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-11-01-preview
+// resourceGroupName - The name of the resource group. The name is case insensitive.
+// accountName - The Azure Video Analyzer account name.
+// livePipelineName - Live pipeline unique identifier.
+// operationID - The operation ID.
+// options - LivePipelineOperationStatusesClientGetOptions contains the optional parameters for the LivePipelineOperationStatusesClient.Get
+// method.
+func (client *LivePipelineOperationStatusesClient) Get(ctx context.Context, resourceGroupName string, accountName string, livePipelineName string, operationID string, options *LivePipelineOperationStatusesClientGetOptions) (LivePipelineOperationStatusesClientGetResponse, error) {
 	req, err := client.getCreateRequest(ctx, resourceGroupName, accountName, livePipelineName, operationID, options)
 	if err != nil {
-		return LivePipelineOperationStatusesGetResponse{}, err
+		return LivePipelineOperationStatusesClientGetResponse{}, err
 	}
 	resp, err := client.pl.Do(req)
 	if err != nil {
-		return LivePipelineOperationStatusesGetResponse{}, err
+		return LivePipelineOperationStatusesClientGetResponse{}, err
 	}
 	if !runtime.HasStatusCode(resp, http.StatusOK) {
-		return LivePipelineOperationStatusesGetResponse{}, client.getHandleError(resp)
+		return LivePipelineOperationStatusesClientGetResponse{}, runtime.NewResponseError(resp)
 	}
 	return client.getHandleResponse(resp)
 }
 
 // getCreateRequest creates the Get request.
-func (client *LivePipelineOperationStatusesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, livePipelineName string, operationID string, options *LivePipelineOperationStatusesGetOptions) (*policy.Request, error) {
+func (client *LivePipelineOperationStatusesClient) getCreateRequest(ctx context.Context, resourceGroupName string, accountName string, livePipelineName string, operationID string, options *LivePipelineOperationStatusesClientGetOptions) (*policy.Request, error) {
 	urlPath := "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/videoAnalyzers/{accountName}/livePipelines/{livePipelineName}/operationStatuses/{operationId}"
 	if client.subscriptionID == "" {
 		return nil, errors.New("parameter client.subscriptionID cannot be empty")
@@ -82,35 +101,22 @@ func (client *LivePipelineOperationStatusesClient) getCreateRequest(ctx context.
 		return nil, errors.New("parameter operationID cannot be empty")
 	}
 	urlPath = strings.ReplaceAll(urlPath, "{operationId}", url.PathEscape(operationID))
-	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.ep, urlPath))
+	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(client.host, urlPath))
 	if err != nil {
 		return nil, err
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-11-01-preview")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
-func (client *LivePipelineOperationStatusesClient) getHandleResponse(resp *http.Response) (LivePipelineOperationStatusesGetResponse, error) {
-	result := LivePipelineOperationStatusesGetResponse{RawResponse: resp}
+func (client *LivePipelineOperationStatusesClient) getHandleResponse(resp *http.Response) (LivePipelineOperationStatusesClientGetResponse, error) {
+	result := LivePipelineOperationStatusesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.LivePipelineOperationStatus); err != nil {
-		return LivePipelineOperationStatusesGetResponse{}, runtime.NewResponseError(err, resp)
+		return LivePipelineOperationStatusesClientGetResponse{}, err
 	}
 	return result, nil
-}
-
-// getHandleError handles the Get error response.
-func (client *LivePipelineOperationStatusesClient) getHandleError(resp *http.Response) error {
-	body, err := runtime.Payload(resp)
-	if err != nil {
-		return runtime.NewResponseError(err, resp)
-	}
-	errType := ErrorResponse{raw: string(body)}
-	if err := runtime.UnmarshalAsJSON(resp, &errType); err != nil {
-		return runtime.NewResponseError(fmt.Errorf("%s\n%s", string(body), err), resp)
-	}
-	return runtime.NewResponseError(&errType, resp)
 }

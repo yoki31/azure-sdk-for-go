@@ -36,6 +36,7 @@ _testmain.go
 .DS_Store
 .vscode
 .vs
+.idea
 
 # ignore vendor/
 vendor/
@@ -46,3 +47,9 @@ vendor/
 # vscode
 **/.vscode/*
 !.vscode/cspell.json
+
+# api view file
+*.gosource
+
+# Default Test Proxy Assets restore directory
+.assets

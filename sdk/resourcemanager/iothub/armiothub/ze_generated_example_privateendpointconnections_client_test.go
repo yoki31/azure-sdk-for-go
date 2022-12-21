@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,100 +12,114 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/iothub/armiothub"
 )
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_listprivateendpointconnections.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_listprivateendpointconnections.json
 func ExamplePrivateEndpointConnectionsClient_List() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewPrivateEndpointConnectionsClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.List(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"myResourceGroup",
+		"testHub",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientListResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_getprivateendpointconnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_getprivateendpointconnection.json
 func ExamplePrivateEndpointConnectionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewPrivateEndpointConnectionsClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<private-endpoint-connection-name>",
+		"myResourceGroup",
+		"testHub",
+		"myPrivateEndpointConnection",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_updateprivateendpointconnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_updateprivateendpointconnection.json
 func ExamplePrivateEndpointConnectionsClient_BeginUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewPrivateEndpointConnectionsClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginUpdate(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<private-endpoint-connection-name>",
+		"myResourceGroup",
+		"testHub",
+		"myPrivateEndpointConnection",
 		armiothub.PrivateEndpointConnection{
 			Properties: &armiothub.PrivateEndpointConnectionProperties{
 				PrivateLinkServiceConnectionState: &armiothub.PrivateLinkServiceConnectionState{
-					Description: to.StringPtr("<description>"),
-					Status:      armiothub.PrivateLinkServiceConnectionStatus("Approved").ToPtr(),
+					Description: to.Ptr("Approved by johndoe@contoso.com"),
+					Status:      to.Ptr(armiothub.PrivateLinkServiceConnectionStatusApproved),
 				},
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_deleteprivateendpointconnection.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_deleteprivateendpointconnection.json
 func ExamplePrivateEndpointConnectionsClient_BeginDelete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewPrivateEndpointConnectionsClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewPrivateEndpointConnectionsClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginDelete(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<private-endpoint-connection-name>",
+		"myResourceGroup",
+		"testHub",
+		"myPrivateEndpointConnection",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.PrivateEndpointConnectionsClientDeleteResult)
+	// TODO: use response item
+	_ = res
 }

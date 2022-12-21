@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"net/http"
@@ -33,49 +34,49 @@ type WorkspacesClient struct {
 // subscriptionID - The ID of the target subscription.
 // credential - used to authorize requests. Usually a credential from azidentity.
 // options - pass nil to accept the default values.
-func NewWorkspacesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) *WorkspacesClient {
-	cp := arm.ClientOptions{}
-	if options != nil {
-		cp = *options
+func NewWorkspacesClient(subscriptionID string, credential azcore.TokenCredential, options *arm.ClientOptions) (*WorkspacesClient, error) {
+	if options == nil {
+		options = &arm.ClientOptions{}
 	}
-	if len(cp.Endpoint) == 0 {
-		cp.Endpoint = arm.AzurePublicCloud
+	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
+	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
+		ep = c.Endpoint
+	}
+	pl, err := armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, options)
+	if err != nil {
+		return nil, err
 	}
 	client := &WorkspacesClient{
 		subscriptionID: subscriptionID,
-		host:           string(cp.Endpoint),
-		pl:             armruntime.NewPipeline(moduleName, moduleVersion, credential, runtime.PipelineOptions{}, &cp),
+		host:           ep,
+		pl:             pl,
 	}
-	return client
+	return client, nil
 }
 
 // BeginCreateOrUpdate - Creates or updates a workspace with the specified parameters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // parameters - The parameters for creating or updating a machine learning workspace.
 // options - WorkspacesClientBeginCreateOrUpdateOptions contains the optional parameters for the WorkspacesClient.BeginCreateOrUpdate
 // method.
-func (client *WorkspacesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, parameters Workspace, options *WorkspacesClientBeginCreateOrUpdateOptions) (WorkspacesClientCreateOrUpdatePollerResponse, error) {
-	resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, parameters, options)
-	if err != nil {
-		return WorkspacesClientCreateOrUpdatePollerResponse{}, err
+func (client *WorkspacesClient) BeginCreateOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, parameters Workspace, options *WorkspacesClientBeginCreateOrUpdateOptions) (*runtime.Poller[WorkspacesClientCreateOrUpdateResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.createOrUpdate(ctx, resourceGroupName, workspaceName, parameters, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[WorkspacesClientCreateOrUpdateResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspacesClientCreateOrUpdateResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspacesClientCreateOrUpdatePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspacesClient.CreateOrUpdate", "", resp, client.pl)
-	if err != nil {
-		return WorkspacesClientCreateOrUpdatePollerResponse{}, err
-	}
-	result.Poller = &WorkspacesClientCreateOrUpdatePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // CreateOrUpdate - Creates or updates a workspace with the specified parameters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *WorkspacesClient) createOrUpdate(ctx context.Context, resourceGroupName string, workspaceName string, parameters Workspace, options *WorkspacesClientBeginCreateOrUpdateOptions) (*http.Response, error) {
 	req, err := client.createOrUpdateCreateRequest(ctx, resourceGroupName, workspaceName, parameters, options)
 	if err != nil {
@@ -113,35 +114,31 @@ func (client *WorkspacesClient) createOrUpdateCreateRequest(ctx context.Context,
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // BeginDelete - Deletes a machine learning workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientBeginDeleteOptions contains the optional parameters for the WorkspacesClient.BeginDelete method.
-func (client *WorkspacesClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDeleteOptions) (WorkspacesClientDeletePollerResponse, error) {
-	resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, options)
-	if err != nil {
-		return WorkspacesClientDeletePollerResponse{}, err
+func (client *WorkspacesClient) BeginDelete(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDeleteOptions) (*runtime.Poller[WorkspacesClientDeleteResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.deleteOperation(ctx, resourceGroupName, workspaceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[WorkspacesClientDeleteResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspacesClientDeleteResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspacesClientDeletePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspacesClient.Delete", "", resp, client.pl)
-	if err != nil {
-		return WorkspacesClientDeletePollerResponse{}, err
-	}
-	result.Poller = &WorkspacesClientDeletePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Delete - Deletes a machine learning workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *WorkspacesClient) deleteOperation(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDeleteOptions) (*http.Response, error) {
 	req, err := client.deleteCreateRequest(ctx, resourceGroupName, workspaceName, options)
 	if err != nil {
@@ -179,36 +176,34 @@ func (client *WorkspacesClient) deleteCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginDiagnose - Diagnose workspace setup issue.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientBeginDiagnoseOptions contains the optional parameters for the WorkspacesClient.BeginDiagnose
 // method.
-func (client *WorkspacesClient) BeginDiagnose(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDiagnoseOptions) (WorkspacesClientDiagnosePollerResponse, error) {
-	resp, err := client.diagnose(ctx, resourceGroupName, workspaceName, options)
-	if err != nil {
-		return WorkspacesClientDiagnosePollerResponse{}, err
+func (client *WorkspacesClient) BeginDiagnose(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDiagnoseOptions) (*runtime.Poller[WorkspacesClientDiagnoseResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.diagnose(ctx, resourceGroupName, workspaceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[WorkspacesClientDiagnoseResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspacesClientDiagnoseResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspacesClientDiagnosePollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspacesClient.Diagnose", "location", resp, client.pl)
-	if err != nil {
-		return WorkspacesClientDiagnosePollerResponse{}, err
-	}
-	result.Poller = &WorkspacesClientDiagnosePoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // Diagnose - Diagnose workspace setup issue.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *WorkspacesClient) diagnose(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginDiagnoseOptions) (*http.Response, error) {
 	req, err := client.diagnoseCreateRequest(ctx, resourceGroupName, workspaceName, options)
 	if err != nil {
@@ -246,7 +241,7 @@ func (client *WorkspacesClient) diagnoseCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	if options != nil && options.Parameters != nil {
 		return req, runtime.MarshalAsJSON(req, *options.Parameters)
 	}
@@ -255,6 +250,7 @@ func (client *WorkspacesClient) diagnoseCreateRequest(ctx context.Context, resou
 
 // Get - Gets the properties of the specified machine learning workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientGetOptions contains the optional parameters for the WorkspacesClient.Get method.
@@ -295,34 +291,51 @@ func (client *WorkspacesClient) getCreateRequest(ctx context.Context, resourceGr
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // getHandleResponse handles the Get response.
 func (client *WorkspacesClient) getHandleResponse(resp *http.Response) (WorkspacesClientGetResponse, error) {
-	result := WorkspacesClientGetResponse{RawResponse: resp}
+	result := WorkspacesClientGetResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Workspace); err != nil {
 		return WorkspacesClientGetResponse{}, err
 	}
 	return result, nil
 }
 
-// ListByResourceGroup - Lists all the available machine learning workspaces under the specified resource group.
+// NewListByResourceGroupPager - Lists all the available machine learning workspaces under the specified resource group.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // options - WorkspacesClientListByResourceGroupOptions contains the optional parameters for the WorkspacesClient.ListByResourceGroup
 // method.
-func (client *WorkspacesClient) ListByResourceGroup(resourceGroupName string, options *WorkspacesClientListByResourceGroupOptions) *WorkspacesClientListByResourceGroupPager {
-	return &WorkspacesClientListByResourceGroupPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+func (client *WorkspacesClient) NewListByResourceGroupPager(resourceGroupName string, options *WorkspacesClientListByResourceGroupOptions) *runtime.Pager[WorkspacesClientListByResourceGroupResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkspacesClientListByResourceGroupResponse]{
+		More: func(page WorkspacesClientListByResourceGroupResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp WorkspacesClientListByResourceGroupResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.WorkspaceListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *WorkspacesClientListByResourceGroupResponse) (WorkspacesClientListByResourceGroupResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listByResourceGroupCreateRequest(ctx, resourceGroupName, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return WorkspacesClientListByResourceGroupResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkspacesClientListByResourceGroupResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkspacesClientListByResourceGroupResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listByResourceGroupHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listByResourceGroupCreateRequest creates the ListByResourceGroup request.
@@ -346,33 +359,50 @@ func (client *WorkspacesClient) listByResourceGroupCreateRequest(ctx context.Con
 		reqQP.Set("$skip", *options.Skip)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listByResourceGroupHandleResponse handles the ListByResourceGroup response.
 func (client *WorkspacesClient) listByResourceGroupHandleResponse(resp *http.Response) (WorkspacesClientListByResourceGroupResponse, error) {
-	result := WorkspacesClientListByResourceGroupResponse{RawResponse: resp}
+	result := WorkspacesClientListByResourceGroupResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkspaceListResult); err != nil {
 		return WorkspacesClientListByResourceGroupResponse{}, err
 	}
 	return result, nil
 }
 
-// ListBySubscription - Lists all the available machine learning workspaces under the specified subscription.
+// NewListBySubscriptionPager - Lists all the available machine learning workspaces under the specified subscription.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // options - WorkspacesClientListBySubscriptionOptions contains the optional parameters for the WorkspacesClient.ListBySubscription
 // method.
-func (client *WorkspacesClient) ListBySubscription(options *WorkspacesClientListBySubscriptionOptions) *WorkspacesClientListBySubscriptionPager {
-	return &WorkspacesClientListBySubscriptionPager{
-		client: client,
-		requester: func(ctx context.Context) (*policy.Request, error) {
-			return client.listBySubscriptionCreateRequest(ctx, options)
+func (client *WorkspacesClient) NewListBySubscriptionPager(options *WorkspacesClientListBySubscriptionOptions) *runtime.Pager[WorkspacesClientListBySubscriptionResponse] {
+	return runtime.NewPager(runtime.PagingHandler[WorkspacesClientListBySubscriptionResponse]{
+		More: func(page WorkspacesClientListBySubscriptionResponse) bool {
+			return page.NextLink != nil && len(*page.NextLink) > 0
 		},
-		advancer: func(ctx context.Context, resp WorkspacesClientListBySubscriptionResponse) (*policy.Request, error) {
-			return runtime.NewRequest(ctx, http.MethodGet, *resp.WorkspaceListResult.NextLink)
+		Fetcher: func(ctx context.Context, page *WorkspacesClientListBySubscriptionResponse) (WorkspacesClientListBySubscriptionResponse, error) {
+			var req *policy.Request
+			var err error
+			if page == nil {
+				req, err = client.listBySubscriptionCreateRequest(ctx, options)
+			} else {
+				req, err = runtime.NewRequest(ctx, http.MethodGet, *page.NextLink)
+			}
+			if err != nil {
+				return WorkspacesClientListBySubscriptionResponse{}, err
+			}
+			resp, err := client.pl.Do(req)
+			if err != nil {
+				return WorkspacesClientListBySubscriptionResponse{}, err
+			}
+			if !runtime.HasStatusCode(resp, http.StatusOK) {
+				return WorkspacesClientListBySubscriptionResponse{}, runtime.NewResponseError(resp)
+			}
+			return client.listBySubscriptionHandleResponse(resp)
 		},
-	}
+	})
 }
 
 // listBySubscriptionCreateRequest creates the ListBySubscription request.
@@ -392,13 +422,13 @@ func (client *WorkspacesClient) listBySubscriptionCreateRequest(ctx context.Cont
 		reqQP.Set("$skip", *options.Skip)
 	}
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listBySubscriptionHandleResponse handles the ListBySubscription response.
 func (client *WorkspacesClient) listBySubscriptionHandleResponse(resp *http.Response) (WorkspacesClientListBySubscriptionResponse, error) {
-	result := WorkspacesClientListBySubscriptionResponse{RawResponse: resp}
+	result := WorkspacesClientListBySubscriptionResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.WorkspaceListResult); err != nil {
 		return WorkspacesClientListBySubscriptionResponse{}, err
 	}
@@ -408,6 +438,7 @@ func (client *WorkspacesClient) listBySubscriptionHandleResponse(resp *http.Resp
 // ListKeys - Lists all the keys associated with this workspace. This includes keys for the storage account, app insights
 // and password for container registry
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientListKeysOptions contains the optional parameters for the WorkspacesClient.ListKeys method.
@@ -448,13 +479,13 @@ func (client *WorkspacesClient) listKeysCreateRequest(ctx context.Context, resou
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listKeysHandleResponse handles the ListKeys response.
 func (client *WorkspacesClient) listKeysHandleResponse(resp *http.Response) (WorkspacesClientListKeysResponse, error) {
-	result := WorkspacesClientListKeysResponse{RawResponse: resp}
+	result := WorkspacesClientListKeysResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListWorkspaceKeysResult); err != nil {
 		return WorkspacesClientListKeysResponse{}, err
 	}
@@ -463,6 +494,7 @@ func (client *WorkspacesClient) listKeysHandleResponse(resp *http.Response) (Wor
 
 // ListNotebookAccessToken - return notebook access token and refresh token
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientListNotebookAccessTokenOptions contains the optional parameters for the WorkspacesClient.ListNotebookAccessToken
@@ -504,13 +536,13 @@ func (client *WorkspacesClient) listNotebookAccessTokenCreateRequest(ctx context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listNotebookAccessTokenHandleResponse handles the ListNotebookAccessToken response.
 func (client *WorkspacesClient) listNotebookAccessTokenHandleResponse(resp *http.Response) (WorkspacesClientListNotebookAccessTokenResponse, error) {
-	result := WorkspacesClientListNotebookAccessTokenResponse{RawResponse: resp}
+	result := WorkspacesClientListNotebookAccessTokenResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.NotebookAccessTokenResult); err != nil {
 		return WorkspacesClientListNotebookAccessTokenResponse{}, err
 	}
@@ -519,6 +551,7 @@ func (client *WorkspacesClient) listNotebookAccessTokenHandleResponse(resp *http
 
 // ListNotebookKeys - List keys of a notebook.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientListNotebookKeysOptions contains the optional parameters for the WorkspacesClient.ListNotebookKeys
@@ -560,13 +593,13 @@ func (client *WorkspacesClient) listNotebookKeysCreateRequest(ctx context.Contex
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listNotebookKeysHandleResponse handles the ListNotebookKeys response.
 func (client *WorkspacesClient) listNotebookKeysHandleResponse(resp *http.Response) (WorkspacesClientListNotebookKeysResponse, error) {
-	result := WorkspacesClientListNotebookKeysResponse{RawResponse: resp}
+	result := WorkspacesClientListNotebookKeysResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListNotebookKeysResult); err != nil {
 		return WorkspacesClientListNotebookKeysResponse{}, err
 	}
@@ -576,6 +609,7 @@ func (client *WorkspacesClient) listNotebookKeysHandleResponse(resp *http.Respon
 // ListOutboundNetworkDependenciesEndpoints - Called by Client (Portal, CLI, etc) to get a list of all external outbound dependencies
 // (FQDNs) programmatically.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientListOutboundNetworkDependenciesEndpointsOptions contains the optional parameters for the WorkspacesClient.ListOutboundNetworkDependenciesEndpoints
@@ -617,13 +651,13 @@ func (client *WorkspacesClient) listOutboundNetworkDependenciesEndpointsCreateRe
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listOutboundNetworkDependenciesEndpointsHandleResponse handles the ListOutboundNetworkDependenciesEndpoints response.
 func (client *WorkspacesClient) listOutboundNetworkDependenciesEndpointsHandleResponse(resp *http.Response) (WorkspacesClientListOutboundNetworkDependenciesEndpointsResponse, error) {
-	result := WorkspacesClientListOutboundNetworkDependenciesEndpointsResponse{RawResponse: resp}
+	result := WorkspacesClientListOutboundNetworkDependenciesEndpointsResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ExternalFQDNResponse); err != nil {
 		return WorkspacesClientListOutboundNetworkDependenciesEndpointsResponse{}, err
 	}
@@ -632,6 +666,7 @@ func (client *WorkspacesClient) listOutboundNetworkDependenciesEndpointsHandleRe
 
 // ListStorageAccountKeys - List storage account keys of a workspace.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientListStorageAccountKeysOptions contains the optional parameters for the WorkspacesClient.ListStorageAccountKeys
@@ -673,13 +708,13 @@ func (client *WorkspacesClient) listStorageAccountKeysCreateRequest(ctx context.
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // listStorageAccountKeysHandleResponse handles the ListStorageAccountKeys response.
 func (client *WorkspacesClient) listStorageAccountKeysHandleResponse(resp *http.Response) (WorkspacesClientListStorageAccountKeysResponse, error) {
-	result := WorkspacesClientListStorageAccountKeysResponse{RawResponse: resp}
+	result := WorkspacesClientListStorageAccountKeysResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.ListStorageAccountKeysResult); err != nil {
 		return WorkspacesClientListStorageAccountKeysResponse{}, err
 	}
@@ -688,30 +723,28 @@ func (client *WorkspacesClient) listStorageAccountKeysHandleResponse(resp *http.
 
 // BeginPrepareNotebook - Prepare a notebook.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientBeginPrepareNotebookOptions contains the optional parameters for the WorkspacesClient.BeginPrepareNotebook
 // method.
-func (client *WorkspacesClient) BeginPrepareNotebook(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginPrepareNotebookOptions) (WorkspacesClientPrepareNotebookPollerResponse, error) {
-	resp, err := client.prepareNotebook(ctx, resourceGroupName, workspaceName, options)
-	if err != nil {
-		return WorkspacesClientPrepareNotebookPollerResponse{}, err
+func (client *WorkspacesClient) BeginPrepareNotebook(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginPrepareNotebookOptions) (*runtime.Poller[WorkspacesClientPrepareNotebookResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.prepareNotebook(ctx, resourceGroupName, workspaceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller(resp, client.pl, &runtime.NewPollerOptions[WorkspacesClientPrepareNotebookResponse]{
+			FinalStateVia: runtime.FinalStateViaLocation,
+		})
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspacesClientPrepareNotebookResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspacesClientPrepareNotebookPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspacesClient.PrepareNotebook", "location", resp, client.pl)
-	if err != nil {
-		return WorkspacesClientPrepareNotebookPollerResponse{}, err
-	}
-	result.Poller = &WorkspacesClientPrepareNotebookPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // PrepareNotebook - Prepare a notebook.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *WorkspacesClient) prepareNotebook(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginPrepareNotebookOptions) (*http.Response, error) {
 	req, err := client.prepareNotebookCreateRequest(ctx, resourceGroupName, workspaceName, options)
 	if err != nil {
@@ -749,38 +782,34 @@ func (client *WorkspacesClient) prepareNotebookCreateRequest(ctx context.Context
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // BeginResyncKeys - Resync all the keys associated with this workspace. This includes keys for the storage account, app insights
 // and password for container registry
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // options - WorkspacesClientBeginResyncKeysOptions contains the optional parameters for the WorkspacesClient.BeginResyncKeys
 // method.
-func (client *WorkspacesClient) BeginResyncKeys(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginResyncKeysOptions) (WorkspacesClientResyncKeysPollerResponse, error) {
-	resp, err := client.resyncKeys(ctx, resourceGroupName, workspaceName, options)
-	if err != nil {
-		return WorkspacesClientResyncKeysPollerResponse{}, err
+func (client *WorkspacesClient) BeginResyncKeys(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginResyncKeysOptions) (*runtime.Poller[WorkspacesClientResyncKeysResponse], error) {
+	if options == nil || options.ResumeToken == "" {
+		resp, err := client.resyncKeys(ctx, resourceGroupName, workspaceName, options)
+		if err != nil {
+			return nil, err
+		}
+		return runtime.NewPoller[WorkspacesClientResyncKeysResponse](resp, client.pl, nil)
+	} else {
+		return runtime.NewPollerFromResumeToken[WorkspacesClientResyncKeysResponse](options.ResumeToken, client.pl, nil)
 	}
-	result := WorkspacesClientResyncKeysPollerResponse{
-		RawResponse: resp,
-	}
-	pt, err := armruntime.NewPoller("WorkspacesClient.ResyncKeys", "", resp, client.pl)
-	if err != nil {
-		return WorkspacesClientResyncKeysPollerResponse{}, err
-	}
-	result.Poller = &WorkspacesClientResyncKeysPoller{
-		pt: pt,
-	}
-	return result, nil
 }
 
 // ResyncKeys - Resync all the keys associated with this workspace. This includes keys for the storage account, app insights
 // and password for container registry
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 func (client *WorkspacesClient) resyncKeys(ctx context.Context, resourceGroupName string, workspaceName string, options *WorkspacesClientBeginResyncKeysOptions) (*http.Response, error) {
 	req, err := client.resyncKeysCreateRequest(ctx, resourceGroupName, workspaceName, options)
 	if err != nil {
@@ -818,12 +847,13 @@ func (client *WorkspacesClient) resyncKeysCreateRequest(ctx context.Context, res
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, nil
 }
 
 // Update - Updates a machine learning workspace with the specified parameters.
 // If the operation fails it returns an *azcore.ResponseError type.
+// Generated from API version 2021-07-01
 // resourceGroupName - The name of the resource group. The name is case insensitive.
 // workspaceName - Name of Azure Machine Learning workspace.
 // parameters - The parameters for updating a machine learning workspace.
@@ -865,13 +895,13 @@ func (client *WorkspacesClient) updateCreateRequest(ctx context.Context, resourc
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2021-07-01")
 	req.Raw().URL.RawQuery = reqQP.Encode()
-	req.Raw().Header.Set("Accept", "application/json")
+	req.Raw().Header["Accept"] = []string{"application/json"}
 	return req, runtime.MarshalAsJSON(req, parameters)
 }
 
 // updateHandleResponse handles the Update response.
 func (client *WorkspacesClient) updateHandleResponse(resp *http.Response) (WorkspacesClientUpdateResponse, error) {
-	result := WorkspacesClientUpdateResponse{RawResponse: resp}
+	result := WorkspacesClientUpdateResponse{}
 	if err := runtime.UnmarshalAsJSON(resp, &result.Workspace); err != nil {
 		return WorkspacesClientUpdateResponse{}, err
 	}

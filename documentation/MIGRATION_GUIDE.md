@@ -1,4 +1,4 @@
-## Guide for migrating to `sdk/resourcemanager/**/arm**` from `services/**/mgmt/**`
+# Guide for migrating to `sdk/resourcemanager/**/arm**` from `services/**/mgmt/**`
 
 This document is intended for users that are familiar with the previous version of the Azure SDK For Go for management modules (`services/**/mgmt/**`) and wish to migrate their application to the next version of Azure resource management libraries (`sdk/resourcemanager/**/arm**`)
 
@@ -10,6 +10,7 @@ This document is intended for users that are familiar with the previous version 
 * [General Changes](#general-changes)
 * [Breaking Changes](#breaking-changes)
     * [Authentication](#authentication)
+    * [Client Initialization](#client-initialization)
     * [Error Handling](#error-handling)
     * [Long Running Operations](#long-running-operations)
     * [Pagination](#pagination)
@@ -18,11 +19,12 @@ This document is intended for users that are familiar with the previous version 
 
 ## Prerequisites
 
-The last 2 released stable versions of Go are supported.
+- Go 1.18
+- Latest version of resource management modules
 
 ## General Changes
 
-The latest Azure SDK For Go for management modules is using the [Go Modules](https://github.com/golang/go/wiki/Modules) to manage the dependencies. We ship every RP as an individual module to create a more flexible user experience.
+The latest Azure SDK For Go for management modules is using the [Go Modules](https://github.com/golang/go/wiki/Modules) to manage the dependencies. We ship every RP as an individual module to create a more flexible user experience. Unlike previous version, the latest SDK only provides one API version in one module for each RP. The SDK stable version will always use the service's stable API version. You can search in [pkg.go.dev](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go) to find the preview version and specify version num when using `go get` to retrive it (e.g., `go get github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/keyvault/armkeyvault@v1.1.0-beta.1`).
 
 ## Breaking Changes
 
@@ -37,6 +39,11 @@ To the show the code snippets for the change:
 **Previous version (`services/**/mgmt/**`)**
 
 ```go
+import "github.com/Azure/go-autorest/autorest/adal"
+import "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
+```
+
+```go
 authorizer, err := adal.NewServicePrincipalToken(oAuthToken, "<ClientId>", "<ClientSecret>", endpoint)
 client := resources.NewGroupsClient("<SubscriptionId>")
 client.Authorizer = authorizer
@@ -45,52 +52,111 @@ client.Authorizer = authorizer
 **Latest version (`sdk/resourcemanager/**/arm**`)**
 
 ```go
+import "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+```
+
+```go
 credential, err := azidentity.NewClientSecretCredential("<TenantId>", "<ClientId>", "<ClientSecret>", nil)
-client := armresources.NewResourceGroupsClient("<SubscriptionId>", credential, nil)
+client, err := armresources.NewResourceGroupsClient("<SubscriptionId>", credential, nil)
 ```
 
 For detailed information on the benefits of using the new authentication types, please refer to [this page](https://github.com/Azure/azure-sdk-for-go/blob/main/sdk/azidentity/README.md)
+
+### Client Initialization
+
+In the previous version (`services/**/mgmt/**`), there are two functions to initialize the clients.
+
+In the latest version (`sdk/resourcemanager/**/arm**`), one initialization function with custom endpoint has removed. If you want to using a custom endpoint. You need to set endpoint with `*arm.ClientOptions` param.
+
+**Previous version (`services/**/mgmt/**`)**
+
+```go
+import "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
+```
+
+```go
+client := compute.NewVirtualMachinesClient("<SubscriptionId>")
+```
+
+**Latest version (`sdk/resourcemanager/**/arm**`)**
+
+```go
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+```
+
+```go
+client, err := armcompute.NewVirtualMachinesClient("<SubscriptionId>", credential, nil)
+```
+
+**Previous version (`services/**/mgmt/**`)**
+
+```go
+import "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
+```
+
+```go
+client := compute.NewVirtualMachinesClientWithBaseURI("<Endpoint>", "<SubscriptionId>")
+```
+
+**Latest version (`sdk/resourcemanager/**/arm**`)**
+
+```go
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+```
+
+```go
+options := arm.ClientOptions {
+    ClientOptions: azcore.ClientOptions {
+        Cloud: cloud.AzureChina,
+    },
+}
+client, err := armcompute.NewVirtualMachinesClient("<SubscriptionId>", credential, &options)
+```
+
+For detailed information on the cloud configuration, please refer to [this page](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud)
 
 ### Error Handling
 
 There are some minor changes in the error handling.
 
-- When there is an error in the SDK request, in the previous version (`services/**/mgmt/**`), the return value will all be non-nil, and you can get the raw HTTP response from the response value. In the latest version (`sdk/resourcemanager/**/arm**`), the first return value will be empty and you need to convert the error to the `azcore.HTTPResponse` interface to get the raw HTTP response. When the request is successful and there is no error returned, you can get the raw HTTP response in `RawResponse` property of the first return value.
+- When there is an error in the SDK request, in the previous version (`services/**/mgmt/**`), the return value will all be non-nil, and you can get the raw HTTP response from the response value. In the latest version (`sdk/resourcemanager/**/arm**`), the first return value will be empty and you need to convert the error to the `azcore.ResponseError` interface to get the raw HTTP response.
+- In the latest version (`sdk/resourcemanager/**/arm**`), you can always get the raw HTTP response from request context regardless of request result.
 
 **Previous version (`services/**/mgmt/**`)**
 
 ```go
-resp, err := resourceGroupsClient.CreateOrUpdate(context.Background(), resourceGroupName, resourceGroupParameters)
+resp, err := resourceGroupsClient.CreateOrUpdate(context.TODO(), resourceGroupName, resourceGroupParameters)
 if err != nil {
-	log.Fatalf("Status code: %d", resp.Response.Response.StatusCode)
+    log.Fatalf("Status code: %d", resp.Response().StatusCode)
 }
 ```
 
 **Latest version (`sdk/resourcemanager/**/arm**`)**
 
 ```go
-resp, err := resourceGroupsClient.CreateOrUpdate(context.Background(), resourceGroupName, resourceGroupParameters, nil)
-if err != nil {
-    var respErr azcore.HTTPResponse
-    if errors.As(err, &respErr) {
-        log.Fatalf("Status code: %d", respErr.RawResponse().StatusCode)
-    }
-	log.Fatalf("Other error: %+v", err)
-}
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore"
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 ```
 
-**When there is no error in latest version (`sdk/resourcemanager/**/arm**`)**
-
 ```go
-resp, err := resourceGroupsClient.CreateOrUpdate(context.Background(), resourceGroupName, resourceGroupParameters, nil)
+var rawResponse *http.Response
+ctx := context.TODO() // your context
+ctxWithResp := runtime.WithCaptureResponse(ctx, &rawResponse)
+resp, err := resourceGroupsClient.CreateOrUpdate(ctxWithResp, resourceGroupName, resourceGroupParameters, nil)
 if err != nil {
-    var respErr azcore.HTTPResponse
+    // with error, you can get RawResponse from context
+    log.Printf("Status code: %d", rawResponse.StatusCode)
+    var respErr *azcore.ResponseError
     if errors.As(err, &respErr) {
-        log.Fatalf("Status code: %d", respErr.RawResponse().StatusCode)
+        // with error, you can also get RawResponse from error
+        log.Fatalf("Status code: %d", respErr.RawResponse.StatusCode)
+    } else {
+        log.Fatalf("Other error: %+v", err)
     }
-    log.Fatalf("Other error: %+v", err)
 }
-log.Printf("Status code: %d", resp.RawResponse.StatusCode)
+// without error, you can get RawResponse from context
+log.Printf("Status code: %d", rawResponse.StatusCode)
 ```
 
 ### Long Running Operations
@@ -102,16 +168,17 @@ In the latest version, if a request is a long-running operation, the function na
 **Previous version (`services/**/mgmt/**`)**
 
 ```go
-future, err := virtualMachinesClient.CreateOrUpdate(context.Background(), "<resource group name>", "<virtual machine name>", param)
+ctx := context.TODO() // your context
+future, err := virtualMachinesClient.CreateOrUpdate(ctx, "<resource group name>", "<virtual machine name>", param)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
-if err := future.WaitForCompletionRef(context.Background(), virtualMachinesClient.Client); err != nil {
-	log.Fatal(err)
+if err := future.WaitForCompletionRef(ctx, virtualMachinesClient.Client); err != nil {
+    log.Fatal(err)
 }
 vm, err := future.Result(virtualMachinesClient)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
 log.Printf("virtual machine ID: %v", *vm.ID)
 ```
@@ -119,11 +186,11 @@ log.Printf("virtual machine ID: %v", *vm.ID)
 **Latest version (`sdk/resourcemanager/**/arm**`)**
 
 ```go
-poller, err := client.BeginCreateOrUpdate(context.Background(), "<resource group name>", "<virtual machine name>", param, nil)
+poller, err := client.BeginCreateOrUpdate(context.TODO(), "<resource group name>", "<virtual machine name>", param, nil)
 if err != nil {
-	log.Fatal(err)
+    log.Fatal(err)
 }
-resp, err := poller.PollUntilDone(context.Background(), 30*time.Second)
+resp, err := poller.PollUntilDone(context.TODO(), nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -139,7 +206,7 @@ In the latest version, if a request is a paginated operation, a struct `**Pager`
 **Previous version (`services/**/mgmt/**`)**
 
 ```go
-pager, err := resourceGroupsClient.List(context.Background(), "", nil)
+pager, err := resourceGroupsClient.List(context.TODO(), "", nil)
 if err != nil {
     log.Fatal(err)
 }
@@ -147,7 +214,7 @@ for p.NotDone() {
     for _, v := range pager.Values() {
         log.Printf("resource group ID: %s\n", *rg.ID)
     }
-    if err := pager.NextWithContext(context.Background()); err != nil   {
+    if err := pager.NextWithContext(context.TODO()); err != nil   {
         log.Fatal(err)
     }
 }
@@ -156,14 +223,16 @@ for p.NotDone() {
 **Latest version (`sdk/resourcemanager/**/arm**`)**
 
 ```go
-pager := resourceGroupsClient.List(nil)
-for pager.NextPage(context.Background()) {
-    for _, rg := range pager.PageResponse().ResourceGroupListResult.Value {
+ctx := context.TODO() // your context
+pager := resourceGroupsClient.NewListPager(nil)
+for pager.More() {
+    nextResult, err := pager.NextPage(ctx)
+    if err != nil {
+        log.Fatalf("failed to advance page: %v", err)
+    }
+    for _, rg := range nextResult.Value {
         log.Printf("resource group ID: %s\n", *rg.ID)
     }
-}
-if err := pager.Err(); err != nil {
-    log.Fatalf("failed to advance page: %v", err)
 }
 ```
 
@@ -180,6 +249,11 @@ In latest version (`sdk/resourcemanager/**/arm**`), we use `arm.ClientOptions.Pe
 Similar to the customized policy, there are changes regarding how the custom HTTP client is configured as well. You can now use the `arm.ClientOptions.Transport` option in `github.com/Azure/azure-sdk-for-go/sdk/azcore/arm` package to use your own implementation of HTTP client and plug in what they need into the configuration.  The HTTP client must implement the `policy.Transporter` interface.
 
 **Previous version (`services/**/mgmt/**`)**
+
+```go
+import "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
+```
+
 ```go
 httpClient := NewYourOwnHTTPClient{}
 client := resources.NewGroupsClient("<SubscriptionId>")
@@ -189,13 +263,19 @@ client.Sender = &httpClient
 **Latest version (`sdk/resourcemanager/**/arm**`)**
 
 ```go
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+```
+
+```go
 httpClient := NewYourOwnHTTPClient{}
 options := &arm.ClientOptions{
     ClientOptions: policy.ClientOptions{
         Transport: &httpClient,
     },
 }
-client := armresources.NewResourceGroupsClient("<SubscriptionId>", credential, options)
+client, err := armresources.NewResourceGroupsClient("<SubscriptionId>", credential, options)
 ```
 
 ## Need help?

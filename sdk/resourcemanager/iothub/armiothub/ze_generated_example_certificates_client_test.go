@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -17,125 +17,148 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/iothub/armiothub"
 )
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_listcertificates.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_listcertificates.json
 func ExampleCertificatesClient_ListByIotHub() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.ListByIotHub(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"myResourceGroup",
+		"testhub",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CertificatesClientListByIotHubResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_getcertificate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_getcertificate.json
 func ExampleCertificatesClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<certificate-name>",
+		"myResourceGroup",
+		"testhub",
+		"cert",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CertificatesClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_certificatescreateorupdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_certificatescreateorupdate.json
 func ExampleCertificatesClient_CreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.CreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<certificate-name>",
+		"myResourceGroup",
+		"iothub",
+		"cert",
 		armiothub.CertificateDescription{
 			Properties: &armiothub.CertificateProperties{
-				Certificate: to.StringPtr("<certificate>"),
+				Certificate: to.Ptr("############################################"),
 			},
 		},
 		&armiothub.CertificatesClientCreateOrUpdateOptions{IfMatch: nil})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CertificatesClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_certificatesdelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_certificatesdelete.json
 func ExampleCertificatesClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Delete(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<certificate-name>",
-		"<if-match>",
+		"myResourceGroup",
+		"myhub",
+		"cert",
+		"AAAAAAAADGk=",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_generateverificationcode.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_generateverificationcode.json
 func ExampleCertificatesClient_GenerateVerificationCode() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.GenerateVerificationCode(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<certificate-name>",
-		"<if-match>",
+		"myResourceGroup",
+		"testHub",
+		"cert",
+		"AAAAAAAADGk=",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CertificatesClientGenerateVerificationCodeResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/iothub/resource-manager/Microsoft.Devices/preview/2021-07-01-preview/examples/iothub_certverify.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/iothub/resource-manager/Microsoft.Devices/stable/2021-07-02/examples/iothub_certverify.json
 func ExampleCertificatesClient_Verify() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armiothub.NewCertificatesClient("<subscription-id>", cred, nil)
+	client, err := armiothub.NewCertificatesClient("91d12660-3dec-467a-be2a-213b5544ddc0", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Verify(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<certificate-name>",
-		"<if-match>",
+		"myResourceGroup",
+		"myFirstProvisioningService",
+		"cert",
+		"AAAAAAAADGk=",
 		armiothub.CertificateVerificationDescription{
-			Certificate: to.StringPtr("<certificate>"),
+			Certificate: to.Ptr("#####################################"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.CertificatesClientVerifyResult)
+	// TODO: use response item
+	_ = res
 }

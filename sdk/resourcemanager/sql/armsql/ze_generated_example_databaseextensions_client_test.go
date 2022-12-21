@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,86 +12,92 @@ import (
 	"context"
 	"log"
 
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/sql/armsql"
 )
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/GetDatabaseExtensions.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/GetDatabaseExtensions.json
 func ExampleDatabaseExtensionsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseExtensionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabaseExtensionsClient("a3473687-7581-41e1-ac24-6bcca5843f07", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	_, err = client.Get(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<extension-name>",
+		"rg_a1f9d6f8-30d5-4228-9504-8a364361bca3",
+		"srv_65858e0f-b1d1-4bdc-8351-a7da86ca4939",
+		"11aa6c5e-58ed-4693-b303-3b8e3131deaa",
+		"polybaseimport",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/CreateOrUpdateDatabaseExtensions.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/CreateOrUpdateDatabaseExtensions.json
 func ExampleDatabaseExtensionsClient_BeginCreateOrUpdate() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseExtensionsClient("<subscription-id>", cred, nil)
+	client, err := armsql.NewDatabaseExtensionsClient("a1c0814d-3c18-4e1e-a247-c128c12b1677", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	poller, err := client.BeginCreateOrUpdate(ctx,
-		"<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
-		"<extension-name>",
+		"rg_20cbe0f0-c2d9-4522-9177-5469aad53029",
+		"srv_1ffd1cf8-9951-47fb-807d-a9c384763849",
+		"878e303f-1ea0-4f17-aa3d-a22ac5e9da08",
+		"polybaseimport",
 		armsql.DatabaseExtensions{
 			Properties: &armsql.DatabaseExtensionsProperties{
-				OperationMode:  armsql.OperationMode("PolybaseImport").ToPtr(),
-				StorageKey:     to.StringPtr("<storage-key>"),
-				StorageKeyType: armsql.StorageKeyType("StorageAccessKey").ToPtr(),
-				StorageURI:     to.StringPtr("<storage-uri>"),
+				OperationMode:  to.Ptr(armsql.OperationModePolybaseImport),
+				StorageKey:     to.Ptr("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+				StorageKeyType: to.Ptr(armsql.StorageKeyTypeStorageAccessKey),
+				StorageURI:     to.Ptr("https://teststorage.blob.core.windows.net/testcontainer/Manifest.xml"),
 			},
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	res, err := poller.PollUntilDone(ctx, 30*time.Second)
+	res, err := poller.PollUntilDone(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to pull the result: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.DatabaseExtensionsClientCreateOrUpdateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/ListDatabaseExtensions.json
-func ExampleDatabaseExtensionsClient_ListByDatabase() {
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/sql/resource-manager/Microsoft.Sql/preview/2021-02-01-preview/examples/ListDatabaseExtensions.json
+func ExampleDatabaseExtensionsClient_NewListByDatabasePager() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armsql.NewDatabaseExtensionsClient("<subscription-id>", cred, nil)
-	pager := client.ListByDatabase("<resource-group-name>",
-		"<server-name>",
-		"<database-name>",
+	client, err := armsql.NewDatabaseExtensionsClient("7b2515fe-f230-4017-8cf0-695163acab85", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	pager := client.NewListByDatabasePager("rg_4007c5a9-b3b0-41e1-bd46-9eef38768a4a",
+		"srv_3b67ec2a-519b-43a7-8533-fb62dce3431e",
+		"719d8fa4-bf0f-48fc-8cd3-ef40fe6ba1fe",
 		nil)
-	for {
-		nextResult := pager.NextPage(ctx)
-		if err := pager.Err(); err != nil {
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
 			log.Fatalf("failed to advance page: %v", err)
 		}
-		if !nextResult {
-			break
-		}
-		for _, v := range pager.PageResponse().Value {
-			log.Printf("Pager result: %#v\n", v)
+		for _, v := range nextResult.Value {
+			// TODO: use page item
+			_ = v
 		}
 	}
 }

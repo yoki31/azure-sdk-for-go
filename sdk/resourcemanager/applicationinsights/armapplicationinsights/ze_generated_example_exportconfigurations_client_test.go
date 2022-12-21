@@ -1,5 +1,5 @@
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,120 +14,140 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/applicationinsights/armapplicationinsights"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/applicationinsights/armapplicationinsights/v2"
 )
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationsList.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationsList.json
 func ExampleExportConfigurationsClient_List() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewExportConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewExportConfigurationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.List(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"my-component",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ExportConfigurationsClientListResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationsPost.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationsPost.json
 func ExampleExportConfigurationsClient_Create() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewExportConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewExportConfigurationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Create(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
+		"my-resource-group",
+		"my-component",
 		armapplicationinsights.ComponentExportRequest{
-			DestinationAccountID:             to.StringPtr("<destination-account-id>"),
-			DestinationAddress:               to.StringPtr("<destination-address>"),
-			DestinationStorageLocationID:     to.StringPtr("<destination-storage-location-id>"),
-			DestinationStorageSubscriptionID: to.StringPtr("<destination-storage-subscription-id>"),
-			DestinationType:                  to.StringPtr("<destination-type>"),
-			IsEnabled:                        to.StringPtr("<is-enabled>"),
-			NotificationQueueEnabled:         to.StringPtr("<notification-queue-enabled>"),
-			NotificationQueueURI:             to.StringPtr("<notification-queue-uri>"),
-			RecordTypes:                      to.StringPtr("<record-types>"),
+			DestinationAccountID:             to.Ptr("/subscriptions/subid/resourceGroups/my-resource-group/providers/Microsoft.ClassicStorage/storageAccounts/mystorageblob"),
+			DestinationAddress:               to.Ptr("https://mystorageblob.blob.core.windows.net/testexport?sv=2015-04-05&sr=c&sig=token"),
+			DestinationStorageLocationID:     to.Ptr("eastus"),
+			DestinationStorageSubscriptionID: to.Ptr("subid"),
+			DestinationType:                  to.Ptr("Blob"),
+			IsEnabled:                        to.Ptr("true"),
+			NotificationQueueEnabled:         to.Ptr("false"),
+			NotificationQueueURI:             to.Ptr(""),
+			RecordTypes:                      to.Ptr("Requests, Event, Exceptions, Metrics, PageViews, PageViewPerformance, Rdd, PerformanceCounters, Availability"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ExportConfigurationsClientCreateResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationDelete.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationDelete.json
 func ExampleExportConfigurationsClient_Delete() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewExportConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewExportConfigurationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Delete(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<export-id>",
+		"my-resource-group",
+		"my-component",
+		"uGOoki0jQsyEs3IdQ83Q4QsNr4=",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ExportConfigurationsClientDeleteResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationGet.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationGet.json
 func ExampleExportConfigurationsClient_Get() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewExportConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewExportConfigurationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Get(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<export-id>",
+		"my-resource-group",
+		"my-component",
+		"uGOoki0jQsyEs3IdQ83Q4QsNr4=",
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ExportConfigurationsClientGetResult)
+	// TODO: use response item
+	_ = res
 }
 
-// x-ms-original-file: specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationUpdate.json
+// Generated from example definition: https://github.com/Azure/azure-rest-api-specs/tree/main/specification/applicationinsights/resource-manager/Microsoft.Insights/stable/2015-05-01/examples/ExportConfigurationUpdate.json
 func ExampleExportConfigurationsClient_Update() {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 	ctx := context.Background()
-	client := armapplicationinsights.NewExportConfigurationsClient("<subscription-id>", cred, nil)
+	client, err := armapplicationinsights.NewExportConfigurationsClient("subid", cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
 	res, err := client.Update(ctx,
-		"<resource-group-name>",
-		"<resource-name>",
-		"<export-id>",
+		"my-resource-group",
+		"my-component",
+		"uGOoki0jQsyEs3IdQ83Q4QsNr4=",
 		armapplicationinsights.ComponentExportRequest{
-			DestinationAccountID:             to.StringPtr("<destination-account-id>"),
-			DestinationAddress:               to.StringPtr("<destination-address>"),
-			DestinationStorageLocationID:     to.StringPtr("<destination-storage-location-id>"),
-			DestinationStorageSubscriptionID: to.StringPtr("<destination-storage-subscription-id>"),
-			DestinationType:                  to.StringPtr("<destination-type>"),
-			IsEnabled:                        to.StringPtr("<is-enabled>"),
-			NotificationQueueEnabled:         to.StringPtr("<notification-queue-enabled>"),
-			NotificationQueueURI:             to.StringPtr("<notification-queue-uri>"),
-			RecordTypes:                      to.StringPtr("<record-types>"),
+			DestinationAccountID:             to.Ptr("/subscriptions/subid/resourceGroups/my-resource-group/providers/Microsoft.ClassicStorage/storageAccounts/mystorageblob"),
+			DestinationAddress:               to.Ptr("https://mystorageblob.blob.core.windows.net/fchentest?sv=2015-04-05&sr=c&sig=token"),
+			DestinationStorageLocationID:     to.Ptr("eastus"),
+			DestinationStorageSubscriptionID: to.Ptr("subid"),
+			DestinationType:                  to.Ptr("Blob"),
+			IsEnabled:                        to.Ptr("true"),
+			NotificationQueueEnabled:         to.Ptr("false"),
+			NotificationQueueURI:             to.Ptr(""),
+			RecordTypes:                      to.Ptr("Requests, Event, Exceptions, Metrics, PageViews, PageViewPerformance, Rdd, PerformanceCounters, Availability"),
 		},
 		nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to finish the request: %v", err)
 	}
-	log.Printf("Response result: %#v\n", res.ExportConfigurationsClientUpdateResult)
+	// TODO: use response item
+	_ = res
 }
